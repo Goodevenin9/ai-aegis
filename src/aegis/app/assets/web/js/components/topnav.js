@@ -91,7 +91,8 @@ const TopNav = {
             burger.appendChild(line);
         }
         burger.addEventListener('click', () => {
-            if (window.Header && Header.toggleMobileMenu) Header.toggleMobileMenu();
+            // Header is a top-level `const`, not a window property.
+            if (typeof Header !== 'undefined' && Header.toggleMobileMenu) Header.toggleMobileMenu();
         });
         root.appendChild(burger);
 
@@ -353,3 +354,9 @@ const TopNav = {
         });
     },
 };
+
+// Expose on window — codebase convention (sidebar.js, header.js, etc. all do
+// this). A top-level `const` lives in the global lexical scope and is NOT a
+// window property, so without this line `window.TopNav` guards stay false and
+// the whole command row never renders.
+window.TopNav = TopNav;

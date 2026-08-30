@@ -101,7 +101,9 @@ const App = {
         Header.render();
         // Top navigation row renders after the rail (it mirrors Sidebar.navItems)
         // and subscribes to the aegis:navigate event before the first loadPage.
-        if (window.TopNav) TopNav.init();
+        // NOTE: TopNav/Sidebar/Header are top-level `const`s — they live in the
+        // global lexical scope, NOT on `window`, so `window.TopNav` is undefined.
+        if (typeof TopNav !== 'undefined') TopNav.init();
 
         // Handle browser back/forward
         window.addEventListener('popstate', (e) => {
