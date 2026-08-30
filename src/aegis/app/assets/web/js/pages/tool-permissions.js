@@ -35,7 +35,7 @@ const ToolPermissionsPage = {
             entries.forEach(e => this.auditSelectedIds.delete(e.id));
         }
         document.querySelectorAll('.audit-row-cb').forEach(cb => { cb.checked = checked; });
-        document.querySelectorAll('[data-audit-row]').forEach(tr => tr.classList.toggle('sv-selected', checked));
+        document.querySelectorAll('[data-audit-row]').forEach(tr => tr.classList.toggle('ag-selected', checked));
         this._updateAuditDeleteBtn();
     },
 
@@ -127,8 +127,8 @@ const ToolPermissionsPage = {
     },
 
     SOURCE_META: {
-        official:     { label: 'Official MCP',  bg: 'rgba(94,173,184,0.12)',  text: '#5eadb8', border: 'rgba(94,173,184,0.3)',  icon: '\u2713' },
-        openclaw:     { label: 'Google Workspace MCP', bg: 'rgba(94,173,184,0.12)', text: '#5eadb8', border: 'rgba(94,173,184,0.3)', icon: '\uD83D\uDCE7' },
+        official:     { label: 'Official MCP',  bg: 'rgba(124,108,255,0.12)',  text: '#7c6cff', border: 'rgba(124,108,255,0.3)',  icon: '\u2713' },
+        openclaw:     { label: 'Google Workspace MCP', bg: 'rgba(124,108,255,0.12)', text: '#7c6cff', border: 'rgba(124,108,255,0.3)', icon: '\uD83D\uDCE7' },
         community:    { label: 'Community MCP',  bg: 'var(--bg-tertiary)', text: 'var(--text-secondary)', border: 'var(--border-default)', icon: '\u2665' },
         conventional: { label: 'Conventional',   bg: 'rgba(100,116,139,0.1)', text: '#94a3b8', border: 'rgba(100,116,139,0.2)', icon: '~' },
     },
@@ -209,7 +209,7 @@ const ToolPermissionsPage = {
 
     _showToolDetail(tool, anchor, accent) {
         // Toggle off if already open for this tool
-        const existing = document.getElementById('sv-tool-detail-popup');
+        const existing = document.getElementById('ag-tool-detail-popup');
         if (existing) {
             if (existing.dataset.toolId === tool.tool_id) { existing.remove(); return; }
             existing.remove();
@@ -219,7 +219,7 @@ const ToolPermissionsPage = {
         const rc = this.RISK_COLORS[tool.risk] || this.RISK_COLORS.write;
 
         const panel = document.createElement('div');
-        panel.id = 'sv-tool-detail-popup';
+        panel.id = 'ag-tool-detail-popup';
         panel.dataset.toolId = tool.tool_id;
         panel.style.cssText = 'position: fixed; z-index: 9999; width: 300px; background: var(--bg-card); border: 1px solid ' + accent.color + '; border-radius: 12px; padding: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.35); animation: fadeInUp 0.15s ease;';
 
@@ -507,7 +507,7 @@ const ToolPermissionsPage = {
 
     // Permissions / Call History / Inventory are three lenses on one feature,
     // exactly like Threat Monitor's facets and the Agent Observability tabs,
-    // so they use the same segmented control (ObsTabs' .sv-obs-tabs). The
+    // so they use the same segmented control (ObsTabs' .ag-obs-tabs). The
     // generic .tab-bar read as page furniture rather than as peer views.
     _TABS: [
         { id: 'permissions', label: 'Tool Permissions', icon: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6' },
@@ -522,7 +522,7 @@ const ToolPermissionsPage = {
         bar.textContent = '';
 
         const wrap = document.createElement('div');
-        wrap.className = 'sv-obs-tabs';
+        wrap.className = 'ag-obs-tabs';
         wrap.setAttribute('role', 'tablist');
 
         this._TABS
@@ -530,9 +530,9 @@ const ToolPermissionsPage = {
             .forEach(({ id, label, icon }) => {
                 const btn = document.createElement('button');
                 const isActive = this.activeTab === id;
-                if (isActive) localStorage.setItem('sv-tab-seen-tp-' + id, '1');
+                if (isActive) localStorage.setItem('ag-tab-seen-tp-' + id, '1');
                 btn.type = 'button';
-                btn.className = 'sv-obs-tab' + (isActive ? ' on' : '');
+                btn.className = 'ag-obs-tab' + (isActive ? ' on' : '');
                 btn.setAttribute('role', 'tab');
                 btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
                 btn.innerHTML =
@@ -642,7 +642,7 @@ const ToolPermissionsPage = {
         // destructive on a page whose stripe palette assigns #dc2626 to
         // last_resort deny rules. A primary "+" affordance must not
         // share a color band with deny.
-        topAddBtn.style.cssText = 'display: flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; border: none; background: #5eadb8; color: #fff; cursor: pointer; transition: opacity 0.15s; flex-shrink: 0;';
+        topAddBtn.style.cssText = 'display: flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 600; border: none; background: #7c6cff; color: #fff; cursor: pointer; transition: opacity 0.15s; flex-shrink: 0;';
         const topAddPlus = document.createElement('span');
         topAddPlus.textContent = '+';
         const topAddLabel = document.createElement('span');
@@ -837,7 +837,7 @@ const ToolPermissionsPage = {
                 body{font-family:-apple-system,Segoe UI,sans-serif;margin:24px;color:#111}
                 .brand{display:flex;align-items:center;gap:14px;border-bottom:1px solid #e3e6ee;padding-bottom:14px;margin-bottom:18px;}
                 .brand-text h1{font-size:20px;margin:0 0 2px;letter-spacing:-0.01em;}
-                .brand-text .product{font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#5eadb8;font-weight:600;}
+                .brand-text .product{font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#7c6cff;font-weight:600;}
                 .meta{font-size:11px;color:#666;margin-bottom:14px}
                 table{width:100%;border-collapse:collapse;font-size:11px}
                 th,td{border:1px solid #ddd;padding:5px 7px;text-align:left;vertical-align:top}
@@ -974,7 +974,7 @@ const ToolPermissionsPage = {
         // even when the filter row above wraps on narrow viewports.
         right.style.cssText = 'display:flex;align-items:center;gap:8px;margin-left:auto;';
         const csvBtn = document.createElement('button');
-        csvBtn.className = 'sv-btn-secondary';
+        csvBtn.className = 'ag-btn-secondary';
         csvBtn.textContent = 'Export CSV';
         csvBtn.style.cssText = 'padding:6px 12px;font-size:12px;';
         csvBtn.title = 'Download the visible inventory as CSV';
@@ -982,7 +982,7 @@ const ToolPermissionsPage = {
         right.appendChild(csvBtn);
 
         const pdfBtn = document.createElement('button');
-        pdfBtn.className = 'sv-btn-secondary';
+        pdfBtn.className = 'ag-btn-secondary';
         pdfBtn.textContent = 'Export PDF';
         pdfBtn.style.cssText = 'padding:6px 12px;font-size:12px;';
         pdfBtn.title = 'Open a print-ready view; use the browser print dialog to save as PDF';
@@ -1080,7 +1080,7 @@ const ToolPermissionsPage = {
             //   built-in     → grey   (--text-secondary)  — harness baseline, no opinion
             // All low-alpha backgrounds so the colour reads but doesn't shout.
             const palette =
-                source === 'cloud-policy' ? 'background:rgba(94,173,184,0.20);color:var(--accent-primary);border:1px solid rgba(94,173,184,0.35);'
+                source === 'cloud-policy' ? 'background:rgba(124,108,255,0.20);color:var(--accent-primary);border:1px solid rgba(124,108,255,0.35);'
               : source === 'local-custom' ? 'background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border-default);'
               : source === 'mcp'          ? 'background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.35);'
               :                              'background:rgba(148,163,184,0.15);color:var(--text-secondary);border:1px solid rgba(148,163,184,0.30);';
@@ -1284,8 +1284,8 @@ const ToolPermissionsPage = {
             pill.textContent = '\uD83D\uDCE6 ' + toolCount + ' local tools';
             pill.title = 'Enable Cloud Mode in Settings';
             pill.addEventListener('mouseenter', () => {
-                pill.style.borderColor = 'rgba(94,173,184,0.4)';
-                pill.style.color = '#5eadb8';
+                pill.style.borderColor = 'rgba(124,108,255,0.4)';
+                pill.style.color = '#7c6cff';
             });
             pill.addEventListener('mouseleave', () => {
                 pill.style.borderColor = 'var(--border-default)';
@@ -1346,9 +1346,9 @@ const ToolPermissionsPage = {
             boxShadow: row.style.boxShadow,
         };
         row.style.transition = 'border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease';
-        row.style.borderColor = '#5eadb8';
-        row.style.background = 'rgba(94,173,184,0.22)';
-        row.style.boxShadow = '0 0 0 3px rgba(94,173,184,0.45)';
+        row.style.borderColor = '#7c6cff';
+        row.style.background = 'rgba(124,108,255,0.22)';
+        row.style.boxShadow = '0 0 0 3px rgba(124,108,255,0.45)';
         setTimeout(() => {
             row.style.borderColor = orig.borderColor;
             row.style.background = orig.background;
@@ -1407,13 +1407,13 @@ const ToolPermissionsPage = {
         // Stable server order
         const serverOrder = Array.from(byServer.keys()).sort();
 
-        const accent = { color: '#5eadb8', bg: 'rgba(94,173,184,0.12)' };
+        const accent = { color: '#7c6cff', bg: 'rgba(124,108,255,0.12)' };
         const col = document.createElement('div');
         col.dataset.categoryCol = 'cloud-only';
         // Tinted column — visually marks the cloud-managed section as
         // distinct from local-editable categories. Matches the framing
         // OpenClaw's column already uses for its proxy tools.
-        col.style.cssText = 'min-width: 0; border-radius: 10px; padding: 8px; background: rgba(94,173,184,0.06); border: 1px solid rgba(94,173,184,0.30);';
+        col.style.cssText = 'min-width: 0; border-radius: 10px; padding: 8px; background: rgba(124,108,255,0.06); border: 1px solid rgba(124,108,255,0.30);';
 
         // Column header — SVG cloud-check icon (replaces the 🔒 emoji)
         // plus a small "From Aegis cloud" badge so the provenance
@@ -1426,7 +1426,7 @@ const ToolPermissionsPage = {
         catTitle.appendChild(document.createTextNode('Cloud-managed'));
         catHeader.appendChild(catTitle);
         const catCount = document.createElement('span');
-        catCount.style.cssText = 'font-size: 10px; color: ' + accent.color + '; margin-left: auto; padding: 1px 6px; background: rgba(94,173,184,0.15); border: 1px solid rgba(94,173,184,0.35); border-radius: var(--radius-full); font-weight: 600;';
+        catCount.style.cssText = 'font-size: 10px; color: ' + accent.color + '; margin-left: auto; padding: 1px 6px; background: rgba(124,108,255,0.15); border: 1px solid rgba(124,108,255,0.35); border-radius: var(--radius-full); font-weight: 600;';
         catCount.textContent = cloudOnly.length;
         catHeader.appendChild(catCount);
         col.appendChild(catHeader);
@@ -1434,7 +1434,7 @@ const ToolPermissionsPage = {
         // Provenance badge + subtitle — makes the cloud origin explicit
         // instead of relying on the lock glyph alone.
         const provBadge = document.createElement('div');
-        provBadge.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; color: ' + accent.color + '; background: rgba(94,173,184,0.10); border: 1px solid rgba(94,173,184,0.30); border-radius: 999px; padding: 2px 8px; margin-bottom: 6px;';
+        provBadge.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; color: ' + accent.color + '; background: rgba(124,108,255,0.10); border: 1px solid rgba(124,108,255,0.30); border-radius: 999px; padding: 2px 8px; margin-bottom: 6px;';
         provBadge.appendChild(this._svgCloudCheck(11));
         provBadge.appendChild(document.createTextNode('Synced from Aegis cloud'));
         col.appendChild(provBadge);
@@ -1586,9 +1586,9 @@ const ToolPermissionsPage = {
         const chipBtns = {};
         const setChipStyle = (btn, active) => {
             btn.style.cssText = 'padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid ' +
-                (active ? 'var(--accent-primary, #5eadb8)' : 'var(--border-default)') + '; ' +
+                (active ? 'var(--accent-primary, #7c6cff)' : 'var(--border-default)') + '; ' +
                 (active
-                    ? 'background: rgba(94,173,184,0.15); color: var(--accent-primary, #5eadb8);'
+                    ? 'background: rgba(124,108,255,0.15); color: var(--accent-primary, #7c6cff);'
                     : 'background: var(--bg-card); color: var(--text-secondary);');
         };
         chipDefs.forEach((def, i) => {
@@ -1736,7 +1736,7 @@ const ToolPermissionsPage = {
         // they all share the single brand accent. A per-category rainbow
         // taught users nothing and buried the one colored thing that matters
         // on this page (the Allow/Block verdicts).
-        const BRAND_ACCENT = { color: '#5eadb8', bg: 'rgba(94,173,184,0.10)' };
+        const BRAND_ACCENT = { color: '#7c6cff', bg: 'rgba(124,108,255,0.10)' };
         const categoryAccents = {
             openclaw: BRAND_ACCENT,
             claude_code: BRAND_ACCENT,
@@ -1801,9 +1801,9 @@ const ToolPermissionsPage = {
         columnsWrap.style.cssText = 'display: flex; flex-direction: column; gap: 8px;';
 
         // ── OpenClaw info note (now above the table, no longer per-column) ──
-        if (categories.openclaw && !sessionStorage.getItem('sv-openclaw-note-dismissed')) {
+        if (categories.openclaw && !sessionStorage.getItem('ag-openclaw-note-dismissed')) {
             const note = document.createElement('div');
-            note.style.cssText = 'position: relative; font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding: 8px 32px 8px 12px; background: rgba(94,173,184,0.06); border: 1px solid var(--border-default); border-radius: 6px;';
+            note.style.cssText = 'position: relative; font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding: 8px 32px 8px 12px; background: rgba(124,108,255,0.06); border: 1px solid var(--border-default); border-radius: 6px;';
             const noteText = document.createElement('div');
             noteText.innerHTML = '<strong style="color:var(--text-primary);">OpenClaw tools detected.</strong> Aegis auto-detected your running OpenClaw proxy and added its Google Workspace tools (Gmail, Drive, Calendar, Meet, etc.) below.';
             note.appendChild(noteText);
@@ -1811,7 +1811,7 @@ const ToolPermissionsPage = {
             closeNote.textContent = '×';
             closeNote.style.cssText = 'position: absolute; top: 4px; right: 8px; background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; line-height: 1; padding: 0;';
             closeNote.addEventListener('click', () => {
-                sessionStorage.setItem('sv-openclaw-note-dismissed', '1');
+                sessionStorage.setItem('ag-openclaw-note-dismissed', '1');
                 note.remove();
             });
             note.appendChild(closeNote);
@@ -1910,7 +1910,7 @@ const ToolPermissionsPage = {
         };
 
         const localChip = mkInlineFilter('override',    counts.override,    'local',       '#d97706');
-        const cloudChip = mkInlineFilter('synced',      counts.synced,      'cloud',       '#5eadb8');
+        const cloudChip = mkInlineFilter('synced',      counts.synced,      'cloud',       '#7c6cff');
         const lastChip  = mkInlineFilter('last_resort', counts.last_resort, 'last-resort', '#dc2626');
         if (localChip || cloudChip || lastChip) {
             const sep = document.createElement('span');
@@ -2037,21 +2037,21 @@ const ToolPermissionsPage = {
             tab.dataset.tabKey = tabKeyStr;
 
             const restingBorder = isHighlighted
-                ? (accentColor || '#5eadb8')
+                ? (accentColor || '#7c6cff')
                 : 'var(--border-default)';
             const borderColor = isActive
-                ? (accentColor || '#5eadb8')
+                ? (accentColor || '#7c6cff')
                 : restingBorder;
 
             const restingBg = isHighlighted
                 ? (accentColor
                     ? 'color-mix(in srgb, ' + accentColor + ' 12%, var(--bg-card))'
-                    : 'rgba(94,173,184,0.10)')
+                    : 'rgba(124,108,255,0.10)')
                 : 'var(--bg-tertiary)';
             const fillBg = isActive
                 ? (accentColor
                     ? 'color-mix(in srgb, ' + accentColor + ' 22%, var(--bg-card))'
-                    : 'rgba(94,173,184,0.16)')
+                    : 'rgba(124,108,255,0.16)')
                 : restingBg;
 
             const txtColor = (isActive || isHighlighted)
@@ -2059,7 +2059,7 @@ const ToolPermissionsPage = {
                 : 'var(--text-secondary)';
             const borderWidth = isHighlighted ? '1.5px' : '1px';
             const ringShadow = isHighlighted
-                ? '0 0 0 2px ' + (accentColor || '#5eadb8') + '1f, 0 1px 4px ' + (accentColor || '#5eadb8') + '24'
+                ? '0 0 0 2px ' + (accentColor || '#7c6cff') + '1f, 0 1px 4px ' + (accentColor || '#7c6cff') + '24'
                 : 'none';
 
             tab.style.cssText = 'flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; font: inherit; font-size: 11px; font-weight: 700; background: ' + fillBg + '; border: ' + borderWidth + ' solid ' + borderColor + '; border-radius: 6px; color: ' + txtColor + '; cursor: pointer; line-height: 1; white-space: nowrap; box-shadow: ' + ringShadow + '; transition: color 0.12s, border-color 0.12s, background 0.12s, transform 0.08s, box-shadow 0.12s;';
@@ -2082,7 +2082,7 @@ const ToolPermissionsPage = {
                 // visually distinct from the category tabs without a
                 // second color cue.
                 const ico = this._svgCloudCheck(12);
-                ico.style.color = accentColor || '#5eadb8';
+                ico.style.color = accentColor || '#7c6cff';
                 tab.appendChild(ico);
             } else if (accentColor && key !== null) {
                 const dot = document.createElement('span');
@@ -2094,7 +2094,7 @@ const ToolPermissionsPage = {
             lbl.textContent = label;
             tab.appendChild(lbl);
             const cnt = document.createElement('span');
-            cnt.style.cssText = 'font-size: 10px; font-weight: 500; padding: 1px 6px; background: ' + (isActive ? (accentColor ? 'color-mix(in srgb, ' + accentColor + ' 18%, transparent)' : 'rgba(94,173,184,0.18)') : 'var(--bg-tertiary)') + '; color: ' + (isActive ? (accentColor || '#5eadb8') : 'var(--text-muted)') + '; border-radius: 999px;';
+            cnt.style.cssText = 'font-size: 10px; font-weight: 500; padding: 1px 6px; background: ' + (isActive ? (accentColor ? 'color-mix(in srgb, ' + accentColor + ' 18%, transparent)' : 'rgba(124,108,255,0.18)') : 'var(--bg-tertiary)') + '; color: ' + (isActive ? (accentColor || '#7c6cff') : 'var(--text-muted)') + '; border-radius: 999px;';
             cnt.textContent = String(count);
             tab.appendChild(cnt);
             tab.addEventListener('click', () => {
@@ -2129,7 +2129,7 @@ const ToolPermissionsPage = {
             // and the byline below says "Managed in your cloud admin
             // console", so the longer label was redundant + caused
             // tab-row wrap on narrow viewports.
-            tabBar.appendChild(mkTab('__cloud__', 'Org Policies', cloudPolicyCount, '#5eadb8', true));
+            tabBar.appendChild(mkTab('__cloud__', 'Org Policies', cloudPolicyCount, '#7c6cff', true));
         }
         visibleCats.forEach(cat => {
             const acc = categoryAccents[cat] || { color: '#64748b' };
@@ -2138,7 +2138,7 @@ const ToolPermissionsPage = {
         // Custom tools tab — surfaces user-authored tools that previously
         // only existed as a section buried below the registry list.
         const customCount = (this.customTools || []).length;
-        tabBar.appendChild(mkTab('__custom__', '+ Custom', customCount, '#5eadb8'));
+        tabBar.appendChild(mkTab('__custom__', '+ Custom', customCount, '#7c6cff'));
 
         // Arrow-key navigation across tabs (left/right) per WAI-ARIA tab
         // pattern — Home/End jump to first/last. Click already works.
@@ -2426,7 +2426,7 @@ const ToolPermissionsPage = {
             // away for good, and the panel returns to taking no space until
             // a real request or grant exists.
             let dismissed = false;
-            try { dismissed = localStorage.getItem('sv-jit-intro-dismissed') === '1'; } catch (_) {}
+            try { dismissed = localStorage.getItem('ag-jit-intro-dismissed') === '1'; } catch (_) {}
             if (!dismissed) box.appendChild(this._jitEmptyState());
             return;
         }
@@ -2486,7 +2486,7 @@ const ToolPermissionsPage = {
         dismiss.title = 'Dismiss';
         dismiss.setAttribute('aria-label', 'Dismiss just-in-time access introduction');
         dismiss.addEventListener('click', () => {
-            try { localStorage.setItem('sv-jit-intro-dismissed', '1'); } catch (_) {}
+            try { localStorage.setItem('ag-jit-intro-dismissed', '1'); } catch (_) {}
             panel.remove();
         });
         title.appendChild(dismiss);
@@ -2670,16 +2670,16 @@ const ToolPermissionsPage = {
         // a visible reassurance that the local ledger is honest.
         // Integrity banner uses CSS classes so dark-mode shows correct
         // contrast instead of a white card on a dark background. The
-        // classes (sv-integrity-banner, .ok/.fail/.unknown) are defined
+        // classes (ag-integrity-banner, .ok/.fail/.unknown) are defined
         // in styles.css with dark-mode-aware color tokens.
         const integrityBanner = document.createElement('div');
         integrityBanner.id = 'audit-integrity-banner';
-        integrityBanner.className = 'sv-integrity-banner';
+        integrityBanner.className = 'ag-integrity-banner';
         // Dismissed state persists across page reloads so a quiet
         // green "all verified" banner doesn't nag the user every visit.
         // Only the OK state honors the dismiss; failure + unknown
         // always re-show (the user needs to see those).
-        const _dismissKey = 'sv-audit-integrity-dismissed';
+        const _dismissKey = 'ag-audit-integrity-dismissed';
         if (sessionStorage.getItem(_dismissKey) === '1') {
             integrityBanner.style.display = 'none';
         }
@@ -2692,14 +2692,14 @@ const ToolPermissionsPage = {
         } else {
             container.appendChild(integrityBanner);
         }
-        console.log('[sv-audit] integrity banner mounted');
+        console.log('[ag-audit] integrity banner mounted');
 
         // Re-verify is an action, so it lives in the toolbar next to Refresh
         // (appended there below) — its old dedicated row wasted a full line
         // under the banner. Banner stays evidence; button joins the actions.
         const reverifyBtn = document.createElement('button');
         reverifyBtn.type = 'button';
-        reverifyBtn.className = 'sv-integrity-reverify';
+        reverifyBtn.className = 'ag-integrity-reverify';
         reverifyBtn.style.cssText = 'padding: 3px 10px; border-radius: var(--radius-full); font-size: 12px; '
             + 'border: 1px solid var(--border-default); background: transparent; color: var(--text-muted); '
             + 'cursor: pointer; transition: color 0.15s;';
@@ -2709,14 +2709,14 @@ const ToolPermissionsPage = {
         reverifyBtn.addEventListener('mouseleave', () => { reverifyBtn.style.color = 'var(--text-muted)'; });
 
         const renderIntegrity = async () => {
-            console.log('[sv-audit] verifying chain…');
+            console.log('[ag-audit] verifying chain…');
             // Reset state each render so repeated re-verifies don't
             // stack stale classes.
-            integrityBanner.className = 'sv-integrity-banner loading';
+            integrityBanner.className = 'ag-integrity-banner loading';
             integrityBanner.style.display = '';
             integrityBanner.textContent = '';
             const loading = document.createElement('span');
-            loading.className = 'sv-integrity-text';
+            loading.className = 'ag-integrity-text';
             loading.textContent = 'Verifying audit chain…';
             integrityBanner.appendChild(loading);
 
@@ -2724,10 +2724,10 @@ const ToolPermissionsPage = {
             try {
                 result = await API.getToolCallAuditIntegrity();
             } catch (e) {
-                console.error('[sv-audit] integrity fetch failed', e);
+                console.error('[ag-audit] integrity fetch failed', e);
                 result = { ok: null };
             }
-            console.log('[sv-audit] integrity result', result);
+            console.log('[ag-audit] integrity result', result);
             self.auditIntegrity = result;
             self._refreshAuditRowIntegrity();
 
@@ -2739,12 +2739,12 @@ const ToolPermissionsPage = {
 
             integrityBanner.textContent = '';
             const stateClass = result.ok === true ? 'ok' : result.ok === false ? 'fail' : 'unknown';
-            integrityBanner.className = 'sv-integrity-banner ' + stateClass;
+            integrityBanner.className = 'ag-integrity-banner ' + stateClass;
 
             const icon = document.createElement('span');
-            icon.className = 'sv-integrity-icon';
+            icon.className = 'ag-integrity-icon';
             const text = document.createElement('span');
-            text.className = 'sv-integrity-text';
+            text.className = 'ag-integrity-text';
             integrityBanner.appendChild(icon);
             integrityBanner.appendChild(text);
 
@@ -2756,11 +2756,11 @@ const ToolPermissionsPage = {
                     : 'just now';
                 const entryLabel = count === 1 ? 'entry' : 'entries';
                 const deviceFrag = deviceId
-                    ? ' · <span class="sv-integrity-meta sv-integrity-device" title="Stable per-device identifier. Hashed from the OS machine UUID: the raw value never leaves this machine.">device ' + deviceId + '</span>'
+                    ? ' · <span class="ag-integrity-meta ag-integrity-device" title="Stable per-device identifier. Hashed from the OS machine UUID: the raw value never leaves this machine.">device ' + deviceId + '</span>'
                     : '';
                 text.innerHTML = '<strong>Audit chain verified</strong> — '
                     + count + ' ' + entryLabel + ' intact '
-                    + '<span class="sv-integrity-meta">· checked ' + when + '</span>'
+                    + '<span class="ag-integrity-meta">· checked ' + when + '</span>'
                     + deviceFrag;
             } else if (result.ok === false) {
                 icon.textContent = '⚠';
@@ -2785,7 +2785,7 @@ const ToolPermissionsPage = {
             // Failure/unknown will re-show on next render (see above).
             const closeBtn = document.createElement('button');
             closeBtn.type = 'button';
-            closeBtn.className = 'sv-integrity-close';
+            closeBtn.className = 'ag-integrity-close';
             closeBtn.setAttribute('aria-label', 'Dismiss banner');
             closeBtn.title = 'Dismiss';
             closeBtn.textContent = '✕';
@@ -2845,7 +2845,7 @@ const ToolPermissionsPage = {
                 DashboardPage._renderTimelineChart(chartBody, {
                     labels: buckets.map(b => b.label),
                     series: [
-                        { label: 'Allowed', color: '#5eadb8', data: buckets.map(b => b.allowed) },
+                        { label: 'Allowed', color: '#7c6cff', data: buckets.map(b => b.allowed) },
                         { label: 'Blocked', color: '#ef4444', data: buckets.map(b => b.blocked) },
                         { label: 'Logged',  color: '#64748b', data: buckets.map(b => b.logged) },
                     ],
@@ -2892,7 +2892,7 @@ const ToolPermissionsPage = {
         };
         makeStatCard('total',   'Total calls',   '');
         makeStatCard('blocked', 'Blocked',       '#ef4444');
-        makeStatCard('allowed', 'Allowed',       '#5eadb8');
+        makeStatCard('allowed', 'Allowed',       '#7c6cff');
         makeStatCard('logged',  'Logged (pass)', '#94a3b8');
 
         // Toolbar: filter buttons + refresh
@@ -2902,7 +2902,7 @@ const ToolPermissionsPage = {
         const filters = [
             { label: 'All',     value: null,       color: '#94a3b8' },
             { label: 'Blocked', value: 'block',    color: '#ef4444' },
-            { label: 'Allowed', value: 'allow',    color: '#5eadb8' },
+            { label: 'Allowed', value: 'allow',    color: '#7c6cff' },
             { label: 'Logged',  value: 'log_only', color: '#64748b' },
         ];
         let activeFilter = null;
@@ -3120,7 +3120,7 @@ const ToolPermissionsPage = {
         // Action badge configs — cyan for allowed, red for blocked
         const ACTION_CFG = {
             block:    { icon: '🔒', label: 'Blocked', color: '#ef4444', bg: 'rgba(239,68,68,0.12)'   },
-            allow:    { icon: '✓',  label: 'Allowed', color: '#5eadb8', bg: 'rgba(94,173,184,0.12)'   },
+            allow:    { icon: '✓',  label: 'Allowed', color: '#7c6cff', bg: 'rgba(124,108,255,0.12)'   },
             log_only: { icon: '~',  label: 'Logged',  color: '#94a3b8', bg: 'rgba(148,163,184,0.1)'  },
         };
 
@@ -3203,7 +3203,7 @@ const ToolPermissionsPage = {
                 metaRow.appendChild(section('Risk Level', riskEl));
             }
 
-            const typeColor = entry.is_essential ? '#5eadb8' : 'var(--text-secondary)';
+            const typeColor = entry.is_essential ? '#7c6cff' : 'var(--text-secondary)';
             const typeText = entry.is_essential ? 'Essential' : (entry.action !== 'log_only' ? 'Custom' : 'Unknown');
             const typeEl = document.createElement('span');
             typeEl.style.cssText = 'font-size: 13px; font-weight: 600; color: ' + typeColor + ';';
@@ -3322,9 +3322,9 @@ const ToolPermissionsPage = {
             // TAMPERED pill so the row visibly stands out even before
             // the user clicks in.
             self._decorateAuditRowForIntegrity(tr, entry);
-            if (self.auditSelectedIds.has(entry.id)) { tr.classList.add('sv-selected'); tr.style.background = 'rgba(94,173,184,0.06)'; }
-            tr.addEventListener('mouseenter', () => { if (!tr.classList.contains('sv-selected')) tr.style.background = 'var(--bg-tertiary)'; });
-            tr.addEventListener('mouseleave', () => { tr.style.background = tr.classList.contains('sv-selected') ? 'rgba(94,173,184,0.06)' : rowBg; });
+            if (self.auditSelectedIds.has(entry.id)) { tr.classList.add('ag-selected'); tr.style.background = 'rgba(124,108,255,0.06)'; }
+            tr.addEventListener('mouseenter', () => { if (!tr.classList.contains('ag-selected')) tr.style.background = 'var(--bg-tertiary)'; });
+            tr.addEventListener('mouseleave', () => { tr.style.background = tr.classList.contains('ag-selected') ? 'rgba(124,108,255,0.06)' : rowBg; });
 
             // Checkbox cell
             const tdCb = document.createElement('td');
@@ -3335,9 +3335,9 @@ const ToolPermissionsPage = {
             cb.checked = self.auditSelectedIds.has(entry.id);
             cb.addEventListener('click', (e) => e.stopPropagation());
             cb.addEventListener('change', () => {
-                if (cb.checked) tr.style.background = 'rgba(94,173,184,0.06)';
+                if (cb.checked) tr.style.background = 'rgba(124,108,255,0.06)';
                 else tr.style.background = rowBg;
-                tr.classList.toggle('sv-selected', cb.checked);
+                tr.classList.toggle('ag-selected', cb.checked);
                 self._toggleSelectAuditRecord(entry.id, cb.checked, lastEntries);
             });
             tdCb.appendChild(cb);
@@ -3432,7 +3432,7 @@ const ToolPermissionsPage = {
             // Type
             const tdType = document.createElement('td');
             tdType.style.cssText = 'padding: 8px 12px; white-space: nowrap; font-size: 12px;';
-            const typeColor = entry.is_essential ? '#5eadb8' : (entry.action !== 'log_only' ? '#5eadb8' : 'var(--text-muted)');
+            const typeColor = entry.is_essential ? '#7c6cff' : (entry.action !== 'log_only' ? '#7c6cff' : 'var(--text-muted)');
             const typeText = entry.is_essential ? 'Essential' : (entry.action !== 'log_only' ? 'Custom' : 'Unknown');
             const typeSpan = document.createElement('span');
             typeSpan.style.color = typeColor;
@@ -3676,7 +3676,7 @@ const ToolPermissionsPage = {
         // from the hero tiles so visual language is consistent.
         let stripeColor;
         if (tool.is_last_resort)    stripeColor = '#dc2626';
-        else if (tool.is_synced)    stripeColor = '#5eadb8';
+        else if (tool.is_synced)    stripeColor = '#7c6cff';
         else if (tool.has_override) stripeColor = '#d97706';
         else                        stripeColor = 'var(--border-default)';
 
@@ -4100,7 +4100,7 @@ const ToolPermissionsPage = {
     // ==================== Custom Tools ====================
 
     renderCustomToolsSection(container) {
-        const customAccent = { color: '#5eadb8', bg: 'rgba(94,173,184,0.12)' };
+        const customAccent = { color: '#7c6cff', bg: 'rgba(124,108,255,0.12)' };
 
         // Section wrapper — either a grid item or nested under code_devops
         const section = document.createElement('div');
@@ -4127,7 +4127,7 @@ const ToolPermissionsPage = {
         // Add Tool button — compact to fit column header
         const addBtn = document.createElement('button');
         addBtn.id = 'custom-tools-add-btn';
-        addBtn.style.cssText = 'display: flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: var(--radius-full); font-size: 11px; font-weight: 600; border: none; background: linear-gradient(135deg, #5eadb8, #ef4444); color: #fff; cursor: pointer; transition: opacity 0.15s; flex-shrink: 0;';
+        addBtn.style.cssText = 'display: flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: var(--radius-full); font-size: 11px; font-weight: 600; border: none; background: linear-gradient(135deg, #7c6cff, #ef4444); color: #fff; cursor: pointer; transition: opacity 0.15s; flex-shrink: 0;';
         addBtn.textContent = '+ Add';
         addBtn.addEventListener('mouseenter', () => { addBtn.style.opacity = '0.85'; });
         addBtn.addEventListener('mouseleave', () => { addBtn.style.opacity = '1'; });
@@ -4319,11 +4319,11 @@ const ToolPermissionsPage = {
     },
 
     _showCustomToolDetail(tool, anchor, accent, grid, catCount) {
-        const existing = document.getElementById('sv-tool-detail-popup');
+        const existing = document.getElementById('ag-tool-detail-popup');
         if (existing) { if (existing.dataset.toolId === tool.tool_id) { existing.remove(); return; } existing.remove(); }
 
         const panel = document.createElement('div');
-        panel.id = 'sv-tool-detail-popup';
+        panel.id = 'ag-tool-detail-popup';
         panel.dataset.toolId = tool.tool_id;
         panel.style.cssText = 'position: fixed; z-index: 9999; width: 300px; background: var(--bg-card); border: 1px solid ' + accent.color + '; border-radius: 12px; padding: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.35); animation: fadeInUp 0.15s ease;';
 

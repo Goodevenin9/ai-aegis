@@ -126,7 +126,7 @@ const GettingStartedPage = {
 
         // Proxy status bar
         const proxyBar = document.createElement('div');
-        proxyBar.style.cssText = 'padding: 14px 18px; background: var(--bg-secondary); border: 1px solid rgba(94,173,184,0.3); border-radius: 8px; margin-bottom: 20px;';
+        proxyBar.style.cssText = 'padding: 14px 18px; background: var(--bg-secondary); border: 1px solid rgba(124,108,255,0.3); border-radius: 8px; margin-bottom: 20px;';
 
         const proxyStatus = document.createElement('div');
         proxyStatus.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 10px;';
@@ -156,15 +156,15 @@ const GettingStartedPage = {
 
         // OpenClaw promo banner — native plugin, no proxy needed
         const ocBanner = document.createElement('div');
-        ocBanner.style.cssText = 'display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: linear-gradient(90deg, rgba(94,173,184,0.10) 0%, rgba(94,173,184,0.04) 100%); border: 1px solid rgba(94,173,184,0.35); border-radius: 8px; margin-bottom: 20px; cursor: pointer; transition: border-color 0.15s;';
-        ocBanner.addEventListener('mouseenter', () => { ocBanner.style.borderColor = 'rgba(94,173,184,0.6)'; });
-        ocBanner.addEventListener('mouseleave', () => { ocBanner.style.borderColor = 'rgba(94,173,184,0.35)'; });
+        ocBanner.style.cssText = 'display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: linear-gradient(90deg, rgba(124,108,255,0.10) 0%, rgba(124,108,255,0.04) 100%); border: 1px solid rgba(124,108,255,0.35); border-radius: 8px; margin-bottom: 20px; cursor: pointer; transition: border-color 0.15s;';
+        ocBanner.addEventListener('mouseenter', () => { ocBanner.style.borderColor = 'rgba(124,108,255,0.6)'; });
+        ocBanner.addEventListener('mouseleave', () => { ocBanner.style.borderColor = 'rgba(124,108,255,0.35)'; });
         ocBanner.addEventListener('click', () => {
             if (window.Sidebar) { Sidebar.expandSection('integrations'); Sidebar.navigate('proxy-openclaw'); }
         });
 
         const ocIcon = document.createElement('div');
-        ocIcon.style.cssText = 'flex-shrink: 0; width: 32px; height: 32px; background: rgba(94,173,184,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;';
+        ocIcon.style.cssText = 'flex-shrink: 0; width: 32px; height: 32px; background: rgba(124,108,255,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;';
         ocIcon.textContent = '\u26A1';
         ocBanner.appendChild(ocIcon);
 
@@ -239,7 +239,7 @@ const GettingStartedPage = {
         // user picks the right path (Framework SDKs vs plugins) for their setup.
         const setupBox = document.createElement('div');
         setupBox.style.cssText = 'background: var(--bg-secondary); border-radius: 8px; padding: 16px; border: 1px solid var(--border-default); min-width: 0; cursor: pointer; transition: border-color 0.15s; overflow: hidden;';
-        setupBox.addEventListener('mouseenter', () => setupBox.style.borderColor = 'rgba(94,173,184,0.3)');
+        setupBox.addEventListener('mouseenter', () => setupBox.style.borderColor = 'rgba(124,108,255,0.3)');
         setupBox.addEventListener('mouseleave', () => setupBox.style.borderColor = 'var(--border-default)');
         setupBox.addEventListener('click', () => { if (window.Sidebar) Sidebar.navigate('guide-connect-agents'); });
 
@@ -261,7 +261,7 @@ const GettingStartedPage = {
         // --- RIGHT: Skill Scanner ---
         const scanBox = document.createElement('div');
         scanBox.style.cssText = 'background: var(--bg-secondary); border-radius: 8px; padding: 16px; border: 1px solid var(--border-default); min-width: 0; cursor: pointer; transition: border-color 0.15s; overflow: hidden;';
-        scanBox.addEventListener('mouseenter', () => scanBox.style.borderColor = 'rgba(94,173,184,0.3)');
+        scanBox.addEventListener('mouseenter', () => scanBox.style.borderColor = 'rgba(124,108,255,0.3)');
         scanBox.addEventListener('mouseleave', () => scanBox.style.borderColor = 'var(--border-default)');
         scanBox.addEventListener('click', () => { if (window.Sidebar) Sidebar.navigate('skill-scanner'); });
 
@@ -292,12 +292,12 @@ const GettingStartedPage = {
         const card = document.createElement('div');
         card.className = 'card';
         card.id = sectionId;
-        card.style.cssText = 'padding: 0; overflow: hidden; margin-bottom: 12px;' + (isNew ? ' border-color: rgba(94,173,184,0.35);' : '');
+        card.style.cssText = 'padding: 0; overflow: hidden; margin-bottom: 12px;' + (isNew ? ' border-color: rgba(124,108,255,0.35);' : '');
 
         // Clickable header
         const header = document.createElement('div');
         header.style.cssText = 'padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; transition: background 0.15s;';
-        header.addEventListener('mouseenter', () => { header.style.background = 'rgba(94, 173, 184, 0.04)'; });
+        header.addEventListener('mouseenter', () => { header.style.background = 'rgba(124, 108, 255, 0.04)'; });
         header.addEventListener('mouseleave', () => { header.style.background = ''; });
 
         const headerLeft = document.createElement('div');
@@ -309,13 +309,13 @@ const GettingStartedPage = {
         titleRow.appendChild(headerTitle);
         if (isNew) {
             const badge = document.createElement('span');
-            badge.style.cssText = 'font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 3px; background: rgba(94,173,184,0.15); color: var(--accent-primary); letter-spacing:0.5px; line-height:1.6;';
+            badge.style.cssText = 'font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 3px; background: rgba(124,108,255,0.15); color: var(--accent-primary); letter-spacing:0.5px; line-height:1.6;';
             badge.textContent = 'NEW';
             titleRow.appendChild(badge);
         }
         if (tier === 'cloud') {
             const tierPill = document.createElement('span');
-            tierPill.style.cssText = 'font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 999px; background: rgba(6, 182, 212, 0.14); color: var(--cyan-600, #0891b2); border: 1px solid rgba(6, 182, 212, 0.32); letter-spacing:0.4px; text-transform:uppercase; line-height:1.4;';
+            tierPill.style.cssText = 'font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 999px; background: rgba(6, 182, 212, 0.14); color: var(--cyan-600, #7c6cff); border: 1px solid rgba(6, 182, 212, 0.32); letter-spacing:0.4px; text-transform:uppercase; line-height:1.4;';
             tierPill.textContent = 'Cloud';
             titleRow.appendChild(tierPill);
         }
@@ -1216,7 +1216,7 @@ const GettingStartedPage = {
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 360" role="img" aria-label="Enterprise deployment: agent hosts forward OCSF events to the company SIEM" style="width:100%;height:auto;max-width:820px;display:block;">
     <defs>
       <marker id="svArrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 Z" fill="#5eadb8"/>
+        <path d="M0,0 L10,5 L0,10 Z" fill="#7c6cff"/>
       </marker>
       <marker id="svArrowRed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
         <path d="M0,0 L10,5 L0,10 Z" fill="#ef4444" opacity="0.5"/>
@@ -1228,53 +1228,53 @@ const GettingStartedPage = {
       <!-- Host 1: developer laptop -->
       <g transform="translate(20,30)">
         <rect x="0" y="0" width="240" height="70" rx="10" fill="#1a1f26" stroke="#2a3139" stroke-width="1.2"/>
-        <g transform="translate(14,20)" stroke="#5eadb8" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <g transform="translate(14,20)" stroke="#7c6cff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <path d="M2 20h28V4H2z"/>
           <path d="M0 24h32"/>
         </g>
         <text x="56" y="27" fill="#e6e8ea" font-size="13" font-weight="600">Developer laptop</text>
         <text x="56" y="46" fill="#8b95a1" font-size="11">AI agent · Aegis local</text>
-        <rect x="176" y="12" width="56" height="18" rx="9" fill="rgba(94,173,184,0.14)" stroke="rgba(94,173,184,0.4)" stroke-width="0.8"/>
-        <text x="204" y="25" fill="#5eadb8" font-size="9.5" font-weight="700" text-anchor="middle">OCSF</text>
+        <rect x="176" y="12" width="56" height="18" rx="9" fill="rgba(124,108,255,0.14)" stroke="rgba(124,108,255,0.4)" stroke-width="0.8"/>
+        <text x="204" y="25" fill="#7c6cff" font-size="9.5" font-weight="700" text-anchor="middle">OCSF</text>
       </g>
 
       <!-- Host 2: CI runner -->
       <g transform="translate(20,120)">
         <rect x="0" y="0" width="240" height="70" rx="10" fill="#1a1f26" stroke="#2a3139" stroke-width="1.2"/>
-        <g transform="translate(14,20)" stroke="#5eadb8" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <g transform="translate(14,20)" stroke="#7c6cff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="4" width="28" height="22" rx="2"/>
           <path d="M8 12h16M8 18h10"/>
         </g>
         <text x="56" y="27" fill="#e6e8ea" font-size="13" font-weight="600">CI runner / container</text>
         <text x="56" y="46" fill="#8b95a1" font-size="11">Agent-as-a-service · sidecar</text>
-        <rect x="176" y="12" width="56" height="18" rx="9" fill="rgba(94,173,184,0.14)" stroke="rgba(94,173,184,0.4)" stroke-width="0.8"/>
-        <text x="204" y="25" fill="#5eadb8" font-size="9.5" font-weight="700" text-anchor="middle">OCSF</text>
+        <rect x="176" y="12" width="56" height="18" rx="9" fill="rgba(124,108,255,0.14)" stroke="rgba(124,108,255,0.4)" stroke-width="0.8"/>
+        <text x="204" y="25" fill="#7c6cff" font-size="9.5" font-weight="700" text-anchor="middle">OCSF</text>
       </g>
 
       <!-- Host 3: production server -->
       <g transform="translate(20,210)">
         <rect x="0" y="0" width="240" height="70" rx="10" fill="#1a1f26" stroke="#2a3139" stroke-width="1.2"/>
-        <g transform="translate(14,18)" stroke="#5eadb8" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <g transform="translate(14,18)" stroke="#7c6cff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="2" width="28" height="10" rx="1.5"/>
           <rect x="2" y="16" width="28" height="10" rx="1.5"/>
-          <circle cx="7" cy="7" r="1.2" fill="#5eadb8"/>
-          <circle cx="7" cy="21" r="1.2" fill="#5eadb8"/>
+          <circle cx="7" cy="7" r="1.2" fill="#7c6cff"/>
+          <circle cx="7" cy="21" r="1.2" fill="#7c6cff"/>
         </g>
         <text x="56" y="27" fill="#e6e8ea" font-size="13" font-weight="600">Production server</text>
         <text x="56" y="46" fill="#8b95a1" font-size="11">Customer-facing agent · N instances</text>
-        <rect x="176" y="12" width="56" height="18" rx="9" fill="rgba(94,173,184,0.14)" stroke="rgba(94,173,184,0.4)" stroke-width="0.8"/>
-        <text x="204" y="25" fill="#5eadb8" font-size="9.5" font-weight="700" text-anchor="middle">OCSF</text>
+        <rect x="176" y="12" width="56" height="18" rx="9" fill="rgba(124,108,255,0.14)" stroke="rgba(124,108,255,0.4)" stroke-width="0.8"/>
+        <text x="204" y="25" fill="#7c6cff" font-size="9.5" font-weight="700" text-anchor="middle">OCSF</text>
       </g>
 
       <!-- Flow arrows (converging to SIEM) -->
-      <path d="M 260 65  C 380 65, 430 170, 540 170" fill="none" stroke="#5eadb8" stroke-width="1.8" marker-end="url(#svArrow)"/>
-      <path d="M 260 155 L 540 170"                   fill="none" stroke="#5eadb8" stroke-width="1.8" marker-end="url(#svArrow)"/>
-      <path d="M 260 245 C 380 245, 430 170, 540 170" fill="none" stroke="#5eadb8" stroke-width="1.8" marker-end="url(#svArrow)"/>
+      <path d="M 260 65  C 380 65, 430 170, 540 170" fill="none" stroke="#7c6cff" stroke-width="1.8" marker-end="url(#svArrow)"/>
+      <path d="M 260 155 L 540 170"                   fill="none" stroke="#7c6cff" stroke-width="1.8" marker-end="url(#svArrow)"/>
+      <path d="M 260 245 C 380 245, 430 170, 540 170" fill="none" stroke="#7c6cff" stroke-width="1.8" marker-end="url(#svArrow)"/>
 
       <!-- Flow label -->
       <g transform="translate(320,140)">
         <rect x="0" y="0" width="160" height="22" rx="11" fill="#0b1117" stroke="#2a3139" stroke-width="1"/>
-        <text x="80" y="15" fill="#5eadb8" font-size="11" font-weight="700" text-anchor="middle">OCSF 1.3.0 · metadata</text>
+        <text x="80" y="15" fill="#7c6cff" font-size="11" font-weight="700" text-anchor="middle">OCSF 1.3.0 · metadata</text>
       </g>
 
       <!-- SIEM card (right) -->
@@ -1306,7 +1306,7 @@ const GettingStartedPage = {
 
       <!-- Central SOC callout -->
       <g transform="translate(540,12)">
-        <text x="130" y="18" fill="#5eadb8" font-size="11" font-weight="700" text-anchor="middle">→ one pane of glass for the SOC</text>
+        <text x="130" y="18" fill="#7c6cff" font-size="11" font-weight="700" text-anchor="middle">→ one pane of glass for the SOC</text>
       </g>
     </g>
   </svg>
@@ -1554,7 +1554,7 @@ const GettingStartedPage = {
         tierGrid.appendChild(tierCard({
             name: 'Standard · Default',
             subtitle: 'Most commonly forwarded',
-            accent: '#5eadb8',
+            accent: '#7c6cff',
             ships: [
                 'Everything from Minimal, plus:',
                 '<code>threat_score</code>, <code>confidence_score</code>',
@@ -1663,7 +1663,7 @@ const GettingStartedPage = {
             activity_id: 1, severity_id: 5, severity: 'BLOCK',
             confidence: 87, confidence_score: 0.87,
             time: 1745352300000,
-            device: { uid: 'sv-89ec5d06412c3e674073b860', type_id: 0, type: 'Endpoint' },
+            device: { uid: 'ag-89ec5d06412c3e674073b860', type_id: 0, type: 'Endpoint' },
             actor: {
                 user: { name: 'yashs' },
                 process: { name: 'customer-support-bot' },
@@ -1706,7 +1706,7 @@ const GettingStartedPage = {
             category_uid: 1, class_uid: 1007, class_name: 'Process Activity',
             activity_id: 1, severity_id: 4,
             time: 1745352300500,
-            device: { uid: 'sv-89ec5d06412c3e674073b860', type_id: 0, type: 'Endpoint' },
+            device: { uid: 'ag-89ec5d06412c3e674073b860', type_id: 0, type: 'Endpoint' },
             actor: {
                 user: { name: 'yashs' },
                 process: { name: 'Gmail.send' },
@@ -1978,7 +1978,7 @@ const GettingStartedPage = {
                     ${[
                         ['<code>class_uid</code>', 'encoder', '2001 = scan finding · 1007 = tool-call audit'],
                         ['<code>severity</code> / <code>severity_id</code>', 'encoder', 'BLOCK / DETECTED / ALLOW + OCSF 1–5 severity'],
-                        ['<code>device.uid</code>', 'scanner', 'Stable per-machine hash <code>sv-&lt;24 hex&gt;</code>'],
+                        ['<code>device.uid</code>', 'scanner', 'Stable per-machine hash <code>ag-&lt;24 hex&gt;</code>'],
                         ['<code>actor.user.name</code>', 'scanner', 'OS login of the user who triggered the scan'],
                         ['<code>actor.process.name</code>', 'scanner', 'The <code>source</code> identifier from /analyze'],
                         ['<code>finding.techniques[].uid</code>', 'rule metadata', 'MITRE ATT&CK technique IDs'],
@@ -2575,7 +2575,7 @@ const GettingStartedPage = {
             // Clickable header
             const header = document.createElement('div');
             header.style.cssText = 'padding: 10px 16px; display: flex; align-items: flex-start; justify-content: space-between; cursor: pointer; user-select: none; gap: 12px;';
-            header.addEventListener('mouseenter', () => { header.style.background = 'rgba(94,173,184,0.04)'; });
+            header.addEventListener('mouseenter', () => { header.style.background = 'rgba(124,108,255,0.04)'; });
             header.addEventListener('mouseleave', () => { header.style.background = ''; });
 
             const titleEl = document.createElement('div');
@@ -2638,7 +2638,7 @@ const GettingStartedPage = {
 
             if (issue.note) {
                 const noteEl = document.createElement('div');
-                noteEl.style.cssText = 'margin-top: 10px; font-size: 11.5px; color: var(--text-secondary); padding: 7px 10px; background: rgba(94,173,184,0.05); border-radius: 6px; border-left: 2px solid var(--accent-primary); line-height: 1.5;';
+                noteEl.style.cssText = 'margin-top: 10px; font-size: 11.5px; color: var(--text-secondary); padding: 7px 10px; background: rgba(124,108,255,0.05); border-radius: 6px; border-left: 2px solid var(--accent-primary); line-height: 1.5;';
                 const noteLabel = document.createElement('strong');
                 noteLabel.style.color = 'var(--accent-primary)';
                 noteLabel.textContent = 'Note: ';
@@ -2683,7 +2683,7 @@ const GettingStartedPage = {
         // ── OpenAPI docs — highlighted hero card ─────────────────────────
         const docsCard = document.createElement('div');
         docsCard.style.cssText = 'padding: 16px 20px; background: var(--bg-secondary); border: 1px solid var(--accent-primary); border-radius: 10px; margin-bottom: 14px; cursor: pointer; transition: background 0.15s;';
-        docsCard.addEventListener('mouseenter', () => { docsCard.style.background = 'rgba(94,173,184,0.06)'; });
+        docsCard.addEventListener('mouseenter', () => { docsCard.style.background = 'rgba(124,108,255,0.06)'; });
         docsCard.addEventListener('mouseleave', () => { docsCard.style.background = 'var(--bg-secondary)'; });
         docsCard.addEventListener('click', () => { window.open('/docs', '_blank'); });
 

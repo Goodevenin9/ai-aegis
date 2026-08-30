@@ -17,7 +17,7 @@ const CommandPalette = {
     _items: [],       // flattened nav catalogue (built per open)
     _filtered: [],
     _sel: 0,
-    RECENTS_KEY: 'sv-palette-recents',
+    RECENTS_KEY: 'ag-palette-recents',
     MAX_RECENTS: 6,
 
     // ------------------------------------------------------------ catalogue
@@ -98,40 +98,40 @@ const CommandPalette = {
     // ------------------------------------------------------------------- ui
 
     _injectStyles() {
-        if (document.getElementById('sv-palette-style')) return;
+        if (document.getElementById('ag-palette-style')) return;
         const st = document.createElement('style');
-        st.id = 'sv-palette-style';
+        st.id = 'ag-palette-style';
         st.textContent = `
-            .sv-palette-backdrop { position: fixed; inset: 0; z-index: 1000;
+            .ag-palette-backdrop { position: fixed; inset: 0; z-index: 1000;
                 background: color-mix(in srgb, #000 45%, transparent);
                 backdrop-filter: blur(2px); display: flex; align-items: flex-start; justify-content: center; }
-            .sv-palette { width: min(560px, calc(100vw - 40px)); margin-top: 12vh;
-                background: var(--bg-card, #161b22); border: 1px solid var(--border-default, #30363d);
+            .ag-palette { width: min(560px, calc(100vw - 40px)); margin-top: 12vh;
+                background: var(--bg-card, #131a30); border: 1px solid var(--border-default, #283152);
                 border-radius: 14px; box-shadow: 0 24px 64px rgba(0,0,0,.5); overflow: hidden;
                 animation: svPaletteIn .18s cubic-bezier(.2,.9,.3,1.2) both; }
             @keyframes svPaletteIn { from { opacity: 0; transform: translateY(-10px) scale(.98); }
                 to { opacity: 1; transform: none; } }
-            @media (prefers-reduced-motion: reduce) { .sv-palette { animation: none; } }
-            .sv-palette-input { width: 100%; box-sizing: border-box; padding: 15px 18px; border: 0;
-                border-bottom: 1px solid var(--border-default, #30363d); outline: none;
-                background: transparent; color: var(--text-primary, #e6edf3);
+            @media (prefers-reduced-motion: reduce) { .ag-palette { animation: none; } }
+            .ag-palette-input { width: 100%; box-sizing: border-box; padding: 15px 18px; border: 0;
+                border-bottom: 1px solid var(--border-default, #283152); outline: none;
+                background: transparent; color: var(--text-primary, #eef1fb);
                 font: 600 15px 'Avenir Next', Avenir, system-ui, sans-serif; }
-            .sv-palette-input::placeholder { color: var(--text-muted, #7d8590); font-weight: 500; }
-            .sv-palette-list { max-height: 46vh; overflow-y: auto; padding: 6px; }
-            .sv-palette-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+            .ag-palette-input::placeholder { color: var(--text-muted, #7d8590); font-weight: 500; }
+            .ag-palette-list { max-height: 46vh; overflow-y: auto; padding: 6px; }
+            .ag-palette-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px;
                 border-radius: 8px; cursor: pointer; }
-            .sv-palette-item[aria-selected="true"] { background: color-mix(in srgb, var(--accent-primary, #5eadb8) 16%, transparent); }
-            .sv-palette-item-label { font: 600 13px 'Avenir Next', Avenir, system-ui, sans-serif;
-                color: var(--text-primary, #e6edf3); }
-            .sv-palette-item[aria-selected="true"] .sv-palette-item-label { color: var(--accent-primary, #5eadb8); }
-            .sv-palette-section { margin-left: auto; font: 700 9.5px 'Avenir Next', Avenir, sans-serif;
+            .ag-palette-item[aria-selected="true"] { background: color-mix(in srgb, var(--accent-primary, #7c6cff) 16%, transparent); }
+            .ag-palette-item-label { font: 600 13px 'Avenir Next', Avenir, system-ui, sans-serif;
+                color: var(--text-primary, #eef1fb); }
+            .ag-palette-item[aria-selected="true"] .ag-palette-item-label { color: var(--accent-primary, #7c6cff); }
+            .ag-palette-section { margin-left: auto; font: 700 9.5px 'Avenir Next', Avenir, sans-serif;
                 letter-spacing: .8px; text-transform: uppercase; color: var(--text-muted, #7d8590);
-                border: 1px solid var(--border-default, #30363d); border-radius: 999px; padding: 2px 8px; }
-            .sv-palette-empty { padding: 22px; text-align: center; font: 500 12.5px 'Avenir Next', Avenir, sans-serif;
+                border: 1px solid var(--border-default, #283152); border-radius: 999px; padding: 2px 8px; }
+            .ag-palette-empty { padding: 22px; text-align: center; font: 500 12.5px 'Avenir Next', Avenir, sans-serif;
                 color: var(--text-muted, #7d8590); }
-            .sv-palette-hint { display: flex; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--border-default, #30363d);
+            .ag-palette-hint { display: flex; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--border-default, #283152);
                 font: 600 10.5px 'Avenir Next', Avenir, sans-serif; color: var(--text-muted, #7d8590); }
-            .sv-palette-hint kbd { font: inherit; border: 1px solid var(--border-default, #30363d);
+            .ag-palette-hint kbd { font: inherit; border: 1px solid var(--border-default, #283152);
                 border-radius: 4px; padding: 0 5px; margin-right: 3px; }
         `;
         document.head.appendChild(st);
@@ -144,29 +144,29 @@ const CommandPalette = {
         this._items = this._catalogue();
 
         const backdrop = document.createElement('div');
-        backdrop.className = 'sv-palette-backdrop';
+        backdrop.className = 'ag-palette-backdrop';
         backdrop.addEventListener('mousedown', (e) => { if (e.target === backdrop) this.close(); });
 
         const box = document.createElement('div');
-        box.className = 'sv-palette';
+        box.className = 'ag-palette';
         box.setAttribute('role', 'dialog');
         box.setAttribute('aria-modal', 'true');
         box.setAttribute('aria-label', 'Go to page');
 
         const input = document.createElement('input');
-        input.className = 'sv-palette-input';
+        input.className = 'ag-palette-input';
         input.type = 'text';
         input.placeholder = 'Go to page…  (type to search)';
         input.setAttribute('aria-label', 'Search pages');
         box.appendChild(input);
 
         const list = document.createElement('div');
-        list.className = 'sv-palette-list';
+        list.className = 'ag-palette-list';
         list.setAttribute('role', 'listbox');
         box.appendChild(list);
 
         const hint = document.createElement('div');
-        hint.className = 'sv-palette-hint';
+        hint.className = 'ag-palette-hint';
         hint.innerHTML = '<span><kbd>↑↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span>';
         box.appendChild(hint);
 
@@ -235,23 +235,23 @@ const CommandPalette = {
         list.textContent = '';
         if (!this._filtered.length) {
             const empty = document.createElement('div');
-            empty.className = 'sv-palette-empty';
+            empty.className = 'ag-palette-empty';
             empty.textContent = 'No matching page.';
             list.appendChild(empty);
             return;
         }
         this._filtered.slice(0, 12).forEach((item, i) => {
             const row = document.createElement('div');
-            row.className = 'sv-palette-item';
+            row.className = 'ag-palette-item';
             row.setAttribute('role', 'option');
             row.setAttribute('aria-selected', i === this._sel ? 'true' : 'false');
             const label = document.createElement('span');
-            label.className = 'sv-palette-item-label';
+            label.className = 'ag-palette-item-label';
             label.textContent = item.label;
             row.appendChild(label);
             if (item.section) {
                 const sec = document.createElement('span');
-                sec.className = 'sv-palette-section';
+                sec.className = 'ag-palette-section';
                 sec.textContent = item.section;
                 row.appendChild(sec);
             }

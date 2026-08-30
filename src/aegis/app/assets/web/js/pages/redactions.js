@@ -155,7 +155,7 @@ const RedactionsPage = {
         exportGroup.style.cssText = 'display:flex;align-items:center;gap:8px;margin-left:auto;';
 
         const csvBtn = document.createElement('button');
-        csvBtn.className = 'sv-btn-secondary';
+        csvBtn.className = 'ag-btn-secondary';
         csvBtn.textContent = 'Export CSV';
         csvBtn.style.cssText = 'padding:6px 12px;font-size:12px;';
         csvBtn.title = 'Download the visible secret detections as CSV (hash only, never raw)';
@@ -163,7 +163,7 @@ const RedactionsPage = {
         exportGroup.appendChild(csvBtn);
 
         const pdfBtn = document.createElement('button');
-        pdfBtn.className = 'sv-btn-secondary';
+        pdfBtn.className = 'ag-btn-secondary';
         pdfBtn.textContent = 'Export PDF';
         pdfBtn.style.cssText = 'padding:6px 12px;font-size:12px;';
         pdfBtn.title = 'Open a print-ready view; use the browser print dialog to save as PDF';
@@ -364,7 +364,7 @@ const RedactionsPage = {
 
             const dirBadge =
                 ev.direction === 'incoming' ? 'background:rgba(239,68,68,0.15);color:var(--danger)'
-              : ev.direction === 'outgoing' ? 'background:rgba(94,173,184,0.18);color:var(--accent-primary)'
+              : ev.direction === 'outgoing' ? 'background:rgba(124,108,255,0.18);color:var(--accent-primary)'
               : 'background:rgba(148,163,184,0.15);color:var(--text-secondary)';
             tr.appendChild(cell(
                 `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;${dirBadge};">${ev.direction}</span>`,
@@ -522,7 +522,7 @@ const RedactionsPage = {
             const items = entries.map(([k, v]) =>
                 `<div style="display:flex;align-items:center;gap:8px;margin:3px 0;">
                     <span style="flex:0 0 220px;">${esc(k)}</span>
-                    <span style="flex:1;height:6px;background:linear-gradient(90deg,#5eadb8 ${(v / max) * 100}%, #e3e6ee ${(v / max) * 100}%);"></span>
+                    <span style="flex:1;height:6px;background:linear-gradient(90deg,#7c6cff ${(v / max) * 100}%, #e3e6ee ${(v / max) * 100}%);"></span>
                     <span style="flex:0 0 40px;text-align:right;">${v}</span>
                  </div>`).join('');
             return `<div style="margin-bottom:12px;"><h3 style="font-size:12px;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.08em;color:#666;">${esc(title)}</h3>${items}</div>`;
@@ -547,7 +547,7 @@ const RedactionsPage = {
                 body{font-family:-apple-system,Segoe UI,sans-serif;margin:24px;color:#111;}
                 .brand{display:flex;align-items:center;gap:14px;border-bottom:1px solid #e3e6ee;padding-bottom:14px;margin-bottom:18px;}
                 .brand-text h1{font-size:20px;margin:0 0 2px;letter-spacing:-0.01em;}
-                .brand-text .product{font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#5eadb8;font-weight:600;}
+                .brand-text .product{font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:#7c6cff;font-weight:600;}
                 .meta{font-size:11px;color:#666;margin-bottom:14px;}
                 .headline{font-size:14px;margin:8px 0 16px;padding:10px 12px;background:#f4f4f7;border-radius:6px;}
                 table{width:100%;border-collapse:collapse;font-size:11px;margin-top:14px;}

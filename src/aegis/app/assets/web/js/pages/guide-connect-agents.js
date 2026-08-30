@@ -150,8 +150,8 @@ const GuideConnectAgentsPage = {
         // (Your cloud / your own engine). Locations are labels, not statuses —
         // the old red end made a healthy self-host choice read as a threat.
         // Used for the engine-node gradient border + the tab dots.
-        const CYAN = '#5eadb8';
-        const DEEP = '#2d6a74'; // deep end of the brand teal ramp
+        const CYAN = '#7c6cff';
+        const DEEP = '#6b4ee8'; // deep end of the brand teal ramp
 
         // Is THIS app the headless engine running in a container (self-host)? If so,
         // "monitor this device" makes no sense (the box is the engine, not where
@@ -287,7 +287,7 @@ const GuideConnectAgentsPage = {
         // self-hoster doesn't get reset to local each visit. Forced to self-host
         // inside a container.
         let savedMode = null;
-        try { savedMode = localStorage.getItem('sv-connect-mode'); } catch (e) {}
+        try { savedMode = localStorage.getItem('ag-connect-mode'); } catch (e) {}
         let mode = endpointMode ? 'selfhost' : (savedMode === 'selfhost' ? 'selfhost' : 'local');
 
         const renderPanel = () => {
@@ -328,7 +328,7 @@ const GuideConnectAgentsPage = {
                 tg.style.cssText = 'font-size: 11px; font-weight: 500; color: ' + (on ? 'var(--text-secondary)' : 'var(--text-muted)') + ';';
                 tg.textContent = tag;
                 b.appendChild(tg);
-                b.addEventListener('click', () => { if (mode !== key) { mode = key; try { localStorage.setItem('sv-connect-mode', mode); } catch (e) {} renderPanel(); } });
+                b.addEventListener('click', () => { if (mode !== key) { mode = key; try { localStorage.setItem('ag-connect-mode', mode); } catch (e) {} renderPanel(); } });
                 return b;
             };
             if (endpointMode) {
@@ -567,7 +567,7 @@ const GuideConnectAgentsPage = {
         // out exactly what it reads (local harness dirs + session transcripts +
         // the tool-call audit). Each detected harness links to its Integrations
         // install page. Consent is remembered + revocable. ---
-        const DETECT_KEY = 'sv-detection-consent';
+        const DETECT_KEY = 'ag-detection-consent';
         // Detection is OPTIONAL — a consent-gated shortcut. Users who skip it just
         // follow steps 1-2-3 below. Renders a clean callout that flips to a results
         // card in place once granted; nothing leaves this device.
@@ -580,7 +580,7 @@ const GuideConnectAgentsPage = {
         // the local probe (behind the consent gate on first use). Expand state
         // persists. The card shell owns the border/elevation; the body content
         // (consent prompt OR results) renders borderless inside it.
-        const RAIL_KEY = 'sv-detect-rail-open';
+        const RAIL_KEY = 'ag-detect-rail-open';
         const detectCard = document.createElement('div');
         detectCard.className = 'ca-detect';
         const detectHead = document.createElement('button');

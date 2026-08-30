@@ -127,7 +127,7 @@ const App = {
      */
     async maybeAutoLaunchWizard(initialPage) {
         if (initialPage !== 'dashboard') return initialPage;
-        if (localStorage.getItem('sv-wizard-autolaunched')) return initialPage;
+        if (localStorage.getItem('ag-wizard-autolaunched')) return initialPage;
         try {
             const ctrl = new AbortController();
             const t = setTimeout(() => ctrl.abort(), 1500);
@@ -137,7 +137,7 @@ const App = {
             const data = await res.json();
             const anyProtected = (data.harnesses || []).some(h => h.plugin_connected) ||
                 (data.frameworks || []).length > 0;
-            localStorage.setItem('sv-wizard-autolaunched', '1');
+            localStorage.setItem('ag-wizard-autolaunched', '1');
             if (anyProtected) return initialPage;
             this._skipWelcomeModal = true; // the wizard IS the welcome
             return 'connect-wizard';
@@ -153,7 +153,7 @@ const App = {
         // v2 — refreshed welcome now leads with "What's new" (OpenClaw plugin,
         // Tool Inventory, Secret Detections, Reports on Dashboard). Bumping the
         // storage key so existing users see the updated welcome once.
-        const hasSeenGeneric = localStorage.getItem('sv-welcome-seen-v2');
+        const hasSeenGeneric = localStorage.getItem('ag-welcome-seen-v2');
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('no-welcome')) return;
 
@@ -175,7 +175,7 @@ const App = {
      * Show welcome modal on first launch
      */
     showWelcomeIfFirstLaunch() {
-        const hasSeenWelcome = localStorage.getItem('sv-welcome-seen-v2');
+        const hasSeenWelcome = localStorage.getItem('ag-welcome-seen-v2');
         const urlParams = new URLSearchParams(window.location.search);
         if (hasSeenWelcome || urlParams.has('no-welcome')) return;
 
@@ -205,7 +205,7 @@ const App = {
 
         // Dismiss helper — defined early so all handlers can reference it
         const dismissModal = () => {
-            localStorage.setItem('sv-welcome-seen-v2', 'true');
+            localStorage.setItem('ag-welcome-seen-v2', 'true');
             overlay.classList.remove('active');
             setTimeout(() => {
                 overlay.remove();
@@ -267,7 +267,7 @@ const App = {
 
         // Proxy status bar with cyan border
         const proxyBar = document.createElement('div');
-        proxyBar.style.cssText = 'padding: 14px 18px; background: var(--bg-secondary); border: 1px solid rgba(94,173,184,0.3); border-radius: 8px; margin-bottom: 20px;';
+        proxyBar.style.cssText = 'padding: 14px 18px; background: var(--bg-secondary); border: 1px solid rgba(124,108,255,0.3); border-radius: 8px; margin-bottom: 20px;';
 
         const proxyStatus = document.createElement('div');
         proxyStatus.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 10px;';
@@ -386,7 +386,7 @@ const App = {
         const makeNewItem = (badge, title, desc, page, expandSection) => {
             const card = document.createElement('div');
             card.style.cssText = 'display:flex;flex-direction:column;gap:6px;padding:12px 14px;background:var(--bg-secondary);border:1px solid var(--border-default);border-radius:8px;cursor:pointer;transition:border-color 0.15s,transform 0.05s;min-width:0;';
-            card.addEventListener('mouseenter', () => card.style.borderColor = 'rgba(94,173,184,0.35)');
+            card.addEventListener('mouseenter', () => card.style.borderColor = 'rgba(124,108,255,0.35)');
             card.addEventListener('mouseleave', () => card.style.borderColor = 'var(--border-default)');
             card.addEventListener('mousedown', () => card.style.transform = 'scale(0.99)');
             card.addEventListener('mouseup', () => card.style.transform = 'scale(1)');
@@ -460,7 +460,7 @@ const App = {
         // --- Setup Integration ---
         const setupCard = document.createElement('div');
         setupCard.style.cssText = 'background: var(--bg-secondary); border-radius: 8px; padding: 16px; border: 1px solid var(--border-default); min-width: 0; cursor: pointer; transition: border-color 0.15s;';
-        setupCard.addEventListener('mouseenter', () => setupCard.style.borderColor = 'rgba(94,173,184,0.3)');
+        setupCard.addEventListener('mouseenter', () => setupCard.style.borderColor = 'rgba(124,108,255,0.3)');
         setupCard.addEventListener('mouseleave', () => setupCard.style.borderColor = 'var(--border-default)');
         setupCard.addEventListener('click', () => navigateTo('proxy-openclaw', 'integrations'));
 
@@ -506,7 +506,7 @@ const App = {
         // --- Skill Scanner ---
         const scanCard = document.createElement('div');
         scanCard.style.cssText = 'background: var(--bg-secondary); border-radius: 8px; padding: 16px; border: 1px solid var(--border-default); min-width: 0; cursor: pointer; transition: border-color 0.15s;';
-        scanCard.addEventListener('mouseenter', () => scanCard.style.borderColor = 'rgba(94,173,184,0.3)');
+        scanCard.addEventListener('mouseenter', () => scanCard.style.borderColor = 'rgba(124,108,255,0.3)');
         scanCard.addEventListener('mouseleave', () => scanCard.style.borderColor = 'var(--border-default)');
         scanCard.addEventListener('click', () => navigateTo('skill-scanner'));
 
@@ -641,9 +641,9 @@ const App = {
             // motion layer: one subtle entrance per navigation. Re-adding
             // the class restarts the CSS animation; prefers-reduced-motion
             // disables it in styles.css.
-            container.classList.remove('sv-page-enter');
+            container.classList.remove('ag-page-enter');
             void container.offsetWidth; // reflow so the animation can restart
-            container.classList.add('sv-page-enter');
+            container.classList.add('ag-page-enter');
         } catch (error) {
             console.error('Failed to render page:', error);
             this.renderError(container, error);
@@ -720,9 +720,9 @@ window.App = App;
 
 /**
  * getPollInterval — returns the user-configured polling interval in ms.
- * Default: 5000ms (5s). Stored in localStorage key 'sv-poll-interval'.
+ * Default: 5000ms (5s). Stored in localStorage key 'ag-poll-interval'.
  */
-window.getPollInterval = () => parseInt(localStorage.getItem('sv-poll-interval') || '5000', 10);
+window.getPollInterval = () => parseInt(localStorage.getItem('ag-poll-interval') || '5000', 10);
 
 /**
  * makeTableSortable — attach click-to-sort to all <th> in a .data-table.

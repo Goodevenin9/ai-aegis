@@ -9,34 +9,34 @@
 
 const GlobalBanners = {
     WHATS_NEW_VERSION: '4.6.0',
-    KEY_WHATS_NEW: 'sv-whats-new-acked',
+    KEY_WHATS_NEW: 'ag-whats-new-acked',
     // Guardian ML ships ENABLED by default (local-only, reversible) — the
     // one-time notice is what turns "enabled without asking" into "enabled
     // with informed consent": say what it is, where data goes (nowhere),
     // and offer the off switch right there. Acked once, never again.
-    KEY_GUARDIAN_NOTICE: 'sv-guardian-notice-acked',
+    KEY_GUARDIAN_NOTICE: 'ag-guardian-notice-acked',
     // One-time post-enrollment banner (#114) pointing the user at the new
     // Cloud Activity page. Acked permanently once dismissed / clicked.
-    KEY_ENROLLED: 'sv-enrolled-banner-acked',
+    KEY_ENROLLED: 'ag-enrolled-banner-acked',
 
     async render() {
         // Inject keyframes once
-        if (!document.getElementById('sv-global-banner-keyframes')) {
+        if (!document.getElementById('ag-global-banner-keyframes')) {
             const style = document.createElement('style');
-            style.id = 'sv-global-banner-keyframes';
+            style.id = 'ag-global-banner-keyframes';
             style.textContent = `
                 @media (prefers-reduced-motion: no-preference) {
-                    @keyframes sv-banner-in {
+                    @keyframes ag-banner-in {
                         0%   { opacity: 0; transform: translateY(-8px); }
                         100% { opacity: 1; transform: translateY(0); }
                     }
-                    @keyframes sv-banner-flash {
-                        0%, 100% { box-shadow: 0 0 0 0 rgba(94,173,184,0); }
-                        30%      { box-shadow: 0 0 0 4px rgba(94,173,184,0.25); }
-                        60%      { box-shadow: 0 0 0 0 rgba(94,173,184,0); }
+                    @keyframes ag-banner-flash {
+                        0%, 100% { box-shadow: 0 0 0 0 rgba(124,108,255,0); }
+                        30%      { box-shadow: 0 0 0 4px rgba(124,108,255,0.25); }
+                        60%      { box-shadow: 0 0 0 0 rgba(124,108,255,0); }
                     }
-                    .sv-global-banner {
-                        animation: sv-banner-in 0.35s ease-out, sv-banner-flash 1.2s ease-out 0.3s 3;
+                    .ag-global-banner {
+                        animation: ag-banner-in 0.35s ease-out, ag-banner-flash 1.2s ease-out 0.3s 3;
                     }
                 }
             `;
@@ -44,10 +44,10 @@ const GlobalBanners = {
         }
 
         // Find or create the slot
-        let slot = document.getElementById('sv-global-banners');
+        let slot = document.getElementById('ag-global-banners');
         if (!slot) {
             slot = document.createElement('div');
-            slot.id = 'sv-global-banners';
+            slot.id = 'ag-global-banners';
             slot.style.cssText = 'padding: 12px 20px 0;';
             const main = document.querySelector('main.main-content');
             const pageContent = document.getElementById('page-content');
@@ -124,7 +124,7 @@ const GlobalBanners = {
 
     _buildGuardianNotice() {
         const banner = document.createElement('div');
-        banner.className = 'sv-global-banner';
+        banner.className = 'ag-global-banner';
         banner.style.cssText = 'position: relative; display: flex; align-items: center; gap: 16px; padding: 14px 44px 14px 16px; background: var(--bg-card); border: 1px solid var(--border-default); border-left: 3px solid var(--accent-primary); border-radius: 8px; margin-bottom: 10px; flex-wrap: wrap;';
 
         const ack = () => {
@@ -137,7 +137,7 @@ const GlobalBanners = {
 
         // Shield-with-spark icon — security feature, not a sales pitch
         const icon = document.createElement('div');
-        icon.style.cssText = 'flex-shrink: 0; width: 36px; height: 36px; background: rgba(94,173,184,0.14); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent-primary);';
+        icon.style.cssText = 'flex-shrink: 0; width: 36px; height: 36px; background: rgba(124,108,255,0.14); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent-primary);';
         icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>';
         banner.appendChild(icon);
 
@@ -150,7 +150,7 @@ const GlobalBanners = {
         title.textContent = 'Guardian ML is active: local AI threat detection';
         titleRow.appendChild(title);
         const pill = document.createElement('span');
-        pill.style.cssText = 'font-size: 9.5px; font-weight: 700; letter-spacing: 0.5px; color: var(--accent-primary); background: rgba(94,173,184,0.12); border: 1px solid rgba(94,173,184,0.3); padding: 2px 6px; border-radius: 4px; text-transform: uppercase;';
+        pill.style.cssText = 'font-size: 9.5px; font-weight: 700; letter-spacing: 0.5px; color: var(--accent-primary); background: rgba(124,108,255,0.12); border: 1px solid rgba(124,108,255,0.3); padding: 2px 6px; border-radius: 4px; text-transform: uppercase;';
         pill.textContent = 'Runs on this machine only';
         titleRow.appendChild(pill);
         textCol.appendChild(titleRow);
@@ -223,13 +223,13 @@ const GlobalBanners = {
         // + one CTA. (The fuller two-CTA treatment read as too heavy next to
         // the Guardian consent notice that now precedes it.)
         const card = document.createElement('div');
-        card.className = 'sv-global-banner';
+        card.className = 'ag-global-banner';
         card.style.cssText = 'position: relative; display: flex; align-items: center; gap: 16px; padding: 14px 44px 14px 16px; background: var(--bg-card); border: 1px solid var(--border-default); border-left: 3px solid var(--accent-primary); border-radius: 8px; margin-bottom: 10px; flex-wrap: wrap;';
 
         // Topology / network-graph icon — three connected nodes, conveying
         // the device -> agent -> tool map at a glance.
         const icon = document.createElement('div');
-        icon.style.cssText = 'flex-shrink: 0; width: 36px; height: 36px; background: rgba(94,173,184,0.14); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent-primary);';
+        icon.style.cssText = 'flex-shrink: 0; width: 36px; height: 36px; background: rgba(124,108,255,0.14); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent-primary);';
         icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M10.6 7l-4 9.7"/><path d="M13.4 7l4 9.7"/></svg>';
         card.appendChild(icon);
 
@@ -243,7 +243,7 @@ const GlobalBanners = {
         title.textContent = 'Now with the GitHub Copilot CLI plugin';
         titleRow.appendChild(title);
         const pill = document.createElement('span');
-        pill.style.cssText = 'font-size: 9.5px; font-weight: 800; letter-spacing: 0.5px; color: var(--accent-primary); background: rgba(94,173,184,0.12); border: 1px solid rgba(94,173,184,0.3); padding: 2px 6px; border-radius: 4px; text-transform: uppercase;';
+        pill.style.cssText = 'font-size: 9.5px; font-weight: 800; letter-spacing: 0.5px; color: var(--accent-primary); background: rgba(124,108,255,0.12); border: 1px solid rgba(124,108,255,0.3); padding: 2px 6px; border-radius: 4px; text-transform: uppercase;';
         pill.textContent = 'New \u00B7 v4.6.0';
         titleRow.appendChild(pill);
         textCol.appendChild(titleRow);
@@ -300,12 +300,12 @@ const GlobalBanners = {
      */
     _buildEnrolledBanner(enrollStatus) {
         const card = document.createElement('div');
-        card.className = 'sv-global-banner';
+        card.className = 'ag-global-banner';
         card.style.cssText = 'position: relative; display: flex; align-items: center; gap: 16px; padding: 14px 44px 14px 16px; background: var(--bg-card); border: 1px solid var(--border-default); border-left: 3px solid var(--accent-primary); border-radius: 8px; margin-bottom: 10px; flex-wrap: wrap;';
 
         // Cloud icon — signals "you're now connected to your org cloud".
         const icon = document.createElement('div');
-        icon.style.cssText = 'flex-shrink: 0; width: 36px; height: 36px; background: rgba(94,173,184,0.14); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent-primary);';
+        icon.style.cssText = 'flex-shrink: 0; width: 36px; height: 36px; background: rgba(124,108,255,0.14); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--accent-primary);';
         icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8 6 6 0 1 0-11.1 3.6"/><path d="m9 15 2 2 4-4"/></svg>';
         card.appendChild(icon);
 
@@ -323,7 +323,7 @@ const GlobalBanners = {
             : 'Your device is enrolled';
         titleRow.appendChild(title);
         const pill = document.createElement('span');
-        pill.style.cssText = 'font-size: 9.5px; font-weight: 800; letter-spacing: 0.5px; color: var(--accent-primary); background: rgba(94,173,184,0.12); border: 1px solid rgba(94,173,184,0.3); padding: 2px 6px; border-radius: 4px; text-transform: uppercase;';
+        pill.style.cssText = 'font-size: 9.5px; font-weight: 800; letter-spacing: 0.5px; color: var(--accent-primary); background: rgba(124,108,255,0.12); border: 1px solid rgba(124,108,255,0.3); padding: 2px 6px; border-radius: 4px; text-transform: uppercase;';
         pill.textContent = 'Cloud Connect on';
         titleRow.appendChild(pill);
         textCol.appendChild(titleRow);
@@ -368,7 +368,7 @@ const GlobalBanners = {
     },
 
     _collapseSlotIfEmpty() {
-        const slot = document.getElementById('sv-global-banners');
+        const slot = document.getElementById('ag-global-banners');
         if (slot && !slot.hasChildNodes()) slot.style.display = 'none';
     },
 };

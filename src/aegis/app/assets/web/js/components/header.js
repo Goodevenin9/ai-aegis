@@ -1057,14 +1057,14 @@ const Header = {
                 // Add "ON" badge
                 const indicator = document.createElement('div');
                 indicator.id = 'cloud-mode-indicator';
-                indicator.style.cssText = 'position: absolute; top: -8px; right: -8px; background: var(--accent-primary, #5eadb8); color: white; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px;';
+                indicator.style.cssText = 'position: absolute; top: -8px; right: -8px; background: var(--accent-primary, #7c6cff); color: white; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px;';
                 indicator.textContent = 'ON';
                 wrapper.appendChild(indicator);
 
                 // Add hover tooltip
                 const tooltip = document.createElement('div');
                 tooltip.id = 'cloud-mode-tooltip';
-                tooltip.style.cssText = 'position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-tertiary, #21262d); color: var(--text-primary, #e6edf3); border: 1px solid var(--accent-primary, #5eadb8); padding: 10px 14px; border-radius: 8px; font-size: 12px; white-space: nowrap; opacity: 0; visibility: hidden; transition: all 0.2s; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2);';
+                tooltip.style.cssText = 'position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-tertiary, #21262d); color: var(--text-primary, #eef1fb); border: 1px solid var(--accent-primary, #7c6cff); padding: 10px 14px; border-radius: 8px; font-size: 12px; white-space: nowrap; opacity: 0; visibility: hidden; transition: all 0.2s; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2);';
 
                 const titleLine = document.createElement('div');
                 titleLine.style.cssText = 'font-weight: 600; margin-bottom: 4px;';
@@ -1193,7 +1193,7 @@ const Header = {
         localNote.className = 'local-mode-highlight';
         localNote.style.marginTop = '20px';
         localNote.style.padding = '12px 16px';
-        localNote.style.background = 'rgba(94, 173, 184, 0.08)';
+        localNote.style.background = 'rgba(124, 108, 255, 0.08)';
         localNote.style.border = '1px solid var(--accent-primary)';
         localNote.style.borderRadius = '8px';
         localNote.style.fontSize = '13px';
@@ -1392,7 +1392,7 @@ const Header = {
         const reflect = (on) => {
             checkbox.checked = on;
             btn.style.borderColor = on ? 'var(--accent-primary)' : 'var(--border-default)';
-            btn.style.boxShadow = on ? '0 0 0 1px rgba(94,173,184,0.35), 0 0 8px rgba(94,173,184,0.30)' : 'none';
+            btn.style.boxShadow = on ? '0 0 0 1px rgba(124,108,255,0.35), 0 0 8px rgba(124,108,255,0.30)' : 'none';
             robo.style.opacity = on ? '1' : '0.45';
             btn.dataset.on = on ? 'true' : 'false';
             stDot.style.background = on ? 'var(--accent-primary)' : 'var(--text-muted)';
@@ -1444,7 +1444,7 @@ const Header = {
         });
         // Hover brightens the disc without overriding the on/off ring color
         // (that's reflect()'s job) — a subtle background lift only.
-        btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--bg-hover, #30363d)'; });
+        btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--bg-hover, #283152)'; });
         btn.addEventListener('mouseleave', () => { btn.style.background = 'var(--bg-tertiary)'; });
 
         // Outside click / Escape dismiss. Header re-renders (e.g. theme
@@ -1691,7 +1691,7 @@ const Header = {
         if (instructions.whyProxy) {
             const whyBox = document.createElement('div');
             whyBox.className = 'cloud-highlight-banner';
-            whyBox.style.cssText = 'margin-bottom:20px;padding:16px;background:var(--bg-secondary);border:1px solid var(--border-default);border-left:3px solid var(--accent-primary, #5eadb8);border-radius:8px;';
+            whyBox.style.cssText = 'margin-bottom:20px;padding:16px;background:var(--bg-secondary);border:1px solid var(--border-default);border-left:3px solid var(--accent-primary, #7c6cff);border-radius:8px;';
 
             const whyTitle = document.createElement('strong');
             whyTitle.textContent = instructions.whyProxy.title;
@@ -1794,7 +1794,7 @@ const Header = {
         if (instructions.note) {
             const noteEl = document.createElement('div');
             noteEl.className = 'local-mode-highlight';
-            noteEl.style.cssText = 'margin-top:20px;padding:12px 16px;background:rgba(94, 173, 184, 0.08);border:1px solid var(--accent-primary);border-radius:8px;font-size:13px;';
+            noteEl.style.cssText = 'margin-top:20px;padding:12px 16px;background:rgba(124, 108, 255, 0.08);border:1px solid var(--accent-primary);border-radius:8px;font-size:13px;';
 
             const noteIcon = document.createElement('span');
             noteIcon.textContent = '💡 ';

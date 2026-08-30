@@ -127,7 +127,7 @@ const GovernancePage = {
         // Native gets its OWN teal identity (not the same green as Enforced) so
         // "blocked by your runtime, not by Aegis's engine" can't be misread.
         if (r.state === 'on')      return { glyph: '✓', label: 'Enforced', color: 'var(--success, #10b981)', bg: 'rgba(16,185,129,0.14)' };
-        if (r.state === 'native')  return { glyph: '◆', label: 'Native',   color: 'var(--accent-primary, #5eadb8)', bg: 'rgba(94,173,184,0.16)' };
+        if (r.state === 'native')  return { glyph: '◆', label: 'Native',   color: 'var(--accent-primary, #7c6cff)', bg: 'rgba(124,108,255,0.16)' };
         if (r.state === 'partial') return { glyph: '~', label: 'Partial',  color: 'var(--warning, #f59e0b)', bg: 'rgba(245,158,11,0.14)' };
         return r.gap
             ? { glyph: '✗', label: 'Action needed', color: 'var(--danger, #ef4444)', bg: 'rgba(239,68,68,0.14)' }
@@ -135,12 +135,12 @@ const GovernancePage = {
     },
 
     _injectStyle() {
-        if (document.getElementById('sv-governance-style')) return;
+        if (document.getElementById('ag-governance-style')) return;
         const st = document.createElement('style');
-        st.id = 'sv-governance-style';
+        st.id = 'ag-governance-style';
         st.textContent = [
-            '@keyframes sv-gov-flash{0%,100%{box-shadow:0 0 0 0 rgba(94,173,184,0);}50%{box-shadow:0 0 0 3px rgba(94,173,184,0.30);}}',
-            '.sv-gov-flash{animation:sv-gov-flash 0.6s ease-in-out 3;}',
+            '@keyframes ag-gov-flash{0%,100%{box-shadow:0 0 0 0 rgba(124,108,255,0);}50%{box-shadow:0 0 0 3px rgba(124,108,255,0.30);}}',
+            '.ag-gov-flash{animation:ag-gov-flash 0.6s ease-in-out 3;}',
             '@keyframes gov-in{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:none;}}',
             '.gov-wrap{max-width:920px;}',
             '.gov-card{background:var(--bg-card);border:1px solid var(--border-default);border-radius:14px;padding:18px 20px;margin-bottom:16px;box-shadow:var(--elevate-1);}',
@@ -202,8 +202,8 @@ const GovernancePage = {
             const el = document.querySelector(selector);
             if (el) {
                 try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { el.scrollIntoView(); }
-                el.classList.add('sv-gov-flash');
-                setTimeout(() => el.classList.remove('sv-gov-flash'), 2200);
+                el.classList.add('ag-gov-flash');
+                setTimeout(() => el.classList.remove('ag-gov-flash'), 2200);
                 return;
             }
             if (tries++ < 16) setTimeout(tick, 150);
@@ -235,7 +235,7 @@ const GovernancePage = {
         // First view this session → play the entrance animations once; on
         // subsequent visits the page renders instantly (no replayed motion).
         let firstView = true;
-        try { firstView = sessionStorage.getItem('sv-governance-flashed') !== '1'; } catch (e) {}
+        try { firstView = sessionStorage.getItem('ag-governance-flashed') !== '1'; } catch (e) {}
 
         let settings = {};   try { settings = (await API.getSettings()) || {}; } catch (e) {}
         let integrityOk = null, auditCount = 0;
@@ -292,7 +292,7 @@ const GovernancePage = {
         const intro = card();
         intro.style.padding = '0';
         intro.style.borderColor = 'var(--border-default)';
-        const introKey = 'sv-gov-about-open';
+        const introKey = 'ag-gov-about-open';
         let introOpen = false; try { introOpen = localStorage.getItem(introKey) === '1'; } catch (_) {}
         const inHead = document.createElement('button');
         inHead.type = 'button';
@@ -320,11 +320,11 @@ const GovernancePage = {
         wrap.appendChild(intro);
 
         // Band + segmented posture meter
-        const C = { on: 'var(--success, #10b981)', native: 'var(--accent-primary, #5eadb8)', partial: 'var(--warning, #f59e0b)', gap: 'var(--danger, #ef4444)', off: 'var(--text-muted, #7d8590)' };
+        const C = { on: 'var(--success, #10b981)', native: 'var(--accent-primary, #7c6cff)', partial: 'var(--warning, #f59e0b)', gap: 'var(--danger, #ef4444)', off: 'var(--text-muted, #7d8590)' };
         const counts = { on: 0, native: 0, partial: 0, gap: 0, off: 0 };
         rows.forEach(r => { if (r.state === 'on') counts.on++; else if (r.state === 'native') counts.native++; else if (r.state === 'partial') counts.partial++; else if (r.gap) counts.gap++; else counts.off++; });
 
-        const bandCard = card(); bandCard.className = 'gov-card gov-hero' + (firstView ? ' sv-gov-flash' : '');
+        const bandCard = card(); bandCard.className = 'gov-card gov-hero' + (firstView ? ' ag-gov-flash' : '');
         const head = document.createElement('div'); head.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;';
         const hLeft = document.createElement('div'); hLeft.style.cssText = 'display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;';
         // Signature: the posture reads as a telemetry instrument — a big
@@ -373,7 +373,7 @@ const GovernancePage = {
         // Recorded only when the posture is actually assessed (an agent has
         // reported); an unassessed day is a non-sample, not a zero.
         try {
-            const histKey = 'sv-gov-posture-history';
+            const histKey = 'ag-gov-posture-history';
             let hist = [];
             try { hist = JSON.parse(localStorage.getItem(histKey) || '[]'); } catch (_) { hist = []; }
             const todayKey = new Date().toISOString().slice(0, 10);
@@ -581,7 +581,7 @@ const GovernancePage = {
 
         container.appendChild(wrap);
 
-        if (firstView) { try { sessionStorage.setItem('sv-governance-flashed', '1'); } catch (e) {} }
+        if (firstView) { try { sessionStorage.setItem('ag-governance-flashed', '1'); } catch (e) {} }
     },
 };
 

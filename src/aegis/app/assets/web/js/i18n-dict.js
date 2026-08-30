@@ -1044,7 +1044,7 @@ window.SV_DICT = {
     "Ollama local calls that bypass both": "绕过两者的 Ollama 本地调用",
     "Customer-facing agent · N instances": "面向客户的智能体 · N 个实例",
     "Why forward AI events to your SIEM?": "为什么要将 AI 事件发送到你的 SIEM？",
-    "Stable per-machine hash sv-\u003c24 hex>": "稳定的按机器哈希 sv-\u003c24 位十六进制>",
+    "Stable per-machine hash ag-\u003c24 hex>": "稳定的按机器哈希 ag-\u003c24 位十六进制>",
     "The source identifier from /analyze": "来自 /analyze 的来源标识符",
     "SHA-256 hash chain: verify off-host": "SHA-256 哈希链：可在主机外验证",
     "AI-Powered False-Positive Reduction": "AI 驱动的误报消减",

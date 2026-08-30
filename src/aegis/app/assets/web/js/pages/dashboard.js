@@ -180,11 +180,11 @@ const DashboardPage = {
     /** Global dashboard lookback (days). Persisted; drives the posture
      *  sentence and (progressively) the charts/feed windows. */
     get rangeDays() {
-        const v = Number(localStorage.getItem('sv-dash-range') || 7);
+        const v = Number(localStorage.getItem('ag-dash-range') || 7);
         return [1, 7, 30].includes(v) ? v : 7;
     },
     set rangeDays(v) {
-        try { localStorage.setItem('sv-dash-range', String(v)); } catch (_) { /* */ }
+        try { localStorage.setItem('ag-dash-range', String(v)); } catch (_) { /* */ }
     },
 
     /**
@@ -229,7 +229,7 @@ const DashboardPage = {
                 (latest && parse(latest.created_at) ? ` — last ${rel(parse(latest.created_at))}, blocked` : '');
         }
 
-        const colors = { ok: 'var(--accent-primary, #5eadb8)', warn: '#f59e0b', alert: '#ef4444' };
+        const colors = { ok: 'var(--accent-primary, #7c6cff)', warn: '#f59e0b', alert: '#ef4444' };
 
         const head = document.createElement('div');
         head.style.cssText = 'display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin: 2px 2px 16px;';
@@ -246,13 +246,13 @@ const DashboardPage = {
 
         // Range pills — one semantics everywhere: a rolling lookback window.
         const pills = document.createElement('div');
-        pills.style.cssText = 'display:inline-flex; gap:2px; background: var(--bg-card,#161b22); border:1px solid var(--border-default,#30363d); border-radius:8px; padding:2px;';
+        pills.style.cssText = 'display:inline-flex; gap:2px; background: var(--bg-card,#131a30); border:1px solid var(--border-default,#283152); border-radius:8px; padding:2px;';
         [[1, '24h'], [7, '7 days'], [30, '30 days']].forEach(([v, label]) => {
             const b = document.createElement('button');
             const active = v === days;
             b.style.cssText = "border:none; cursor:pointer; font: 600 11.5px 'Avenir Next',Avenir,system-ui,sans-serif; padding: 5px 11px; border-radius:6px;" +
                 (active
-                    ? 'background: var(--accent-primary,#5eadb8); color:#fff;'
+                    ? 'background: var(--accent-primary,#7c6cff); color:#fff;'
                     : 'background: transparent; color: var(--text-secondary,#b1bac4);');
             b.textContent = label;
             b.addEventListener('click', () => {
@@ -308,10 +308,10 @@ const DashboardPage = {
         // First-event poll. The stall hint appears after 10 minutes of
         // silence measured from the FIRST time the checklist rendered, so
         // re-visits don't reset the clock.
-        let since = Number(localStorage.getItem('sv-day0-since') || 0);
+        let since = Number(localStorage.getItem('ag-day0-since') || 0);
         if (!since) {
             since = Date.now();
-            try { localStorage.setItem('sv-day0-since', String(since)); } catch (_) { /* */ }
+            try { localStorage.setItem('ag-day0-since', String(since)); } catch (_) { /* */ }
         }
         const poll = setInterval(async () => {
             if (!card.isConnected) { clearInterval(poll); return; }
@@ -319,15 +319,15 @@ const DashboardPage = {
                 const stats = await API.getToolCallAuditStats();
                 if (stats && stats.total > 0) {
                     clearInterval(poll);
-                    try { localStorage.removeItem('sv-day0-since'); } catch (_) { /* */ }
+                    try { localStorage.removeItem('ag-day0-since'); } catch (_) { /* */ }
                     if (window.Toast) Toast.success('First event received: you are live');
                     if (this.currentContainer) this.render(this.currentContainer);
                     return;
                 }
             } catch (_) { /* keep polling */ }
-            if (Date.now() - since > 600000 && !card.querySelector('.sv-day0-stall')) {
+            if (Date.now() - since > 600000 && !card.querySelector('.ag-day0-stall')) {
                 const stall = document.createElement('div');
-                stall.className = 'sv-day0-stall';
+                stall.className = 'ag-day0-stall';
                 stall.style.cssText = 'margin-top: 10px; font-size: 12px; color: var(--text-secondary);';
                 stall.textContent = 'No events after 10 minutes? Check that your agent restarted after connecting, and that the proxy/plugin is active. ';
                 const link = document.createElement('a');
@@ -352,7 +352,7 @@ const DashboardPage = {
         // selector) plus the headline aggregates as a single stat strip.
         // Same data the old KPI grid showed — recomposed, not changed.
         const hero = document.createElement('div');
-        hero.className = 'sv-dash-hero';
+        hero.className = 'ag-dash-hero';
         hero.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 12px; padding: 18px 20px 8px; margin-bottom: 20px;';
         container.appendChild(hero);
         this._renderPostureHeader(hero);
@@ -434,7 +434,7 @@ const DashboardPage = {
             // localStorage with a timestamp and expire after 24h.
             const dayZero = !((this.data && this.data.total_threats) || (this.threats || []).length);
             const dismissedAt = (id) => {
-                try { return Number(localStorage.getItem('sv-attn-dismiss-' + id) || 0); } catch (_) { return 0; }
+                try { return Number(localStorage.getItem('ag-attn-dismiss-' + id) || 0); } catch (_) { return 0; }
             };
             const buildGapItem = (ids, text, cta, onRemove) => {
                 const bar = document.createElement('div');
@@ -457,7 +457,7 @@ const DashboardPage = {
                 dismiss.textContent = '×';
                 dismiss.style.cssText = 'background:none; border:none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 0 2px; line-height: 1;';
                 dismiss.addEventListener('click', () => {
-                    try { ids.forEach(id => localStorage.setItem('sv-attn-dismiss-' + id, String(Date.now()))); } catch (_) { /* */ }
+                    try { ids.forEach(id => localStorage.setItem('ag-attn-dismiss-' + id, String(Date.now()))); } catch (_) { /* */ }
                     bar.remove();
                     if (onRemove) onRemove();
                 });
@@ -562,11 +562,11 @@ const DashboardPage = {
         // The chart owns an inner host div so a responsive re-render clears
         // only itself — siblings the caller appended (e.g. the dashboard's
         // truncation note) survive.
-        let host = container.querySelector(':scope > .sv-linechart');
+        let host = container.querySelector(':scope > .ag-linechart');
         if (!host) {
             container.textContent = '';
             host = document.createElement('div');
-            host.className = 'sv-linechart';
+            host.className = 'ag-linechart';
             container.appendChild(host);
         } else {
             host.textContent = '';
@@ -1158,13 +1158,13 @@ const DashboardPage = {
         container.appendChild(section);
 
         // Fill live stats in the background — each card's stat slot is the
-        // first .sv-report-stats element inside it.
+        // first .ag-report-stats element inside it.
         this._populateReportStats(ti, sd, th);
     },
 
     async _populateReportStats(toolInventoryCard, secretDetectionsCard, threatsCard) {
         const setStats = (card, parts) => {
-            const slot = card.querySelector('.sv-report-stats');
+            const slot = card.querySelector('.ag-report-stats');
             if (!slot) return;
             slot.textContent = '';
             parts.forEach((p, i) => {
@@ -1235,7 +1235,7 @@ const DashboardPage = {
         const card = document.createElement('div');
         card.title = blurb;
         card.style.cssText = 'background:var(--bg-card);border:1px solid var(--border-default);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;min-width:0;cursor:pointer;transition:border-color 0.15s;';
-        card.addEventListener('mouseenter', () => { card.style.borderColor = 'rgba(94,173,184,0.55)'; });
+        card.addEventListener('mouseenter', () => { card.style.borderColor = 'rgba(124,108,255,0.55)'; });
         card.addEventListener('mouseleave', () => { card.style.borderColor = 'var(--border-default)'; });
         card.addEventListener('click', () => {
             if (window.App && App.loadPage) App.loadPage(openPage);
@@ -1253,13 +1253,13 @@ const DashboardPage = {
         // Live stats line — populated by _populateReportStats. Renders a
         // single em-dash while waiting so the layout doesn't jump.
         const stats = document.createElement('div');
-        stats.className = 'sv-report-stats';
+        stats.className = 'ag-report-stats';
         stats.style.cssText = 'font-size:12px;color:var(--text-secondary);line-height:1.4;min-height:17px;';
         stats.textContent = '—';
         main.appendChild(stats);
 
         const csvBtn = document.createElement('button');
-        csvBtn.className = 'sv-btn-secondary';
+        csvBtn.className = 'ag-btn-secondary';
         csvBtn.textContent = 'CSV';
         csvBtn.title = 'Export CSV (last 7 days)';
         csvBtn.style.cssText = 'padding:4px 9px;font-size:11.5px;flex-shrink:0;';

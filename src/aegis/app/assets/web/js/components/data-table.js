@@ -35,7 +35,7 @@ class DataTable {
         this.bulkActions = opts.bulkActions || null;
 
         this.el = document.createElement('div');
-        this.el.className = 'sv-table-wrap';
+        this.el.className = 'ag-table-wrap';
         this._render();
     }
 
@@ -70,7 +70,7 @@ class DataTable {
 
         if (this.data.length === 0) {
             const empty = document.createElement('div');
-            empty.className = 'sv-table-empty';
+            empty.className = 'ag-table-empty';
             empty.textContent = this.emptyText;
             this.el.appendChild(empty);
             return;
@@ -89,7 +89,7 @@ class DataTable {
 
         const table = document.createElement('table');
         table.className = 'data-table';
-        if (this.selectable) table.classList.add('sv-selectable');
+        if (this.selectable) table.classList.add('ag-selectable');
         if (this.tableId) table.id = this.tableId;
 
         table.appendChild(this._buildThead());
@@ -105,10 +105,10 @@ class DataTable {
 
     _buildSelectionBar() {
         const bar = document.createElement('div');
-        bar.className = 'sv-selection-bar';
+        bar.className = 'ag-selection-bar';
 
         const count = document.createElement('span');
-        count.className = 'sv-selection-count';
+        count.className = 'ag-selection-count';
         count.textContent = `${this.selectedIds.size} selected`;
         bar.appendChild(count);
 
@@ -123,7 +123,7 @@ class DataTable {
         }
 
         const clearBtn = document.createElement('button');
-        clearBtn.className = 'btn btn-sm sv-selection-clear';
+        clearBtn.className = 'btn btn-sm ag-selection-clear';
         clearBtn.textContent = 'Clear';
         clearBtn.addEventListener('click', () => this.clearSelection());
         bar.appendChild(clearBtn);
@@ -140,13 +140,13 @@ class DataTable {
 
             // First column gets the select-all checkbox overlay when selectable
             if (idx === 0 && this.selectable) {
-                th.className = 'sv-th-first';
+                th.className = 'ag-th-first';
                 const inner = document.createElement('div');
-                inner.className = 'sv-th-first-inner';
+                inner.className = 'ag-th-first-inner';
 
                 const cb = document.createElement('input');
                 cb.type = 'checkbox';
-                cb.className = 'sv-select-all';
+                cb.className = 'ag-select-all';
                 cb.title = 'Select all';
                 const paged = this._getPagedData(this._getSortedData());
                 const pagedSelected = paged.filter(item => this.selectedIds.has(item[this.idField])).length;
@@ -160,19 +160,19 @@ class DataTable {
                 inner.appendChild(cb);
 
                 const label = document.createElement('span');
-                label.className = 'sv-th-label';
+                label.className = 'ag-th-label';
                 label.textContent = col.label;
                 inner.appendChild(label);
 
                 th.appendChild(inner);
             } else if (col.sortable && col.key) {
-                th.className = 'sv-table-th-sort';
+                th.className = 'ag-table-th-sort';
                 const label = document.createElement('span');
                 label.textContent = col.label;
                 th.appendChild(label);
 
                 const arrow = document.createElement('span');
-                arrow.className = 'sv-sort-arrow';
+                arrow.className = 'ag-sort-arrow';
                 if (this.sortKey === col.key) {
                     arrow.textContent = this.sortDir === 'asc' ? '\u25B2' : '\u25BC';
                     arrow.classList.add('active');
@@ -218,12 +218,12 @@ class DataTable {
             const tr = document.createElement('tr');
             const rowId = item[this.idField];
             const isSelected = this.selectedIds.has(rowId);
-            if (isSelected) tr.classList.add('sv-row-selected');
+            if (isSelected) tr.classList.add('ag-row-selected');
 
             if (this.onRowClick) {
                 tr.style.cursor = 'pointer';
                 tr.addEventListener('click', (e) => {
-                    if (e.target.closest('.sv-row-cb-wrap') || e.target.closest('.sv-row-actions') ||
+                    if (e.target.closest('.ag-row-cb-wrap') || e.target.closest('.ag-row-actions') ||
                         e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'A') return;
                     this.onRowClick(item);
                 });
@@ -237,16 +237,16 @@ class DataTable {
 
                 // First cell: overlay checkbox on hover
                 if (idx === 0 && this.selectable) {
-                    td.className = (td.className ? td.className + ' ' : '') + 'sv-td-first';
+                    td.className = (td.className ? td.className + ' ' : '') + 'ag-td-first';
 
                     const inner = document.createElement('div');
-                    inner.className = 'sv-td-first-inner';
+                    inner.className = 'ag-td-first-inner';
 
                     const cbWrap = document.createElement('div');
-                    cbWrap.className = 'sv-row-cb-wrap';
+                    cbWrap.className = 'ag-row-cb-wrap';
                     const cb = document.createElement('input');
                     cb.type = 'checkbox';
-                    cb.className = 'sv-row-cb';
+                    cb.className = 'ag-row-cb';
                     cb.checked = isSelected;
                     cb.addEventListener('change', (e) => {
                         e.stopPropagation();
@@ -260,7 +260,7 @@ class DataTable {
                     inner.appendChild(cbWrap);
 
                     const content = document.createElement('div');
-                    content.className = 'sv-td-first-content';
+                    content.className = 'ag-td-first-content';
                     this._renderCellContent(content, col, item);
                     inner.appendChild(content);
 
@@ -275,10 +275,10 @@ class DataTable {
             // Hover action icons on the right (overlays last cell)
             if (this.rowActions && this.rowActions.length > 0) {
                 const overlay = document.createElement('div');
-                overlay.className = 'sv-row-actions';
+                overlay.className = 'ag-row-actions';
                 this.rowActions.forEach(action => {
                     const btn = document.createElement('button');
-                    btn.className = 'sv-row-action-btn' + (action.className ? ' ' + action.className : '');
+                    btn.className = 'ag-row-action-btn' + (action.className ? ' ' + action.className : '');
                     btn.title = action.title || '';
                     btn.textContent = action.icon || '';
                     btn.addEventListener('click', (e) => {
@@ -322,7 +322,7 @@ class DataTable {
     _buildPagination(totalItems) {
         const totalPages = this._getTotalPages(totalItems);
         const pager = document.createElement('div');
-        pager.className = 'sv-table-pager';
+        pager.className = 'ag-table-pager';
 
         const prevBtn = document.createElement('button');
         prevBtn.className = 'btn btn-sm';
@@ -333,7 +333,7 @@ class DataTable {
         pager.appendChild(prevBtn);
 
         const info = document.createElement('span');
-        info.className = 'sv-table-page-info';
+        info.className = 'ag-table-page-info';
         info.textContent = `Page ${this.currentPage + 1} of ${totalPages}`;
         pager.appendChild(info);
 

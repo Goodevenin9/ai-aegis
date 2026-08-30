@@ -27,8 +27,8 @@ const OUTCOME_COLOR = { blocked: '#ef4444', log_only: '#64748b', allow: '#10b981
 // palette below.
 // harnesses are all "yours" — brand teal for every harness node;
 // security state colors the RING, not the node identity.
-const HARNESS_FIXED = { 'claude-code': '#5eadb8', 'codex': '#5eadb8', 'openclaw': '#5eadb8', 'cursor': '#5eadb8' };
-const HARNESS_PALETTE = ['#5eadb8'];
+const HARNESS_FIXED = { 'claude-code': '#7c6cff', 'codex': '#7c6cff', 'openclaw': '#7c6cff', 'cursor': '#7c6cff' };
+const HARNESS_PALETTE = ['#7c6cff'];
 const TOOL_FILL = '#64748b';      // built-in tool — neutral slate
 const TOOL_FILL_EXT = '#e08a3c';  // external MCP / plugin — warm amber gear
 const GRAY = '#5b626b';           // inactive / greyed-out
@@ -60,7 +60,7 @@ const VIRUS_SVG = (c, s) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}"
 const ICON = {
     lock: (c = '#f59e0b', s = 12) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" style="vertical-align:-2px"><path fill="${c}" d="${LOCK_PATH}"/></svg>`,
     ban: (c = '#ef4444', s = 12) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" style="vertical-align:-2px"><path fill="${c}" d="${BAN_PATH}"/></svg>`,
-    gear: (c = '#e08a3c', s = 12) => `<svg class="sv-spin" viewBox="0 0 24 24" width="${s}" height="${s}" style="vertical-align:-2px"><path fill="${c}" d="${GEAR_PATH}"/></svg>`,
+    gear: (c = '#e08a3c', s = 12) => `<svg class="ag-spin" viewBox="0 0 24 24" width="${s}" height="${s}" style="vertical-align:-2px"><path fill="${c}" d="${GEAR_PATH}"/></svg>`,
     virus: (c = '#ef4444', s = 13) => VIRUS_SVG(c, s),
 };
 // Threat-detection node colour — red. The virus *shape* (spiky body) keeps it
@@ -89,10 +89,10 @@ function appendVirusMarker(g, transform) {
     });
     const body = document.createElementNS(NS, 'circle');
     body.setAttribute('r', 4.4); body.setAttribute('fill', VIRUS_NODE_COLOR);
-    body.setAttribute('stroke', 'var(--bg-card,#161b22)'); body.setAttribute('stroke-width', 1.4);
+    body.setAttribute('stroke', 'var(--bg-card,#131a30)'); body.setAttribute('stroke-width', 1.4);
     body.setAttribute('paint-order', 'stroke'); vg.appendChild(body);
     const core = document.createElementNS(NS, 'circle');
-    core.setAttribute('r', 1.5); core.setAttribute('fill', 'var(--bg-card,#161b22)');
+    core.setAttribute('r', 1.5); core.setAttribute('fill', 'var(--bg-card,#131a30)');
     core.setAttribute('fill-opacity', 0.55); vg.appendChild(core);
     g.appendChild(vg);
 }
@@ -139,10 +139,10 @@ const AgentMapPage = {
         // bottom handle to override (remembered across loads). A 1px placeholder
         // height is replaced with the real target right after the box is in the
         // DOM (needs its top offset to size to the screen).
-        body.style.cssText = 'position:relative;width:100%;height:700px;border:1px solid var(--border-default,#30363d);border-radius:14px;overflow:hidden;' +
-            'background:radial-gradient(120% 120% at 18% -5%, rgba(94,173,184,.10), transparent 50%),' +
+        body.style.cssText = 'position:relative;width:100%;height:700px;border:1px solid var(--border-default,#283152);border-radius:14px;overflow:hidden;' +
+            'background:radial-gradient(120% 120% at 18% -5%, rgba(124,108,255,.10), transparent 50%),' +
             'radial-gradient(120% 120% at 100% 110%, rgba(99,102,241,.07), transparent 55%),' +
-            'var(--bg-card,#161b22);box-shadow:inset 0 1px 0 rgba(255,255,255,.03);';
+            'var(--bg-card,#131a30);box-shadow:inset 0 1px 0 rgba(255,255,255,.03);';
         container.appendChild(body);
         this._wireAutoResize();
 
@@ -170,7 +170,7 @@ const AgentMapPage = {
     // resize paths).
     _MAP_MIN_H: 420,
     _MAP_MAX_H: 1600,
-    _MAP_H_KEY: 'sv-map-h',
+    _MAP_H_KEY: 'ag-map-h',
 
     /** Target height for the map box: a saved MANUAL height wins; otherwise
      *  auto-fit the viewport (fill down to ~24px above the window bottom). */
@@ -215,11 +215,11 @@ const AgentMapPage = {
         handle.style.cssText = 'position:absolute;left:50%;bottom:0;transform:translateX(-50%);' +
             'width:70px;height:12px;display:flex;align-items:center;justify-content:center;' +
             'cursor:ns-resize;z-index:6;border-radius:9px 9px 0 0;' +
-            'background:color-mix(in srgb,var(--bg-card,#161b22) 82%,transparent);' +
-            'border:1px solid var(--border-default,#30363d);border-bottom:none;transition:background .12s;';
+            'background:color-mix(in srgb,var(--bg-card,#131a30) 82%,transparent);' +
+            'border:1px solid var(--border-default,#283152);border-bottom:none;transition:background .12s;';
         handle.innerHTML = '<span style="width:28px;height:3px;border-radius:2px;background:var(--text-muted,#7d8590);display:block;"></span>';
         handle.addEventListener('mouseenter', () => { handle.style.background = 'var(--bg-hover,#21262d)'; });
-        handle.addEventListener('mouseleave', () => { handle.style.background = 'color-mix(in srgb,var(--bg-card,#161b22) 82%,transparent)'; });
+        handle.addEventListener('mouseleave', () => { handle.style.background = 'color-mix(in srgb,var(--bg-card,#131a30) 82%,transparent)'; });
         body.appendChild(handle);
 
         let startY = 0, startH = 0, dragging = false;
@@ -257,116 +257,116 @@ const AgentMapPage = {
         st.textContent = `
             @keyframes svFlow { to { stroke-dashoffset: -16; } }
             @keyframes svPulse { 0%,100% { opacity: .5; } 50% { opacity: .95; } }
-            .sv-edge-flow { stroke-dasharray: 3 11; stroke-linecap: round; animation: svFlow linear infinite; pointer-events: none; }
-            .sv-edge-blocked { animation: svFlow linear infinite, svPulse 1.2s ease-in-out infinite; }
+            .ag-edge-flow { stroke-dasharray: 3 11; stroke-linecap: round; animation: svFlow linear infinite; pointer-events: none; }
+            .ag-edge-blocked { animation: svFlow linear infinite, svPulse 1.2s ease-in-out infinite; }
             @keyframes svGearSpin { to { transform: rotate(360deg); } }
-            .sv-gear { transform-box: fill-box; transform-origin: center; animation: svGearSpin 28s linear infinite; }
-            .sv-spin { transform-origin: center; animation: svGearSpin 28s linear infinite; }
-            @media (prefers-reduced-motion: reduce) { .sv-edge-flow, .sv-edge-blocked, .sv-gear, .sv-spin { animation: none !important; } }
-            .sv-node { cursor: grab; }
-            .sv-node:active { cursor: grabbing; }
-            .sv-node.sv-sel circle { stroke: var(--accent-primary,#5eadb8) !important; stroke-width: 3.4 !important; }
-            .sv-node.sv-sel rect { stroke: var(--accent-primary,#5eadb8) !important; stroke-width: 2.5 !important; }
+            .ag-gear { transform-box: fill-box; transform-origin: center; animation: svGearSpin 28s linear infinite; }
+            .ag-spin { transform-origin: center; animation: svGearSpin 28s linear infinite; }
+            @media (prefers-reduced-motion: reduce) { .ag-edge-flow, .ag-edge-blocked, .ag-gear, .ag-spin { animation: none !important; } }
+            .ag-node { cursor: grab; }
+            .ag-node:active { cursor: grabbing; }
+            .ag-node.ag-sel circle { stroke: var(--accent-primary,#7c6cff) !important; stroke-width: 3.4 !important; }
+            .ag-node.ag-sel rect { stroke: var(--accent-primary,#7c6cff) !important; stroke-width: 2.5 !important; }
             /* Visible keyboard-focus indicator (mouse focus stays clean). */
-            .sv-node:focus { outline: none; }
-            .sv-node:focus-visible circle, .sv-node:focus-visible rect { stroke: var(--accent-primary,#5eadb8) !important; stroke-width: 3 !important; }
-            .sv-node:focus-visible path.sv-gear { filter: drop-shadow(0 0 2px var(--accent-primary,#5eadb8)); }
-            .sv-node-label { font: 600 10px 'Avenir Next','Avenir','Segoe UI Variable',system-ui,sans-serif;
+            .ag-node:focus { outline: none; }
+            .ag-node:focus-visible circle, .ag-node:focus-visible rect { stroke: var(--accent-primary,#7c6cff) !important; stroke-width: 3 !important; }
+            .ag-node:focus-visible path.ag-gear { filter: drop-shadow(0 0 2px var(--accent-primary,#7c6cff)); }
+            .ag-node-label { font: 600 10px 'Avenir Next','Avenir','Segoe UI Variable',system-ui,sans-serif;
                 letter-spacing:.2px; pointer-events:none; user-select:none; paint-order: stroke;
-                stroke: var(--bg-card,#161b22); stroke-width: 3px; }
-            .sv-harness-label { font: 700 12.5px 'Avenir Next','Avenir',system-ui,sans-serif; }
-            .sv-agent-label { font: 700 9px ui-monospace,'JetBrains Mono',Menlo,monospace; }
-            .sv-reason { font: 500 9.5px 'Avenir Next','Avenir',system-ui,sans-serif; fill: var(--text-muted,#64748b); }
-            #agent-map-body.sv-panning { cursor: grabbing; }
+                stroke: var(--bg-card,#131a30); stroke-width: 3px; }
+            .ag-harness-label { font: 700 12.5px 'Avenir Next','Avenir',system-ui,sans-serif; }
+            .ag-agent-label { font: 700 9px ui-monospace,'JetBrains Mono',Menlo,monospace; }
+            .ag-reason { font: 500 9.5px 'Avenir Next','Avenir',system-ui,sans-serif; fill: var(--text-muted,#64748b); }
+            #agent-map-body.ag-panning { cursor: grabbing; }
             /* Topology segmented control */
-            .sv-seg { display:inline-flex; background:color-mix(in srgb,var(--bg-card,#161b22) 60%, #000 8%); border:1px solid var(--border-default,#30363d); border-radius:10px; padding:3px; gap:2px; }
-            .sv-seg button { background:transparent; border:none; border-radius:7px; padding:6px 12px; font:600 12px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-secondary,#b1bac4); cursor:pointer; }
-            .sv-seg button.on { background:color-mix(in srgb,var(--accent-primary,#5eadb8) 20%, var(--bg-card,#161b22)); color:var(--text-primary,#e6edf3); }
-            .sv-seg button.soon { color:var(--text-muted,#64748b); font-style:italic; }
-            .sv-seg button .tag { font-size:8.5px; font-weight:700; color:var(--text-muted,#64748b); margin-left:5px; border:1px solid var(--border-default,#30363d); border-radius:5px; padding:0 4px; vertical-align:middle; }
+            .ag-seg { display:inline-flex; background:color-mix(in srgb,var(--bg-card,#131a30) 60%, #000 8%); border:1px solid var(--border-default,#283152); border-radius:10px; padding:3px; gap:2px; }
+            .ag-seg button { background:transparent; border:none; border-radius:7px; padding:6px 12px; font:600 12px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-secondary,#b1bac4); cursor:pointer; }
+            .ag-seg button.on { background:color-mix(in srgb,var(--accent-primary,#7c6cff) 20%, var(--bg-card,#131a30)); color:var(--text-primary,#eef1fb); }
+            .ag-seg button.soon { color:var(--text-muted,#64748b); font-style:italic; }
+            .ag-seg button .tag { font-size:8.5px; font-weight:700; color:var(--text-muted,#64748b); margin-left:5px; border:1px solid var(--border-default,#283152); border-radius:5px; padding:0 4px; vertical-align:middle; }
             /* Detail card — opens on click of ANY node (mirrors node→Runs drill-down) */
             #agent-map-card { position:absolute; top:14px; right:14px; z-index:12; width:266px; padding:14px 15px;
-                border:1px solid var(--border-default,#30363d); border-radius:13px; background:color-mix(in srgb,var(--bg-card,#161b22) 97%, transparent);
+                border:1px solid var(--border-default,#283152); border-radius:13px; background:color-mix(in srgb,var(--bg-card,#131a30) 97%, transparent);
                 -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); box-shadow:0 14px 40px rgba(0,0,0,.5);
                 transform:translateX(20px); opacity:0; pointer-events:none; transition:opacity .12s,transform .12s; }
             #agent-map-card.show { transform:none; opacity:1; pointer-events:auto; }
             #agent-map-card .ch { display:flex; align-items:center; gap:9px; margin-bottom:3px; }
             #agent-map-card .ch .dot { width:11px; height:11px; border-radius:50%; flex:none; }
-            #agent-map-card .ch .ttl { font-weight:700; font-size:14px; color:var(--text-primary,#e6edf3); min-width:0; word-break:break-word; }
-            #agent-map-card .sv-rename { flex:0 0 auto; margin-left:auto; margin-right:16px; width:24px; height:24px; display:inline-flex;
-                align-items:center; justify-content:center; border:1px solid var(--border-default,#30363d); border-radius:7px;
-                background:var(--bg-card,#161b22); color:var(--text-muted,#7d8590); cursor:pointer; padding:0; transition:color .12s,border-color .12s; }
-            #agent-map-card .sv-rename:hover { color:var(--accent-primary,#5eadb8); border-color:var(--accent-primary,#5eadb8); }
-            #agent-map-card .sv-rename svg { width:13px; height:13px; }
-            #agent-map-card .sv-rename-row { display:flex; align-items:center; gap:6px; margin:2px 0 9px; }
-            #agent-map-card .sv-rename-input { flex:1 1 auto; min-width:0; background:var(--bg-tertiary,#21262d);
-                border:1px solid var(--accent-primary,#5eadb8); border-radius:7px; color:var(--text-primary,#e6edf3);
+            #agent-map-card .ch .ttl { font-weight:700; font-size:14px; color:var(--text-primary,#eef1fb); min-width:0; word-break:break-word; }
+            #agent-map-card .ag-rename { flex:0 0 auto; margin-left:auto; margin-right:16px; width:24px; height:24px; display:inline-flex;
+                align-items:center; justify-content:center; border:1px solid var(--border-default,#283152); border-radius:7px;
+                background:var(--bg-card,#131a30); color:var(--text-muted,#7d8590); cursor:pointer; padding:0; transition:color .12s,border-color .12s; }
+            #agent-map-card .ag-rename:hover { color:var(--accent-primary,#7c6cff); border-color:var(--accent-primary,#7c6cff); }
+            #agent-map-card .ag-rename svg { width:13px; height:13px; }
+            #agent-map-card .ag-rename-row { display:flex; align-items:center; gap:6px; margin:2px 0 9px; }
+            #agent-map-card .ag-rename-input { flex:1 1 auto; min-width:0; background:var(--bg-tertiary,#21262d);
+                border:1px solid var(--accent-primary,#7c6cff); border-radius:7px; color:var(--text-primary,#eef1fb);
                 font:700 13px 'Avenir Next',Avenir,system-ui,sans-serif; padding:5px 8px; }
-            #agent-map-card .sv-rename-input:focus { outline:none; }
-            #agent-map-card .sv-rename-save, #agent-map-card .sv-rename-cancel { flex:0 0 auto; border:1px solid var(--border-default,#30363d);
+            #agent-map-card .ag-rename-input:focus { outline:none; }
+            #agent-map-card .ag-rename-save, #agent-map-card .ag-rename-cancel { flex:0 0 auto; border:1px solid var(--border-default,#283152);
                 border-radius:7px; padding:5px 9px; font:700 11.5px 'Avenir Next',Avenir,system-ui,sans-serif; cursor:pointer; }
-            #agent-map-card .sv-rename-save { background:var(--accent-primary,#5eadb8); border-color:var(--accent-primary,#5eadb8); color:#fff; }
-            #agent-map-card .sv-rename-cancel { background:transparent; color:var(--text-secondary,#b1bac4); }
-            #agent-map-card .sv-rename-hint { font-size:10.5px; color:var(--text-muted,#7d8590); margin:-4px 0 9px; }
+            #agent-map-card .ag-rename-save { background:var(--accent-primary,#7c6cff); border-color:var(--accent-primary,#7c6cff); color:#fff; }
+            #agent-map-card .ag-rename-cancel { background:transparent; color:var(--text-secondary,#b1bac4); }
+            #agent-map-card .ag-rename-hint { font-size:10.5px; color:var(--text-muted,#7d8590); margin:-4px 0 9px; }
             #agent-map-card .typ { font-size:10.5px; letter-spacing:.4px; text-transform:uppercase; color:var(--text-muted,#7d8590); margin-bottom:11px; }
             #agent-map-card .kv { display:grid; grid-template-columns:90px 1fr; gap:5px 10px; font-size:12.5px; color:var(--text-secondary,#b1bac4); }
-            #agent-map-card .kv b { color:var(--text-primary,#e6edf3); font-weight:600; word-break:break-word; }
+            #agent-map-card .kv b { color:var(--text-primary,#eef1fb); font-weight:600; word-break:break-word; }
             #agent-map-card .perm { display:inline-block; padding:1px 8px; border-radius:6px; font-size:11px; font-weight:700; }
             #agent-map-card .perm.allow { color:#10b981; background:color-mix(in srgb,#10b981 16%,transparent); }
             #agent-map-card .perm.block { color:#ef4444; background:color-mix(in srgb,#ef4444 16%,transparent); }
             #agent-map-card .perm.log { color:#f59e0b; background:color-mix(in srgb,#f59e0b 16%,transparent); }
-            #agent-map-card .open { margin-top:13px; width:100%; text-align:left; background:color-mix(in srgb,var(--accent-primary,#5eadb8) 14%,var(--bg-card,#161b22));
-                border:1px solid color-mix(in srgb,var(--accent-primary,#5eadb8) 40%,var(--border-default,#30363d)); color:var(--text-primary,#e6edf3); border-radius:9px; padding:9px 11px;
+            #agent-map-card .open { margin-top:13px; width:100%; text-align:left; background:color-mix(in srgb,var(--accent-primary,#7c6cff) 14%,var(--bg-card,#131a30));
+                border:1px solid color-mix(in srgb,var(--accent-primary,#7c6cff) 40%,var(--border-default,#283152)); color:var(--text-primary,#eef1fb); border-radius:9px; padding:9px 11px;
                 font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; cursor:pointer; }
-            #agent-map-card .open:hover { background:color-mix(in srgb,var(--accent-primary,#5eadb8) 22%,var(--bg-card,#161b22)); }
+            #agent-map-card .open:hover { background:color-mix(in srgb,var(--accent-primary,#7c6cff) 22%,var(--bg-card,#131a30)); }
             #agent-map-card .close { position:absolute; top:11px; right:12px; width:20px; height:20px; border:none; background:transparent; color:var(--text-muted,#7d8590); font-size:16px; cursor:pointer; line-height:1; padding:0; }
-            #agent-map-card .sv-sid { display:flex; align-items:center; gap:6px; min-width:0; }
-            #agent-map-card .sv-sid code { font:600 10.5px ui-monospace,'JetBrains Mono',Menlo,monospace; color:var(--text-primary,#e6edf3); word-break:break-all; user-select:all; line-height:1.3; }
-            #agent-map-card .sv-copy { flex:0 0 auto; border:1px solid var(--border-default,#30363d); background:var(--bg-card,#161b22); color:var(--text-secondary,#b1bac4); border-radius:6px; padding:2px 7px; font:600 10px 'Avenir Next',Avenir,system-ui,sans-serif; cursor:pointer; }
-            #agent-map-card .sv-copy:hover { border-color:var(--accent-primary,#5eadb8); color:var(--text-primary,#e6edf3); }
+            #agent-map-card .ag-sid { display:flex; align-items:center; gap:6px; min-width:0; }
+            #agent-map-card .ag-sid code { font:600 10.5px ui-monospace,'JetBrains Mono',Menlo,monospace; color:var(--text-primary,#eef1fb); word-break:break-all; user-select:all; line-height:1.3; }
+            #agent-map-card .ag-copy { flex:0 0 auto; border:1px solid var(--border-default,#283152); background:var(--bg-card,#131a30); color:var(--text-secondary,#b1bac4); border-radius:6px; padding:2px 7px; font:600 10px 'Avenir Next',Avenir,system-ui,sans-serif; cursor:pointer; }
+            #agent-map-card .ag-copy:hover { border-color:var(--accent-primary,#7c6cff); color:var(--text-primary,#eef1fb); }
             #agent-map-tip { position:absolute; z-index:11; pointer-events:none; max-width:260px; padding:6px 9px;
-                border:1px solid var(--border-default,#30363d); border-radius:8px;
-                background:color-mix(in srgb, var(--bg-card,#161b22) 97%, transparent);
+                border:1px solid var(--border-default,#283152); border-radius:8px;
+                background:color-mix(in srgb, var(--bg-card,#131a30) 97%, transparent);
                 -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); box-shadow:0 6px 20px rgba(0,0,0,.45);
                 opacity:0; transition:opacity .08s; font:12px 'Avenir Next',Avenir,system-ui,sans-serif; }
             #agent-map-tip.show { opacity:1; }
-            #agent-map-tip b { display:block; font-weight:700; font-size:12.5px; color:var(--text-primary,#e6edf3); }
+            #agent-map-tip b { display:block; font-weight:700; font-size:12.5px; color:var(--text-primary,#eef1fb); }
             #agent-map-tip span { display:block; font-size:11px; color:var(--text-secondary,#b1bac4); margin-top:2px; }
             #agent-map-tip span .blk { color:var(--danger,#ef4444); font-weight:600; }
             #agent-map-stats { position:absolute; top:12px; left:14px; z-index:4; display:flex; align-items:center;
                 gap:12px; flex-wrap:wrap; max-width:54%; padding:7px 13px; border-radius:11px;
-                background:color-mix(in srgb, var(--bg-card,#161b22) 78%, transparent);
+                background:color-mix(in srgb, var(--bg-card,#131a30) 78%, transparent);
                 -webkit-backdrop-filter:blur(9px); backdrop-filter:blur(9px);
-                border:1px solid color-mix(in srgb, var(--border-default,#30363d) 80%, transparent);
+                border:1px solid color-mix(in srgb, var(--border-default,#283152) 80%, transparent);
                 box-shadow:0 6px 20px rgba(0,0,0,.28); pointer-events:none; font-size:11px; color:var(--text-secondary,#b1bac4); }
-            .sv-stat { display:inline-flex; align-items:baseline; gap:5px; }
-            .sv-stat b { font:600 12px ui-monospace,'JetBrains Mono',Menlo,monospace; font-variant-numeric:tabular-nums; color:var(--text-primary,#e6edf3); }
-            .sv-stat-sep { width:1px; height:14px; background:var(--border-default,#30363d); }
-            .sv-stat.is-alert, .sv-stat.is-alert b { color:var(--danger,#ef4444); }
-            .sv-stat.is-watch, .sv-stat.is-watch b { color:var(--warning,#f59e0b); }
+            .ag-stat { display:inline-flex; align-items:baseline; gap:5px; }
+            .ag-stat b { font:600 12px ui-monospace,'JetBrains Mono',Menlo,monospace; font-variant-numeric:tabular-nums; color:var(--text-primary,#eef1fb); }
+            .ag-stat-sep { width:1px; height:14px; background:var(--border-default,#283152); }
+            .ag-stat.is-alert, .ag-stat.is-alert b { color:var(--danger,#ef4444); }
+            .ag-stat.is-watch, .ag-stat.is-watch b { color:var(--warning,#f59e0b); }
             #agent-map-legend { position:absolute; bottom:20px; left:14px; z-index:4; display:flex; align-items:center;
                 flex-wrap:wrap; gap:4px 0; max-width:74%; padding:7px 13px; border-radius:11px;
-                background:color-mix(in srgb, var(--bg-card,#161b22) 80%, transparent);
+                background:color-mix(in srgb, var(--bg-card,#131a30) 80%, transparent);
                 -webkit-backdrop-filter:blur(9px); backdrop-filter:blur(9px);
-                border:1px solid color-mix(in srgb, var(--border-default,#30363d) 80%, transparent);
+                border:1px solid color-mix(in srgb, var(--border-default,#283152) 80%, transparent);
                 box-shadow:0 6px 20px rgba(0,0,0,.28); pointer-events:none; }
             #agent-map-legend span { display:inline-flex; align-items:center; gap:5px; margin-right:13px; font-size:11px; color:var(--text-secondary,#b1bac4); }
             #agent-map-legend i { width:15px; height:0; border-top:3px solid; display:inline-block; }
             #agent-map-legend .lg-dot { width:9px; height:9px; border:0; border-radius:50%; }
             #agent-map-legend .lg-ring { width:11px; height:11px; border-radius:50%; border:2px solid; box-sizing:border-box; }
-            #agent-map-legend .lg-sep { width:1px; height:13px; padding:0; background:var(--border-default,#30363d); margin-right:13px; }
-            .sv-zoom { position:absolute; bottom:12px; right:12px; display:flex; flex-direction:column; gap:6px; z-index:5; }
-            .sv-zoom button { width:33px; height:33px; display:flex; align-items:center; justify-content:center;
+            #agent-map-legend .lg-sep { width:1px; height:13px; padding:0; background:var(--border-default,#283152); margin-right:13px; }
+            .ag-zoom { position:absolute; bottom:12px; right:12px; display:flex; flex-direction:column; gap:6px; z-index:5; }
+            .ag-zoom button { width:33px; height:33px; display:flex; align-items:center; justify-content:center;
                 font-size:16px; line-height:1; border-radius:9px; cursor:pointer;
-                background:color-mix(in srgb, var(--bg-card,#161b22) 78%, transparent);
+                background:color-mix(in srgb, var(--bg-card,#131a30) 78%, transparent);
                 -webkit-backdrop-filter:blur(9px); backdrop-filter:blur(9px);
-                color:var(--text-primary,#e2e8f0); border:1px solid color-mix(in srgb, var(--border-default,#30363d) 80%, transparent);
+                color:var(--text-primary,#e2e8f0); border:1px solid color-mix(in srgb, var(--border-default,#283152) 80%, transparent);
                 box-shadow:0 4px 14px rgba(0,0,0,.25); transition:background .12s,border-color .12s,transform .1s; }
-            .sv-zoom button:hover { background:var(--bg-hover,#21262d); border-color:var(--accent-primary,#5eadb8); transform:translateY(-1px); }
-            .sv-hint { position:absolute; left:14px; bottom:10px; max-width:50%; font-size:11px; color:var(--text-muted,#64748b); z-index:5; user-select:none; }
-            .sv-check { display:inline-flex; align-items:center; gap:6px; cursor:pointer;
-                font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3); user-select:none; }
-            .sv-check input { width:14px; height:14px; cursor:pointer; accent-color:var(--accent-primary,#5eadb8); margin:0; }
+            .ag-zoom button:hover { background:var(--bg-hover,#21262d); border-color:var(--accent-primary,#7c6cff); transform:translateY(-1px); }
+            .ag-hint { position:absolute; left:14px; bottom:10px; max-width:50%; font-size:11px; color:var(--text-muted,#64748b); z-index:5; user-select:none; }
+            .ag-check { display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+                font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb); user-select:none; }
+            .ag-check input { width:14px; height:14px; cursor:pointer; accent-color:var(--accent-primary,#7c6cff); margin:0; }
         `;
         document.head.appendChild(st);
     },
@@ -399,7 +399,7 @@ const AgentMapPage = {
         tlbl.textContent = 'View';
         tgrp.appendChild(tlbl);
         const seg = document.createElement('div');
-        seg.className = 'sv-seg';
+        seg.className = 'ag-seg';
         TOPOLOGIES.forEach(t => {
             const b = document.createElement('button');
             b.type = 'button';
@@ -424,9 +424,9 @@ const AgentMapPage = {
         // the two label-less controls (this + Export) at the right edge keeps
         // the toolbar visually balanced.
         const igrp = document.createElement('div');
-        igrp.className = 'filter-group sv-nolabel';
+        igrp.className = 'filter-group ag-nolabel';
         const ilab = document.createElement('label');
-        ilab.className = 'sv-check';
+        ilab.className = 'ag-check';
         const cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.checked = this.showInactive;
@@ -657,7 +657,7 @@ const AgentMapPage = {
         bg.setAttribute('width', W); bg.setAttribute('height', H); bg.setAttribute('fill', 'transparent');
         svg.appendChild(bg);
         const vp = document.createElementNS(SVG_NS, 'g');
-        vp.setAttribute('id', 'sv-vp');
+        vp.setAttribute('id', 'ag-vp');
         svg.appendChild(vp);
         this._vp = vp;
 
@@ -702,7 +702,7 @@ const AgentMapPage = {
                     flow.setAttribute('stroke', e.blocked ? '#ffffff' : e.col);
                     flow.setAttribute('stroke-width', Math.max(e.w + 0.6, 2));
                     flow.setAttribute('stroke-opacity', e.blocked ? 0.6 : 0.9);
-                    flow.setAttribute('class', e.blocked ? 'sv-edge-flow sv-edge-blocked' : 'sv-edge-flow');
+                    flow.setAttribute('class', e.blocked ? 'ag-edge-flow ag-edge-blocked' : 'ag-edge-flow');
                     flow.style.animationDuration = `${Math.max(0.6, 2.2 - Math.log2((e.calls || 1) + 1) * 0.3)}s`;
                     vp.appendChild(flow);
                 }
@@ -740,7 +740,7 @@ const AgentMapPage = {
         svg.addEventListener('pointerdown', (ev) => { if (ev.target === bg || ev.target === svg) this._closeCard(); });
 
         const hint = document.createElement('div');
-        hint.className = 'sv-hint';
+        hint.className = 'ag-hint';
         hint.textContent = this.data.truncated
             ? `Top ${this.data.node_cap} edges by volume: ${this.data.dropped_edges} hidden · click a node for detail`
             : 'Click any node for detail · drag to reposition · scroll to zoom · drag canvas to pan';
@@ -963,7 +963,7 @@ const AgentMapPage = {
 
     _drawNode(vp, n) {
         const g = document.createElementNS(SVG_NS, 'g');
-        g.setAttribute('class', 'sv-node');
+        g.setAttribute('class', 'ag-node');
         g.setAttribute('tabindex', '0');
         g.setAttribute('role', 'button');
         g.setAttribute('aria-label', this._ariaLabel(n));
@@ -971,8 +971,8 @@ const AgentMapPage = {
 
         if (n.kind === 'device') {
             const c = document.createElementNS(SVG_NS, 'circle');
-            c.setAttribute('r', 24); c.setAttribute('fill', 'var(--bg-card,#161b22)');
-            c.setAttribute('stroke', 'var(--border-default,#30363d)'); c.setAttribute('stroke-width', 1.5);
+            c.setAttribute('r', 24); c.setAttribute('fill', 'var(--bg-card,#131a30)');
+            c.setAttribute('stroke', 'var(--border-default,#283152)'); c.setAttribute('stroke-width', 1.5);
             g.appendChild(c);
             ['this', 'device'].forEach((tx, i) => {
                 const t = document.createElementNS(SVG_NS, 'text');
@@ -984,18 +984,18 @@ const AgentMapPage = {
             const r = n.gray ? 13 : 16;
             const c = document.createElementNS(SVG_NS, 'circle');
             c.setAttribute('r', r); c.setAttribute('fill', n.gray ? '#22272e' : this._fillFor(n.col));
-            c.setAttribute('stroke', 'var(--bg-card,#161b22)'); c.setAttribute('stroke-width', 3);
+            c.setAttribute('stroke', 'var(--bg-card,#131a30)'); c.setAttribute('stroke-width', 3);
             if (n.gray) c.setAttribute('fill-opacity', 0.6);
             g.appendChild(c);
             const L = n._lbl || { dx: 0, dy: r + 16, anchor: 'middle' };
             const hl = document.createElementNS(SVG_NS, 'text');
-            hl.setAttribute('class', 'sv-node-label sv-harness-label');
+            hl.setAttribute('class', 'ag-node-label ag-harness-label');
             hl.setAttribute('x', L.dx); hl.setAttribute('y', L.dy); hl.setAttribute('text-anchor', L.anchor);
             hl.style.fill = n.gray ? 'var(--text-muted,#7d8590)' : n.col;
             hl.textContent = n.label; g.appendChild(hl);
             if (n.gray && n.reason) {
                 const rl = document.createElementNS(SVG_NS, 'text');
-                rl.setAttribute('class', 'sv-reason'); rl.setAttribute('x', L.dx);
+                rl.setAttribute('class', 'ag-reason'); rl.setAttribute('x', L.dx);
                 rl.setAttribute('y', L.dy + (L.reasonDy || 12)); rl.setAttribute('text-anchor', L.anchor);
                 rl.textContent = n.reason; g.appendChild(rl);
             }
@@ -1005,7 +1005,7 @@ const AgentMapPage = {
             // Always wear the dark card-coloured halo; the risk colour goes on a
             // SEPARATE outer ring (below) so it reads even when the harness fill
             // is the same hue (e.g. openclaw red + blocked red).
-            c.setAttribute('stroke', 'var(--bg-card,#161b22)'); c.setAttribute('stroke-width', 2.5);
+            c.setAttribute('stroke', 'var(--bg-card,#131a30)'); c.setAttribute('stroke-width', 2.5);
             g.appendChild(c);
             // Risk ring: red = blocked, amber = secret-touch or high-risk.
             const ring = n.gray ? null : ((n.blocked || 0) > 0 ? OUTCOME_COLOR.blocked : (n.secret || n.risk === 'amber') ? '#f59e0b' : n.risk === 'red' ? OUTCOME_COLOR.blocked : null);
@@ -1018,7 +1018,7 @@ const AgentMapPage = {
             if (n.secret && !n.gray) {
                 const lock = document.createElementNS(SVG_NS, 'path');
                 lock.setAttribute('d', LOCK_PATH); lock.setAttribute('fill', '#f59e0b');
-                lock.style.stroke = 'var(--bg-card,#161b22)'; lock.setAttribute('stroke-width', 2.5);
+                lock.style.stroke = 'var(--bg-card,#131a30)'; lock.setAttribute('stroke-width', 2.5);
                 lock.setAttribute('paint-order', 'stroke'); lock.setAttribute('pointer-events', 'none');
                 lock.setAttribute('transform', 'translate(6,-16) scale(0.5)'); g.appendChild(lock);
             }
@@ -1035,13 +1035,13 @@ const AgentMapPage = {
             num.textContent = n.num != null ? n.num : ''; g.appendChild(num);
             if (!n._denseLabel) {
                 const al = document.createElementNS(SVG_NS, 'text');
-                al.setAttribute('class', 'sv-node-label sv-agent-label'); al.setAttribute('text-anchor', 'middle'); al.setAttribute('y', 21);
+                al.setAttribute('class', 'ag-node-label ag-agent-label'); al.setAttribute('text-anchor', 'middle'); al.setAttribute('y', 21);
                 al.style.fill = n.gray ? 'var(--text-muted,#7d8590)' : 'var(--text-secondary,#b1bac4)';
                 al.textContent = this._sessionNodeLabel(n); g.appendChild(al);
             }
             if (!n.active && !n._denseLabel) {
                 const idl = document.createElementNS(SVG_NS, 'text');
-                idl.setAttribute('class', 'sv-reason'); idl.setAttribute('text-anchor', 'middle'); idl.setAttribute('y', 31);
+                idl.setAttribute('class', 'ag-reason'); idl.setAttribute('text-anchor', 'middle'); idl.setAttribute('y', 31);
                 idl.textContent = (n.idle_days != null ? n.idle_days : '?') + 'd inactive'; g.appendChild(idl);
             }
         } else { // tool
@@ -1057,19 +1057,19 @@ const AgentMapPage = {
                 gw.setAttribute('transform', 'translate(-8,-8) scale(0.68)');
                 const p = document.createElementNS(SVG_NS, 'path');
                 p.setAttribute('d', GEAR_PATH); p.setAttribute('fill', n.gray ? '#4b515a' : TOOL_FILL_EXT);
-                if (!n.gray) p.setAttribute('class', 'sv-gear');
+                if (!n.gray) p.setAttribute('class', 'ag-gear');
                 gw.appendChild(p); g.appendChild(gw);
             } else {
                 const c = document.createElementNS(SVG_NS, 'circle');
                 c.setAttribute('r', 6); c.setAttribute('fill', n.gray ? '#3a4048' : TOOL_FILL);
-                c.setAttribute('stroke', n.blocked ? OUTCOME_COLOR.blocked : 'var(--border-default,#30363d)');
+                c.setAttribute('stroke', n.blocked ? OUTCOME_COLOR.blocked : 'var(--border-default,#283152)');
                 c.setAttribute('stroke-width', n.blocked ? 2 : 1.2);
                 g.appendChild(c);
             }
             if ((n.cloud_managed || n.touched_secrets) && !n.gray) {
                 const lock = document.createElementNS(SVG_NS, 'path');
                 lock.setAttribute('d', LOCK_PATH); lock.setAttribute('fill', '#f59e0b');
-                lock.style.stroke = 'var(--bg-card,#161b22)'; lock.setAttribute('stroke-width', 2.5);
+                lock.style.stroke = 'var(--bg-card,#131a30)'; lock.setAttribute('stroke-width', 2.5);
                 lock.setAttribute('paint-order', 'stroke'); lock.setAttribute('pointer-events', 'none');
                 lock.setAttribute('transform', 'translate(3,-13) scale(0.5)'); g.appendChild(lock);
             }
@@ -1080,7 +1080,7 @@ const AgentMapPage = {
             }
             if (n._lbl) {
                 const tl = document.createElementNS(SVG_NS, 'text');
-                tl.setAttribute('class', 'sv-node-label'); tl.setAttribute('text-anchor', n._lbl.anchor); tl.setAttribute('font-size', 9.5);
+                tl.setAttribute('class', 'ag-node-label'); tl.setAttribute('text-anchor', n._lbl.anchor); tl.setAttribute('font-size', 9.5);
                 tl.style.fill = n.gray ? 'var(--text-muted,#7d8590)' : 'var(--text-secondary,#b1bac4)';
                 if (n._lbl.rot) {
                     tl.setAttribute('x', 0); tl.setAttribute('y', 0);
@@ -1230,7 +1230,7 @@ const AgentMapPage = {
         // Node bars.
         nodes.forEach(n => {
             const g = document.createElementNS(SVG_NS, 'g');
-            g.setAttribute('class', 'sv-node'); g.setAttribute('tabindex', '0');
+            g.setAttribute('class', 'ag-node'); g.setAttribute('tabindex', '0');
             g.setAttribute('role', 'button'); g.setAttribute('aria-label', this._ariaLabel(n));
             g.setAttribute('transform', `translate(${n._x},${n._y})`);
             n.x = n._x + barW / 2; n.y = n._cy; // for card/focus geometry
@@ -1240,11 +1240,11 @@ const AgentMapPage = {
                 : n.kind === 'session' ? (n.gray ? GRAY : this._fillFor(n.col || n.baseCol))
                     : (n.blocked ? OUTCOME_COLOR.blocked : (n.ext ? TOOL_FILL_EXT : TOOL_FILL));
             rect.setAttribute('fill', fill);
-            rect.setAttribute('stroke', 'var(--bg-card,#161b22)'); rect.setAttribute('stroke-width', 1);
+            rect.setAttribute('stroke', 'var(--bg-card,#131a30)'); rect.setAttribute('stroke-width', 1);
             g.appendChild(rect);
             // label: harness left, tool right, agent left (small)
             const lab = document.createElementNS(SVG_NS, 'text');
-            lab.setAttribute('class', 'sv-node-label'); lab.setAttribute('font-size', n.kind === 'harness' ? 11.5 : 9.5);
+            lab.setAttribute('class', 'ag-node-label'); lab.setAttribute('font-size', n.kind === 'harness' ? 11.5 : 9.5);
             lab.setAttribute('dominant-baseline', 'middle');
             if (n.kind === 'tool') { lab.setAttribute('x', barW + 5); lab.setAttribute('y', n._h / 2); lab.setAttribute('text-anchor', 'start'); }
             else { lab.setAttribute('x', -5); lab.setAttribute('y', n._h / 2); lab.setAttribute('text-anchor', 'end'); }
@@ -1313,13 +1313,13 @@ const AgentMapPage = {
     // ---------------- detail card (click any node) ----------------
 
     selectNode(n, g) {
-        Object.values(this._nodeEls || {}).forEach(({ g }) => g.classList.remove('sv-sel'));
-        if (g) g.classList.add('sv-sel');
+        Object.values(this._nodeEls || {}).forEach(({ g }) => g.classList.remove('ag-sel'));
+        if (g) g.classList.add('ag-sel');
         this._sel = n;
-        const col = n.col || (n.gray ? GRAY : (n.kind === 'tool' ? (n.ext ? TOOL_FILL_EXT : TOOL_FILL) : 'var(--accent-primary,#5eadb8)'));
+        const col = n.col || (n.gray ? GRAY : (n.kind === 'tool' ? (n.ext ? TOOL_FILL_EXT : TOOL_FILL) : 'var(--accent-primary,#7c6cff)'));
         let title, typ, rows = '', openLbl, openFn;
         const kv = (k, v) => `<span>${this._esc(k)}</span><b>${v}</b>`;
-        const kvBlk = (k, v) => `<span>${this._esc(k)}</span><b style="color:${v ? 'var(--danger,#ef4444)' : 'var(--text-primary,#e6edf3)'}">${v}</b>`;
+        const kvBlk = (k, v) => `<span>${this._esc(k)}</span><b style="color:${v ? 'var(--danger,#ef4444)' : 'var(--text-primary,#eef1fb)'}">${v}</b>`;
         // Detection-source row (Rule / ML / Rule+ML) rolled up across this
         // node's calls; empty when none of them produced a threat.
         // Detection shown as its OWN labelled row — a separate activity from
@@ -1363,7 +1363,7 @@ const AgentMapPage = {
                 + kv('Tools', n.tools || 0) + kv('Tool calls', n.calls || 0) + kvBlk('Blocked', n.blocked || 0)
                 + detRow(n)
                 + (n.secret ? kv('Secret access', '<span style="color:var(--warning,#f59e0b);font-weight:700">detected</span>') : '')
-                + (fullSid ? `<span>Session</span><span class="sv-sid"><code>${this._esc(fullSid)}</code><button class="sv-copy" data-copy="${this._esc(fullSid)}" title="Copy session id">copy</button></span>` : '');
+                + (fullSid ? `<span>Session</span><span class="ag-sid"><code>${this._esc(fullSid)}</code><button class="ag-copy" data-copy="${this._esc(fullSid)}" title="Copy session id">copy</button></span>` : '');
             openLbl = '▸ Open this agent’s trace'; openFn = () => this._openAgent(n);
         } else { // tool
             // Per-node by design: in radial/tree a tool node is ONE agent's use
@@ -1398,7 +1398,7 @@ const AgentMapPage = {
         // and Timeline too.
         const canRename = n.kind === 'session' && !!n.trace_id;
         const renameBtn = canRename
-            ? `<button class="sv-rename" title="Rename agent" aria-label="Rename agent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>`
+            ? `<button class="ag-rename" title="Rename agent" aria-label="Rename agent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>`
             : '';
         const card = this._card;
         card.innerHTML = `<button class="close" aria-label="close">×</button>` +
@@ -1408,9 +1408,9 @@ const AgentMapPage = {
         card.classList.add('show');
         card.querySelector('.close').onclick = () => this._closeCard();
         card.querySelector('.open').onclick = openFn;
-        const rb = card.querySelector('.sv-rename');
+        const rb = card.querySelector('.ag-rename');
         if (rb) rb.onclick = () => this._beginRename(n);
-        const cp = card.querySelector('.sv-copy');
+        const cp = card.querySelector('.ag-copy');
         if (cp) cp.onclick = () => {
             const txt = cp.dataset.copy;
             const done = () => { cp.textContent = 'copied'; setTimeout(() => { cp.textContent = 'copy'; }, 1200); };
@@ -1432,21 +1432,21 @@ const AgentMapPage = {
         const placeholder = 'agent #' + (n.num != null ? n.num : '?');
 
         const row = document.createElement('div');
-        row.className = 'sv-rename-row';
+        row.className = 'ag-rename-row';
         const input = document.createElement('input');
-        input.className = 'sv-rename-input';
+        input.className = 'ag-rename-input';
         input.type = 'text';
         input.maxLength = 60;
         input.value = current;
         input.placeholder = placeholder;
         const save = document.createElement('button');
-        save.className = 'sv-rename-save'; save.textContent = 'Save';
+        save.className = 'ag-rename-save'; save.textContent = 'Save';
         const cancel = document.createElement('button');
-        cancel.className = 'sv-rename-cancel'; cancel.textContent = 'Cancel';
+        cancel.className = 'ag-rename-cancel'; cancel.textContent = 'Cancel';
         row.appendChild(input); row.appendChild(save); row.appendChild(cancel);
 
         const hint = document.createElement('div');
-        hint.className = 'sv-rename-hint';
+        hint.className = 'ag-rename-hint';
         hint.textContent = current ? 'Clear the field to reset to the default name.' : 'Reflects in Traces and the Live feed too.';
 
         ch.replaceWith(row);
@@ -1476,7 +1476,7 @@ const AgentMapPage = {
 
     _closeCard() {
         if (this._card) this._card.classList.remove('show');
-        Object.values(this._nodeEls || {}).forEach(({ g }) => g.classList.remove('sv-sel'));
+        Object.values(this._nodeEls || {}).forEach(({ g }) => g.classList.remove('ag-sel'));
         this._sel = null;
         this._clearFocus();
         this._applyOutcomeFilter(); // restore the base outcome-filter dimming
@@ -1568,9 +1568,9 @@ const AgentMapPage = {
         }, { passive: false });
         let panning = false, startVb = null, startT = null;
         svg.addEventListener('pointerdown', (ev) => {
-            if (ev.target.closest('.sv-node')) return;
+            if (ev.target.closest('.ag-node')) return;
             panning = true; startVb = this._clientToVb(ev); startT = { tx: this.view.tx, ty: this.view.ty };
-            body.classList.add('sv-panning'); svg.setPointerCapture(ev.pointerId);
+            body.classList.add('ag-panning'); svg.setPointerCapture(ev.pointerId);
         });
         svg.addEventListener('pointermove', (ev) => {
             if (!panning) return;
@@ -1578,7 +1578,7 @@ const AgentMapPage = {
             this.view.tx = startT.tx + (now.x - startVb.x); this.view.ty = startT.ty + (now.y - startVb.y);
             this._applyView();
         });
-        const endPan = () => { panning = false; body.classList.remove('sv-panning'); };
+        const endPan = () => { panning = false; body.classList.remove('ag-panning'); };
         svg.addEventListener('pointerup', endPan);
         svg.addEventListener('pointercancel', endPan);
     },
@@ -1616,7 +1616,7 @@ const AgentMapPage = {
     },
     _addControls(body) {
         const box = document.createElement('div');
-        box.className = 'sv-zoom';
+        box.className = 'ag-zoom';
         const mk = (label, aria, fn) => {
             const b = document.createElement('button');
             b.type = 'button'; b.textContent = label; b.title = aria; b.setAttribute('aria-label', aria);
@@ -1645,13 +1645,13 @@ const AgentMapPage = {
         // distinct secret-touching tools across the fleet (posture at a glance)
         const secrets = new Set((this.data.nodes || []).filter(n => n.kind === 'tool' && n.touched_secrets).map(n => n.tool_id)).size;
         el.innerHTML =
-            `<span class="sv-stat"><b>${harnesses.length}</b> harnesses</span>` +
-            `<span class="sv-stat"><b>${active}</b> active agents</span>` +
-            `<span class="sv-stat"><b>${sessions.length}</b> total</span>` +
-            `<span class="sv-stat-sep"></span>` +
-            `<span class="sv-stat ${detected ? 'is-alert' : ''}" title="Threats detected, may have been allowed to run, not necessarily blocked">${ICON.virus(detected ? VIRUS_NODE_COLOR : '#64748b', 13)} <b>${detected}</b> detected</span>` +
-            `<span class="sv-stat ${blocked ? 'is-alert' : ''}" title="Tool calls the policy actually blocked">${ICON.ban(blocked ? '#ef4444' : '#64748b', 13)} <b>${blocked}</b> blocked</span>` +
-            `<span class="sv-stat ${secrets ? 'is-watch' : ''}">${ICON.lock(secrets ? '#f59e0b' : '#64748b', 13)} <b>${secrets}</b> secret</span>`;
+            `<span class="ag-stat"><b>${harnesses.length}</b> harnesses</span>` +
+            `<span class="ag-stat"><b>${active}</b> active agents</span>` +
+            `<span class="ag-stat"><b>${sessions.length}</b> total</span>` +
+            `<span class="ag-stat-sep"></span>` +
+            `<span class="ag-stat ${detected ? 'is-alert' : ''}" title="Threats detected, may have been allowed to run, not necessarily blocked">${ICON.virus(detected ? VIRUS_NODE_COLOR : '#64748b', 13)} <b>${detected}</b> detected</span>` +
+            `<span class="ag-stat ${blocked ? 'is-alert' : ''}" title="Tool calls the policy actually blocked">${ICON.ban(blocked ? '#ef4444' : '#64748b', 13)} <b>${blocked}</b> blocked</span>` +
+            `<span class="ag-stat ${secrets ? 'is-watch' : ''}">${ICON.lock(secrets ? '#f59e0b' : '#64748b', 13)} <b>${secrets}</b> secret</span>`;
         // "How to read this map" — its own pill at the FAR RIGHT of the same
         // line as the stats (the stats pill is pointer-events:none and capped at
         // 54% width, so the link can't live inside it). Anchored top-right of
@@ -1663,7 +1663,7 @@ const AgentMapPage = {
             const howto = ObsTabs.howToReadLink('How to read this map', 'section-read-map', 'gs-read-map');
             howto.id = 'agent-map-howto';
             howto.style.cssText += ';position:absolute; top:14px; right:14px; z-index:6; pointer-events:auto;' +
-                'background:color-mix(in srgb, var(--bg-card,#161b22) 82%, transparent);' +
+                'background:color-mix(in srgb, var(--bg-card,#131a30) 82%, transparent);' +
                 '-webkit-backdrop-filter:blur(9px); backdrop-filter:blur(9px);';
             body.appendChild(howto);
         }

@@ -40,7 +40,7 @@ const ThreatsPage = {
     pendingRequestId: null,
 
     /** Masthead stat strip + toolbar pills. Shared export-menu CSS
-     *  (`sv-export-*`) lives in ObsTabs' stylesheet, injected explicitly
+     *  (`ag-export-*`) lives in ObsTabs' stylesheet, injected explicitly
      *  because this page doesn't render the obs tab strip. */
     _injectStyle() {
         if (window.ObsTabs) ObsTabs._injectStyle();
@@ -49,12 +49,12 @@ const ThreatsPage = {
         st.id = 'threats-style';
         st.textContent = `
             .tm-masthead { display:flex; align-items:stretch; gap:0; margin:0 0 14px;
-                border:1px solid var(--border-default,#30363d); border-radius:10px;
-                background:var(--bg-card,#161b22); overflow:hidden; }
-            .tm-stat { flex:1 1 0; padding:14px 18px 12px; border-left:1px solid var(--border-default,#30363d); }
+                border:1px solid var(--border-default,#283152); border-radius:10px;
+                background:var(--bg-card,#131a30); overflow:hidden; }
+            .tm-stat { flex:1 1 0; padding:14px 18px 12px; border-left:1px solid var(--border-default,#283152); }
             .tm-stat:first-child { border-left:none; }
             .tm-stat-v { font:700 22px ui-monospace,'JetBrains Mono',Menlo,monospace;
-                color:var(--text-primary,#e6edf3); letter-spacing:.3px; }
+                color:var(--text-primary,#eef1fb); letter-spacing:.3px; }
             .tm-stat-l { font:700 10.5px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.8px;
                 text-transform:uppercase; color:var(--text-secondary,#b1bac4); margin-top:3px; }
             .tm-stat-d { font:500 11px 'Avenir Next',Avenir,system-ui,sans-serif;
@@ -63,16 +63,16 @@ const ThreatsPage = {
             .tm-stat.danger .tm-stat-v, .tm-stat.danger .tm-stat-l { color:#ef4444; }
             /* Auto-refresh pill — teal = activity accent when armed. */
             .tm-auto { display:inline-flex; align-items:center; gap:7px; cursor:pointer;
-                border:1px solid var(--border-default,#30363d); border-radius:999px; padding:6px 13px;
+                border:1px solid var(--border-default,#283152); border-radius:999px; padding:6px 13px;
                 background:var(--bg-tertiary,#21262d); color:var(--text-secondary,#b1bac4);
                 font:600 12px 'Avenir Next',Avenir,system-ui,sans-serif; white-space:nowrap;
                 transition:border-color .14s,color .14s,background .14s; }
-            .tm-auto:hover { border-color:var(--accent-primary,#5eadb8); color:var(--text-primary,#e6edf3); }
+            .tm-auto:hover { border-color:var(--accent-primary,#7c6cff); color:var(--text-primary,#eef1fb); }
             .tm-auto .tm-auto-dot { width:7px; height:7px; border-radius:50%;
                 background:var(--text-muted,#7d8590); flex:0 0 auto; }
-            .tm-auto.on { border-color:var(--accent-primary,#5eadb8); color:var(--accent-primary,#5eadb8);
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 10%, var(--bg-tertiary,#21262d)); }
-            .tm-auto.on .tm-auto-dot { background:var(--accent-primary,#5eadb8);
+            .tm-auto.on { border-color:var(--accent-primary,#7c6cff); color:var(--accent-primary,#7c6cff);
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 10%, var(--bg-tertiary,#21262d)); }
+            .tm-auto.on .tm-auto-dot { background:var(--accent-primary,#7c6cff);
                 animation:tmAutoPulse 1.6s ease-in-out infinite; }
             @keyframes tmAutoPulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
             @media (prefers-reduced-motion: reduce) { .tm-auto.on .tm-auto-dot { animation:none; } }
@@ -84,7 +84,7 @@ const ThreatsPage = {
             .tm-preview code { min-width:0; }
             .tm-payload-tag { font:700 9px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.6px;
                 text-transform:uppercase; color:var(--text-muted,#7d8590);
-                border:1px solid var(--border-default,#30363d); border-radius:4px;
+                border:1px solid var(--border-default,#283152); border-radius:4px;
                 padding:1px 5px; flex:0 0 auto; }
             .tm-preview code { font:12px ui-monospace,'JetBrains Mono',Menlo,monospace;
                 color:var(--text-secondary,#b1bac4); overflow:hidden; text-overflow:ellipsis;
@@ -111,7 +111,7 @@ const ThreatsPage = {
     },
 
     // Uses the same segmented control as the Agent Observability tabs
-    // (ObsTabs' .sv-obs-tabs / .sv-obs-tab), so the two "one feature, several
+    // (ObsTabs' .ag-obs-tabs / .ag-obs-tab), so the two "one feature, several
     // lenses" surfaces read identically. The generic .tab-bar was too quiet
     // to signal that these are peer views rather than page furniture.
     _FACETS: [
@@ -127,13 +127,13 @@ const ThreatsPage = {
         bar.textContent = '';
 
         const wrap = document.createElement('div');
-        wrap.className = 'sv-obs-tabs';
+        wrap.className = 'ag-obs-tabs';
         wrap.setAttribute('role', 'tablist');
 
         this._FACETS.forEach(({ id, label, icon }) => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'sv-obs-tab' + (this.activeFacet === id ? ' on' : '');
+            btn.className = 'ag-obs-tab' + (this.activeFacet === id ? ' on' : '');
             btn.setAttribute('role', 'tab');
             btn.setAttribute('aria-selected', this.activeFacet === id ? 'true' : 'false');
             btn.innerHTML =
@@ -575,7 +575,7 @@ const ThreatsPage = {
             }
             details += '</div>';
         });
-        return '<!DOCTYPE html><html><head><title>Aegis Threat Report</title><style>body{font-family:Arial,sans-serif;padding:20px}h1{color:#1a1a2e;border-bottom:2px solid #5eadb8;padding-bottom:10px}h2{color:#16213e;margin-top:30px}.threat{border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:8px}.threat-header{display:flex;justify-content:space-between;margin-bottom:10px}.risk-high{color:#ef4444;font-weight:bold}.risk-medium{color:#f59e0b;font-weight:bold}.risk-low{color:#22c55e;font-weight:bold}.label{color:#666;font-size:12px}.llm-section{background:#f5f5f5;padding:10px;margin-top:10px;border-radius:4px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#1a1a2e;color:white}.summary{background:#e8f4f8;padding:15px;border-radius:8px;margin-bottom:20px}</style></head><body><h1>Aegis Threat Report</h1><p>Generated: ' + new Date().toLocaleString() + '</p><div class="summary"><strong>Summary:</strong> ' + threats.length + ' threats<br>Critical: ' + threats.filter(t => t.risk_score >= 80).length + ' | High: ' + threats.filter(t => t.risk_score >= 60 && t.risk_score < 80).length + ' | Medium: ' + threats.filter(t => t.risk_score >= 40 && t.risk_score < 60).length + ' | Low: ' + threats.filter(t => t.risk_score < 40).length + '</div><table><thead><tr><th>Content</th><th>Type</th><th>Risk</th><th>LLM</th><th>Date</th></tr></thead><tbody>' + rows + '</tbody></table><h2>High Risk Details</h2>' + details + '</body></html>';
+        return '<!DOCTYPE html><html><head><title>Aegis Threat Report</title><style>body{font-family:Arial,sans-serif;padding:20px}h1{color:#1a1a2e;border-bottom:2px solid #7c6cff;padding-bottom:10px}h2{color:#16213e;margin-top:30px}.threat{border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:8px}.threat-header{display:flex;justify-content:space-between;margin-bottom:10px}.risk-high{color:#ef4444;font-weight:bold}.risk-medium{color:#f59e0b;font-weight:bold}.risk-low{color:#22c55e;font-weight:bold}.label{color:#666;font-size:12px}.llm-section{background:#f5f5f5;padding:10px;margin-top:10px;border-radius:4px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#1a1a2e;color:white}.summary{background:#e8f4f8;padding:15px;border-radius:8px;margin-bottom:20px}</style></head><body><h1>Aegis Threat Report</h1><p>Generated: ' + new Date().toLocaleString() + '</p><div class="summary"><strong>Summary:</strong> ' + threats.length + ' threats<br>Critical: ' + threats.filter(t => t.risk_score >= 80).length + ' | High: ' + threats.filter(t => t.risk_score >= 60 && t.risk_score < 80).length + ' | Medium: ' + threats.filter(t => t.risk_score >= 40 && t.risk_score < 60).length + ' | Low: ' + threats.filter(t => t.risk_score < 40).length + '</div><table><thead><tr><th>Content</th><th>Type</th><th>Risk</th><th>LLM</th><th>Date</th></tr></thead><tbody>' + rows + '</tbody></table><h2>High Risk Details</h2>' + details + '</body></html>';
     },
 
     getUniqueCategories() {

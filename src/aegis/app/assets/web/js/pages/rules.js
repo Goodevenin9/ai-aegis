@@ -222,7 +222,7 @@ const RulesPage = {
             syncBtn.style.gap = '8px';
             // Pulsing readiness dot — uses theme accent, not a hardcoded color
             const dot = document.createElement('span');
-            dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:currentColor;opacity:0.9;animation:sv-sync-pulse 2s infinite;';
+            dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:currentColor;opacity:0.9;animation:ag-sync-pulse 2s infinite;';
             syncBtn.appendChild(dot);
             // Cloud-upload glyph, inherits currentColor
             const glyph = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -240,10 +240,10 @@ const RulesPage = {
             label.textContent = 'Sync from Cloud';
             syncBtn.appendChild(label);
             // Register the keyframes once — idempotent.
-            if (!document.getElementById('sv-sync-pulse-keyframes')) {
+            if (!document.getElementById('ag-sync-pulse-keyframes')) {
                 const style = document.createElement('style');
-                style.id = 'sv-sync-pulse-keyframes';
-                style.textContent = '@keyframes sv-sync-pulse {'
+                style.id = 'ag-sync-pulse-keyframes';
+                style.textContent = '@keyframes ag-sync-pulse {'
                     + '0%   { transform: scale(1);   opacity: 0.9; }'
                     + '50%  { transform: scale(1.4); opacity: 0.5; }'
                     + '100% { transform: scale(1);   opacity: 0.9; }'

@@ -914,70 +914,70 @@ const EgressPage = {
         st.id = 'eg-style';
         st.textContent = `
             .eg-tabs { display:inline-flex; gap:4px; padding:4px; border-radius:10px; margin-bottom:18px;
-                background:var(--bg-tertiary,#21262d); border:1px solid var(--border-default,#30363d); }
+                background:var(--bg-tertiary,#21262d); border:1px solid var(--border-default,#283152); }
             .eg-tab { border:0; background:transparent; color:var(--text-secondary,#b1bac4);
                 font:600 12px 'Avenir Next',Avenir,system-ui,sans-serif; padding:6px 14px; border-radius:7px;
                 cursor:pointer; transition:color .12s, background .12s; }
-            .eg-tab.on { background:var(--bg-card,#161b22); color:var(--text-primary,#e6edf3); box-shadow:0 1px 2px rgba(0,0,0,.25); }
-            .eg-tab:hover:not(.on) { color:var(--text-primary,#e6edf3); }
+            .eg-tab.on { background:var(--bg-card,#131a30); color:var(--text-primary,#eef1fb); box-shadow:0 1px 2px rgba(0,0,0,.25); }
+            .eg-tab:hover:not(.on) { color:var(--text-primary,#eef1fb); }
 
-            .eg-card { padding:18px 20px; border-radius:12px; background:var(--bg-card,#161b22);
-                border:1px solid var(--border-default,#30363d); box-shadow:var(--elevate-1,none); margin-bottom:16px; }
+            .eg-card { padding:18px 20px; border-radius:12px; background:var(--bg-card,#131a30);
+                border:1px solid var(--border-default,#283152); box-shadow:var(--elevate-1,none); margin-bottom:16px; }
             .eg-card h3 { margin:0 0 4px; font:700 14px 'Avenir Next',Avenir,system-ui,sans-serif;
-                color:var(--text-primary,#e6edf3); }
+                color:var(--text-primary,#eef1fb); }
             .eg-card p { margin:0 0 10px; font-size:12.5px; line-height:1.6; color:var(--text-secondary,#b1bac4); }
             .eg-empty { padding:26px; color:var(--text-muted,#7d8590); font-size:13px; }
             .eg-empty-clear { text-align:center; max-width:600px; margin:40px auto; }
             .eg-note { font-size:12px; color:var(--text-muted,#7d8590); line-height:1.6; }
             .eg-simbanner { border-style:dashed; }
             .eg-simbanner h3 { color:var(--text-secondary,#b1bac4); }
-            .eg-simbanner strong { color:var(--text-primary,#e6edf3); font-weight:700; }
+            .eg-simbanner strong { color:var(--text-primary,#eef1fb); font-weight:700; }
             .eg-simbanner p:last-child { margin-bottom:0; }
             .eg-running { font-size:12.5px; color:var(--text-muted,#7d8590); padding:4px 2px 16px; }
 
             /* Tone is security state only: ok = enforced, warn = inconclusive or
                moved off us, bad = a dangerous path reached the network. */
-            .eg-card.tone-ok { border-color:color-mix(in srgb,var(--accent-primary,#5eadb8) 50%,transparent); }
+            .eg-card.tone-ok { border-color:color-mix(in srgb,var(--accent-primary,#7c6cff) 50%,transparent); }
             .eg-card.tone-warn { border-color:color-mix(in srgb,#f59e0b 50%,transparent);
-                background:color-mix(in srgb,#f59e0b 6%,var(--bg-card,#161b22)); }
+                background:color-mix(in srgb,#f59e0b 6%,var(--bg-card,#131a30)); }
             .eg-card.tone-bad { border-color:color-mix(in srgb,#ef4444 55%,transparent);
-                background:color-mix(in srgb,#ef4444 7%,var(--bg-card,#161b22)); }
+                background:color-mix(in srgb,#ef4444 7%,var(--bg-card,#131a30)); }
 
             .eg-verdict-top { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
             .eg-verdict-word { font:700 32px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:-.5px;
-                text-transform:uppercase; color:var(--text-primary,#e6edf3); line-height:1; }
+                text-transform:uppercase; color:var(--text-primary,#eef1fb); line-height:1; }
             .eg-verdict.tone-bad .eg-verdict-word { color:#ef4444; }
             .eg-verdict.tone-warn .eg-verdict-word { color:#f59e0b; }
-            .eg-verdict.tone-ok .eg-verdict-word { color:var(--accent-primary,#5eadb8); }
+            .eg-verdict.tone-ok .eg-verdict-word { color:var(--accent-primary,#7c6cff); }
             .eg-verdict-stamp { margin-left:auto; font-size:11.5px; color:var(--text-muted,#7d8590);
                 font-variant-numeric:tabular-nums; }
             .eg-verdict-line { margin:12px 0 16px; font-size:13px; line-height:1.65;
                 color:var(--text-secondary,#b1bac4); max-width:78ch; }
 
             .eg-counts { display:flex; flex-wrap:wrap; gap:26px; padding:14px 0 4px;
-                border-top:1px solid var(--border-default,#30363d); }
+                border-top:1px solid var(--border-default,#283152); }
             .eg-count-val { display:block; font:700 22px ui-monospace,'JetBrains Mono',Menlo,monospace;
-                color:var(--text-primary,#e6edf3); font-variant-numeric:tabular-nums; line-height:1; }
+                color:var(--text-primary,#eef1fb); font-variant-numeric:tabular-nums; line-height:1; }
             .eg-count.tone-bad .eg-count-val { color:#ef4444; }
             .eg-count.tone-warn .eg-count-val { color:#f59e0b; }
             .eg-count-label { display:block; margin-top:5px; font:600 10.5px 'Avenir Next',Avenir,system-ui,sans-serif;
                 text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted,#7d8590); }
 
             .eg-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
-            .eg-btn { border:1px solid var(--border-default,#30363d); background:var(--bg-tertiary,#21262d);
-                color:var(--text-primary,#e6edf3); font:600 12px 'Avenir Next',Avenir,system-ui,sans-serif;
+            .eg-btn { border:1px solid var(--border-default,#283152); background:var(--bg-tertiary,#21262d);
+                color:var(--text-primary,#eef1fb); font:600 12px 'Avenir Next',Avenir,system-ui,sans-serif;
                 padding:7px 14px; border-radius:8px; cursor:pointer; text-decoration:none; display:inline-block;
                 transition:border-color .12s, background .12s; }
-            .eg-btn:hover { border-color:var(--accent-primary,#5eadb8); }
+            .eg-btn:hover { border-color:var(--accent-primary,#7c6cff); }
             .eg-btn[disabled] { opacity:.55; cursor:default; }
-            .eg-btn.primary { background:color-mix(in srgb,var(--accent-primary,#5eadb8) 16%,transparent);
-                border-color:color-mix(in srgb,var(--accent-primary,#5eadb8) 60%,transparent);
-                color:var(--accent-primary,#5eadb8); }
+            .eg-btn.primary { background:color-mix(in srgb,var(--accent-primary,#7c6cff) 16%,transparent);
+                border-color:color-mix(in srgb,var(--accent-primary,#7c6cff) 60%,transparent);
+                color:var(--accent-primary,#7c6cff); }
             .eg-btn.ghost { background:transparent; color:var(--text-secondary,#b1bac4); }
             .eg-btn.tiny { padding:3px 10px; font-size:11px; }
 
             .eg-preflight { margin-top:14px; padding:14px 16px; border-radius:10px;
-                background:var(--bg-tertiary,#21262d); border:1px solid var(--border-default,#30363d); }
+                background:var(--bg-tertiary,#21262d); border:1px solid var(--border-default,#283152); }
             .eg-preflight h4 { margin:12px 0 5px; font:700 11px 'Avenir Next',Avenir,system-ui,sans-serif;
                 text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted,#7d8590); }
             .eg-preflight ul, .eg-coverage ul, .eg-caveats { margin:0; padding-left:18px; }
@@ -989,12 +989,12 @@ const EgressPage = {
             .eg-drift-label { font:600 10.5px 'Avenir Next',Avenir,system-ui,sans-serif; text-transform:uppercase;
                 letter-spacing:.5px; color:var(--text-muted,#7d8590); }
             .eg-drift-status { font:700 12px 'Avenir Next',Avenir,system-ui,sans-serif; text-transform:uppercase;
-                letter-spacing:.5px; color:var(--text-primary,#e6edf3); }
+                letter-spacing:.5px; color:var(--text-primary,#eef1fb); }
             .eg-drift.tone-bad .eg-drift-status { color:#ef4444; }
             .eg-drift.tone-warn .eg-drift-status { color:#f59e0b; }
             .eg-drift-reason { margin:8px 0 0 !important; }
-            .eg-drift-row { margin-top:12px; padding-top:12px; border-top:1px solid var(--border-default,#30363d); }
-            .eg-drift-probe { font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3); }
+            .eg-drift-row { margin-top:12px; padding-top:12px; border-top:1px solid var(--border-default,#283152); }
+            .eg-drift-probe { font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb); }
             .eg-drift-move { margin-left:10px; font:600 11px ui-monospace,'JetBrains Mono',Menlo,monospace;
                 color:var(--text-muted,#7d8590); }
             .eg-drift-note { margin-top:5px; font-size:12px; line-height:1.6; color:var(--text-secondary,#b1bac4); }
@@ -1002,34 +1002,34 @@ const EgressPage = {
             .eg-table { width:100%; border-collapse:collapse; margin-top:8px; }
             .eg-table th { text-align:left; padding:8px 10px; font:600 10.5px 'Avenir Next',Avenir,system-ui,sans-serif;
                 text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted,#7d8590);
-                border-bottom:1px solid var(--border-default,#30363d); }
+                border-bottom:1px solid var(--border-default,#283152); }
             .eg-table th.num, .eg-table td.num { text-align:right; }
             .eg-table td { padding:11px 10px; font-size:12.5px; color:var(--text-secondary,#b1bac4);
-                border-bottom:1px solid var(--border-default,#30363d); vertical-align:top;
+                border-bottom:1px solid var(--border-default,#283152); vertical-align:top;
                 font-variant-numeric:tabular-nums; }
             .eg-table tbody tr:last-child td { border-bottom:0; }
             .eg-table tr.bad td { background:color-mix(in srgb,#ef4444 7%,transparent); }
             .eg-table.compact td, .eg-table.compact th { padding:6px 8px; font-size:12px; }
             .eg-table code { font:600 11.5px ui-monospace,'JetBrains Mono',Menlo,monospace;
-                color:var(--text-primary,#e6edf3); }
+                color:var(--text-primary,#eef1fb); }
             .eg-table .muted { color:var(--text-muted,#7d8590); }
             /* Scoped to td so it outranks the .eg-table td colour rule. */
             .eg-table td.bad-text, .bad-text { color:#ef4444; }
             .eg-nopromote { font:600 10.5px 'Avenir Next',Avenir,system-ui,sans-serif; text-transform:uppercase;
-                letter-spacing:.5px; color:var(--text-muted,#7d8590); border:1px dashed var(--border-default,#30363d);
+                letter-spacing:.5px; color:var(--text-muted,#7d8590); border:1px dashed var(--border-default,#283152);
                 padding:3px 9px; border-radius:6px; cursor:help; }
 
-            .eg-probe-title { font:600 13px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3); }
+            .eg-probe-title { font:600 13px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb); }
             .eg-probe-meta { margin-top:3px; font-size:11px; color:var(--text-muted,#7d8590); }
             .eg-probe-dest { display:block; margin-top:5px; font-size:11px !important;
                 color:var(--text-muted,#7d8590) !important; word-break:break-all; }
             .eg-probe-detail { margin-top:5px; font-size:11px; font-style:italic;
                 color:var(--text-muted,#7d8590); }
             .eg-mark { font:700 11px 'Avenir Next',Avenir,system-ui,sans-serif; text-transform:uppercase;
-                letter-spacing:.5px; padding:2px 8px; border-radius:6px; border:1px solid var(--border-default,#30363d);
+                letter-spacing:.5px; padding:2px 8px; border-radius:6px; border:1px solid var(--border-default,#283152);
                 color:var(--text-muted,#7d8590); }
-            .eg-mark.tone-ok { color:var(--accent-primary,#5eadb8);
-                border-color:color-mix(in srgb,var(--accent-primary,#5eadb8) 55%,transparent); }
+            .eg-mark.tone-ok { color:var(--accent-primary,#7c6cff);
+                border-color:color-mix(in srgb,var(--accent-primary,#7c6cff) 55%,transparent); }
             .eg-mark.tone-warn { color:#f59e0b; border-color:color-mix(in srgb,#f59e0b 55%,transparent); }
             .eg-mark.tone-bad { color:#ef4444; border-color:color-mix(in srgb,#ef4444 60%,transparent);
                 background:color-mix(in srgb,#ef4444 12%,transparent); }
@@ -1042,10 +1042,10 @@ const EgressPage = {
                 color:var(--text-muted,#7d8590); }
 
             .eg-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:14px; }
-            .eg-stat { padding:16px 18px; border-radius:12px; background:var(--bg-card,#161b22);
-                border:1px solid var(--border-default,#30363d); box-shadow:var(--elevate-1,none); }
+            .eg-stat { padding:16px 18px; border-radius:12px; background:var(--bg-card,#131a30);
+                border:1px solid var(--border-default,#283152); box-shadow:var(--elevate-1,none); }
             .eg-stat.tone-warn { border-color:color-mix(in srgb,#f59e0b 45%,transparent); }
-            .eg-stat-val { font:700 28px ui-monospace,'JetBrains Mono',Menlo,monospace; color:var(--text-primary,#e6edf3);
+            .eg-stat-val { font:700 28px ui-monospace,'JetBrains Mono',Menlo,monospace; color:var(--text-primary,#eef1fb);
                 font-variant-numeric:tabular-nums; line-height:1; }
             .eg-stat.big .eg-stat-val { font-size:34px; }
             .eg-stat.tone-warn .eg-stat-val { color:#f59e0b; }
@@ -1056,58 +1056,58 @@ const EgressPage = {
             .eg-sectitle h3 { margin:0 0 3px; }
             .eg-sectitle p { margin:0; font-size:12px; color:var(--text-muted,#7d8590); }
 
-            .eg-preset { padding:14px 16px; border-radius:10px; border:1px solid var(--border-default,#30363d);
+            .eg-preset { padding:14px 16px; border-radius:10px; border:1px solid var(--border-default,#283152);
                 margin-bottom:10px; background:var(--bg-tertiary,#21262d); }
-            .eg-preset.on { border-color:color-mix(in srgb,var(--accent-primary,#5eadb8) 60%,transparent);
-                background:color-mix(in srgb,var(--accent-primary,#5eadb8) 8%,transparent); }
+            .eg-preset.on { border-color:color-mix(in srgb,var(--accent-primary,#7c6cff) 60%,transparent);
+                background:color-mix(in srgb,var(--accent-primary,#7c6cff) 8%,transparent); }
             .eg-preset-head { display:flex; align-items:center; gap:10px; }
-            .eg-preset-name { font:700 13px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3); }
+            .eg-preset-name { font:700 13px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb); }
             .eg-preset-active { font:700 9.5px 'Avenir Next',Avenir,system-ui,sans-serif; text-transform:uppercase;
-                letter-spacing:.5px; color:var(--accent-primary,#5eadb8); padding:2px 7px; border-radius:5px;
-                border:1px solid color-mix(in srgb,var(--accent-primary,#5eadb8) 55%,transparent); }
+                letter-spacing:.5px; color:var(--accent-primary,#7c6cff); padding:2px 7px; border-radius:5px;
+                border:1px solid color-mix(in srgb,var(--accent-primary,#7c6cff) 55%,transparent); }
             .eg-preset-blurb { margin:6px 0 0 !important; }
             .eg-presetdetail { margin-top:10px; }
             .eg-presetdetail > summary { cursor:pointer; font:600 11.5px 'Avenir Next',Avenir,system-ui,sans-serif;
-                color:var(--accent-primary,#5eadb8); list-style:revert; width:fit-content; }
+                color:var(--accent-primary,#7c6cff); list-style:revert; width:fit-content; }
             .eg-presetdetail > summary:hover { text-decoration:underline; }
             .eg-preset-adds { margin:10px 0 0; padding-left:18px; }
             .eg-preset-adds li { font-size:12px; line-height:1.65; color:var(--text-secondary,#b1bac4); }
             .eg-rulelist { margin-top:12px; display:flex; flex-direction:column; gap:8px; }
-            .eg-rule { padding:9px 11px; border-radius:8px; border:1px solid var(--border-default,#30363d);
-                background:var(--bg-elevated,#0d1117); }
+            .eg-rule { padding:9px 11px; border-radius:8px; border:1px solid var(--border-default,#283152);
+                background:var(--bg-elevated,#0b0f1e); }
             .eg-rule-head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
             .eg-rule-title { font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif;
-                color:var(--text-primary,#e6edf3); }
+                color:var(--text-primary,#eef1fb); }
             .eg-rule-sev { font-size:10.5px; text-transform:uppercase; letter-spacing:.5px;
                 color:var(--text-muted,#7d8590); }
             .eg-rule-flag { font:600 9.5px 'Avenir Next',Avenir,system-ui,sans-serif; text-transform:uppercase;
-                letter-spacing:.5px; color:var(--text-muted,#7d8590); border:1px dashed var(--border-default,#30363d);
+                letter-spacing:.5px; color:var(--text-muted,#7d8590); border:1px dashed var(--border-default,#283152);
                 padding:2px 7px; border-radius:5px; cursor:help; }
             .eg-rule-match { margin-top:5px; font-size:11px; line-height:1.55;
                 color:var(--text-muted,#7d8590); word-break:break-word; }
 
             .eg-replay { margin-top:14px; padding:14px 16px; border-radius:10px;
-                background:var(--bg-card,#161b22); border:1px solid var(--border-default,#30363d);
+                background:var(--bg-card,#131a30); border:1px solid var(--border-default,#283152);
                 font-size:12.5px; color:var(--text-secondary,#b1bac4); }
             .eg-replay-summary { font:600 13px 'Avenir Next',Avenir,system-ui,sans-serif !important;
-                color:var(--text-primary,#e6edf3) !important; margin-bottom:10px !important; }
+                color:var(--text-primary,#eef1fb) !important; margin-bottom:10px !important; }
             .eg-caveats { margin-top:12px !important; }
 
-            .eg-scope-row { margin-top:12px; padding-top:12px; border-top:1px solid var(--border-default,#30363d); }
+            .eg-scope-row { margin-top:12px; padding-top:12px; border-top:1px solid var(--border-default,#283152); }
             .eg-scope-row code { font:600 11.5px ui-monospace,'JetBrains Mono',Menlo,monospace;
-                color:var(--text-primary,#e6edf3); }
+                color:var(--text-primary,#eef1fb); }
             .eg-scope-nums { margin-left:10px; font:600 11px ui-monospace,'JetBrains Mono',Menlo,monospace;
                 color:var(--text-muted,#7d8590); font-variant-numeric:tabular-nums; }
             .eg-scope-reason { margin-top:5px; font-size:12px; line-height:1.6; color:var(--text-secondary,#b1bac4); }
             /* The alert-only note must not read as one more reason. */
             .eg-scope .eg-note { margin-top:14px; padding-top:12px;
-                border-top:1px solid var(--border-default,#30363d); }
+                border-top:1px solid var(--border-default,#283152); }
 
             .eg-health-line { margin:0 !important; }
             .eg-hostlist { display:flex; flex-wrap:wrap; gap:6px; }
             .eg-hostchip { font:600 11.5px ui-monospace,'JetBrains Mono',Menlo,monospace; padding:3px 9px;
                 border-radius:6px; background:var(--bg-tertiary,#21262d); color:var(--text-secondary,#b1bac4);
-                border:1px solid var(--border-default,#30363d); }
+                border:1px solid var(--border-default,#283152); }
         `;
         document.head.appendChild(st);
     },

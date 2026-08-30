@@ -53,7 +53,7 @@ const ReplayPage = {
         agentSelect.className = 'filter-select';
         agentSelect.id = 'replay-agent-filter';
         // Cap the rendered width so a long agent ID like
-        // 'agent:main:explicit:sv-realtest-direct' doesn't blow the
+        // 'agent:main:explicit:ag-realtest-direct' doesn't blow the
         // dropdown out to several hundred pixels. Full value still
         // available via the option's title attribute on hover.
         agentSelect.style.cssText = 'max-width:220px;min-width:160px;';

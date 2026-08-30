@@ -96,7 +96,7 @@ const SkillScannerPage = {
             summaryToggle.addEventListener('mouseenter', () => { summaryToggle.style.borderColor = 'var(--accent-primary)'; });
             summaryToggle.addEventListener('mouseleave', () => { summaryToggle.style.borderColor = 'var(--border-default)'; });
             const countBubble = document.createElement('span');
-            countBubble.style.cssText = 'min-width: 28px; height: 28px; border-radius: var(--radius-full); background: rgba(94,173,184,0.15); color: var(--accent-primary); border: 1px solid rgba(94,173,184,0.3); font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;';
+            countBubble.style.cssText = 'min-width: 28px; height: 28px; border-radius: var(--radius-full); background: rgba(124,108,255,0.15); color: var(--accent-primary); border: 1px solid rgba(124,108,255,0.3); font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;';
             countBubble.textContent = discovered.length;
             summaryToggle.appendChild(countBubble);
             const summaryText = document.createElement('span');
@@ -190,7 +190,7 @@ const SkillScannerPage = {
 
             discovered.forEach(skill => {
                 const card = document.createElement('div');
-                card.style.cssText = 'display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; border: 1.5px solid var(--accent-primary); background: rgba(94,173,184,0.06); cursor: pointer; transition: all 0.15s; user-select: none;';
+                card.style.cssText = 'display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; border: 1.5px solid var(--accent-primary); background: rgba(124,108,255,0.06); cursor: pointer; transition: all 0.15s; user-select: none;';
                 selectedPaths.add(skill.path);
 
                 const check = document.createElement('span');
@@ -225,7 +225,7 @@ const SkillScannerPage = {
                 const setSelected = (sel) => {
                     if (sel) {
                         card.style.borderColor = 'var(--accent-primary)';
-                        card.style.background = 'rgba(94,173,184,0.06)';
+                        card.style.background = 'rgba(124,108,255,0.06)';
                         check.style.background = 'var(--accent-primary)';
                         check.style.borderColor = 'var(--accent-primary)';
                         check.textContent = '\u2713';
@@ -648,15 +648,15 @@ const SkillScannerPage = {
         }
 
         // Flash cyan highlight on key sections — once per session, staggered
-        if (!sessionStorage.getItem('sv-scanner-flashed')) {
-            sessionStorage.setItem('sv-scanner-flashed', '1');
-            if (!document.getElementById('sv-flash-style')) {
+        if (!sessionStorage.getItem('ag-scanner-flashed')) {
+            sessionStorage.setItem('ag-scanner-flashed', '1');
+            if (!document.getElementById('ag-flash-style')) {
                 const flashStyle = document.createElement('style');
-                flashStyle.id = 'sv-flash-style';
-                flashStyle.textContent = '@keyframes sv-cyan-flash { 0%, 100% { box-shadow: none; } 50% { box-shadow: 0 0 0 2px rgba(94,173,184,0.5), 0 0 12px rgba(94,173,184,0.2); } }';
+                flashStyle.id = 'ag-flash-style';
+                flashStyle.textContent = '@keyframes ag-cyan-flash { 0%, 100% { box-shadow: none; } 50% { box-shadow: 0 0 0 2px rgba(124,108,255,0.5), 0 0 12px rgba(124,108,255,0.2); } }';
                 document.head.appendChild(flashStyle);
             }
-            const flashAnim = 'sv-cyan-flash 0.8s ease-in-out 3';
+            const flashAnim = 'ag-cyan-flash 0.8s ease-in-out 3';
             // Skills Detected first (after page settles)
             if (summaryToggle) {
                 setTimeout(() => { summaryToggle.style.animation = flashAnim; }, 400);
@@ -672,7 +672,7 @@ const SkillScannerPage = {
         const POLICY_COLOR = { allow: '#10b981', warn: '#f59e0b', block: '#ef4444' };
 
         const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'margin-top: 16px; padding: 16px; border-radius: 10px; border: 1px solid rgba(94, 173, 184, 0.25); background: rgba(94, 173, 184, 0.04); border-left: 3px solid var(--accent-primary);';
+        wrapper.style.cssText = 'margin-top: 16px; padding: 16px; border-radius: 10px; border: 1px solid rgba(124, 108, 255, 0.25); background: rgba(124, 108, 255, 0.04); border-left: 3px solid var(--accent-primary);';
 
         // Header
         const header = document.createElement('div');
@@ -1043,7 +1043,7 @@ const SkillScannerPage = {
         header.appendChild(nameEl);
 
         const typeBadge = document.createElement('span');
-        typeBadge.style.cssText = 'font-size: 10px; padding: 2px 8px; border-radius: 4px; background: rgba(94,173,184,0.1); color: var(--accent-primary); font-weight: 600;';
+        typeBadge.style.cssText = 'font-size: 10px; padding: 2px 8px; border-radius: 4px; background: rgba(124,108,255,0.1); color: var(--accent-primary); font-weight: 600;';
         typeBadge.textContent = (data.url_type || 'url').toUpperCase();
         header.appendChild(typeBadge);
 
@@ -1380,7 +1380,7 @@ const SkillScannerPage = {
                         const isCli = v === 'cli';
                         b.style.cssText = 'font-size: 10px; font-weight: 600; border-radius: 3px; padding: 1px 6px; ' +
                             (isCli ? 'background: rgba(99,102,241,0.15); color: #818cf8;'
-                                   : 'background: rgba(94,173,184,0.1); color: var(--accent-primary);');
+                                   : 'background: rgba(124,108,255,0.1); color: var(--accent-primary);');
                         b.textContent = v.toUpperCase();
                         return b;
                     }},
@@ -1410,7 +1410,7 @@ const SkillScannerPage = {
             const totalPages = Math.ceil(total / PAGE_SIZE);
             if (totalPages > 1) {
                 const pager = document.createElement('div');
-                pager.className = 'sv-table-pager';
+                pager.className = 'ag-table-pager';
 
                 const prevBtn = document.createElement('button');
                 prevBtn.className = 'btn btn-sm';
@@ -1421,7 +1421,7 @@ const SkillScannerPage = {
                 pager.appendChild(prevBtn);
 
                 const pageInfo = document.createElement('span');
-                pageInfo.className = 'sv-table-page-info';
+                pageInfo.className = 'ag-table-page-info';
                 pageInfo.textContent = `Page ${currentPage + 1} of ${totalPages}`;
                 pager.appendChild(pageInfo);
 
@@ -1486,7 +1486,7 @@ const SkillScannerPage = {
         const isCli = rec.invocation_source === 'cli';
         srcBadge.style.cssText = 'font-size: 10px; font-weight: 600; border-radius: 3px; padding: 1px 6px; ' +
             (isCli ? 'background: rgba(99,102,241,0.15); color: #818cf8;'
-                   : 'background: rgba(94,173,184,0.1); color: var(--accent-primary);');
+                   : 'background: rgba(124,108,255,0.1); color: var(--accent-primary);');
         srcBadge.textContent = rec.invocation_source.toUpperCase();
         tdSrc.appendChild(srcBadge);
         tr.appendChild(tdSrc);
@@ -2136,7 +2136,7 @@ const SkillScannerPage = {
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.style.borderColor = 'var(--accent-primary)';
-            dropZone.style.background = 'rgba(94,173,184,0.04)';
+            dropZone.style.background = 'rgba(124,108,255,0.04)';
         });
         dropZone.addEventListener('dragleave', () => {
             dropZone.style.borderColor = 'var(--border-default)';
@@ -2336,7 +2336,7 @@ const SkillScannerPage = {
         // AI Review — compact card below banner (check LLM state)
         if (!data.ai_reviewed) {
             const aiBox = document.createElement('div');
-            aiBox.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; border: 1px dashed rgba(94, 173, 184, 0.4); background: rgba(94, 173, 184, 0.05);';
+            aiBox.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; border: 1px dashed rgba(124, 108, 255, 0.4); background: rgba(124, 108, 255, 0.05);';
 
             const aiLeft = document.createElement('div');
             aiLeft.style.cssText = 'flex: 1; min-width: 0;';
@@ -2446,11 +2446,11 @@ const SkillScannerPage = {
             const resHeader = document.createElement('div');
             resHeader.style.cssText = 'display: flex; align-items: center; gap: 6px; margin-bottom: 10px;';
             const resIcon = document.createElement('span');
-            resIcon.style.cssText = 'font-size: 14px; color: var(--accent-primary, #5eadb8);';
+            resIcon.style.cssText = 'font-size: 14px; color: var(--accent-primary, #7c6cff);';
             resIcon.textContent = '\u26A1';
             resHeader.appendChild(resIcon);
             const resTitle = document.createElement('span');
-            resTitle.style.cssText = 'font-size: 13px; font-weight: 700; color: var(--accent-primary, #5eadb8); text-transform: uppercase; letter-spacing: 0.5px;';
+            resTitle.style.cssText = 'font-size: 13px; font-weight: 700; color: var(--accent-primary, #7c6cff); text-transform: uppercase; letter-spacing: 0.5px;';
             resTitle.textContent = 'Resolution Options';
             resHeader.appendChild(resTitle);
             resBox.appendChild(resHeader);
@@ -2718,7 +2718,7 @@ const SkillScannerPage = {
         // AI Analysis card (if reviewed)
         if (aiReview && aiReview.reviewed) {
             const aiCard = document.createElement('div');
-            aiCard.style.cssText = 'padding: 12px 16px; border-radius: 8px; background: rgba(94, 173, 184, 0.06); border: 1px solid rgba(94, 173, 184, 0.2);';
+            aiCard.style.cssText = 'padding: 12px 16px; border-radius: 8px; background: rgba(124, 108, 255, 0.06); border: 1px solid rgba(124, 108, 255, 0.2);';
 
             const aiHeader = document.createElement('div');
             aiHeader.style.cssText = 'display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;';
@@ -3088,7 +3088,7 @@ const SkillScannerPage = {
     _buildResolutionOption(icon, iconColor, title, subtitle, onClick) {
         const opt = document.createElement('div');
         opt.style.cssText = 'display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: background 0.15s;';
-        opt.addEventListener('mouseenter', () => { opt.style.background = 'rgba(94, 173, 184, 0.08)'; });
+        opt.addEventListener('mouseenter', () => { opt.style.background = 'rgba(124, 108, 255, 0.08)'; });
         opt.addEventListener('mouseleave', () => { opt.style.background = 'transparent'; });
 
         const iconEl = document.createElement('span');

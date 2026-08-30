@@ -270,7 +270,7 @@ const SettingsPage = {
         // MITRE). No third-party datasets or pretrained weights — that's an
         // originality / no-data-leakage selling point, not a limitation.
         const provenance = document.createElement('div');
-        provenance.style.cssText = 'margin-top: 14px; padding: 12px 14px; border-radius: 8px; background: rgba(94,173,184,0.08); border: 1px solid rgba(94,173,184,0.22);';
+        provenance.style.cssText = 'margin-top: 14px; padding: 12px 14px; border-radius: 8px; background: rgba(124,108,255,0.08); border: 1px solid rgba(124,108,255,0.22);';
         const provLabel = document.createElement('div');
         provLabel.style.cssText = 'font-size: 11px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--accent-primary); margin-bottom: 5px;';
         provLabel.textContent = 'How Guardian is trained';
@@ -1142,7 +1142,7 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
         // turned off). Users kept asking whether scans still run with
         // Cloud Connect off; this panel answers that inline.
         const primer = document.createElement('div');
-        primer.style.cssText = 'margin-bottom:16px;padding:14px 16px;background:var(--bg-secondary,#f5f7fa);border-left:3px solid var(--accent-primary,#5eadb8);border-radius:6px;font-size:13px;line-height:1.55;';
+        primer.style.cssText = 'margin-bottom:16px;padding:14px 16px;background:var(--bg-secondary,#f5f7fa);border-left:3px solid var(--accent-primary,#7c6cff);border-radius:6px;font-size:13px;line-height:1.55;';
 
         const primerHeading = document.createElement('div');
         primerHeading.style.cssText = 'font-weight:600;margin-bottom:6px;';
@@ -1162,7 +1162,7 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
         // Cloud Connect ON indicator (simple version - details in header tooltip)
         if (this.cloudSettings.credentials_configured && this.cloudSettings.cloud_mode_enabled) {
             const indicator = document.createElement('div');
-            indicator.style.cssText = 'margin-bottom: 16px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-default); border-left: 3px solid var(--accent-primary, #5eadb8); border-radius: 8px; display: flex; align-items: center; gap: 10px;';
+            indicator.style.cssText = 'margin-bottom: 16px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-default); border-left: 3px solid var(--accent-primary, #7c6cff); border-radius: 8px; display: flex; align-items: center; gap: 10px;';
 
             const icon = document.createElement('span');
             icon.textContent = '☁️';
@@ -1635,7 +1635,7 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
             { value: '30000', label: '30 seconds' },
         ];
 
-        const current = localStorage.getItem('sv-poll-interval') || '5000';
+        const current = localStorage.getItem('ag-poll-interval') || '5000';
         options.forEach(opt => {
             const option = document.createElement('option');
             option.value = opt.value;
@@ -1645,7 +1645,7 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
         });
 
         select.addEventListener('change', (e) => {
-            localStorage.setItem('sv-poll-interval', e.target.value);
+            localStorage.setItem('ag-poll-interval', e.target.value);
             Toast.success('Polling interval updated: takes effect on next page visit');
         });
 
@@ -1788,9 +1788,9 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
         const addBtnForPulse = document.getElementById('siem-inline-add-btn');
         if (addBtnForPulse) {
             if (items.length === 0) {
-                addBtnForPulse.classList.add('sv-siem-add-pulse');
+                addBtnForPulse.classList.add('ag-siem-add-pulse');
             } else {
-                addBtnForPulse.classList.remove('sv-siem-add-pulse');
+                addBtnForPulse.classList.remove('ag-siem-add-pulse');
             }
         }
 
@@ -2040,7 +2040,7 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
     // outbox attempts + a "Retry now" action that zeros the breaker.
     async _openSiemFailureDrawer(row) {
         // Close any prior instance so rapid clicks don't stack drawers.
-        const prior = document.getElementById('sv-siem-failure-drawer');
+        const prior = document.getElementById('ag-siem-failure-drawer');
         if (prior) prior.remove();
 
         let health;
@@ -2052,18 +2052,18 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
         }
 
         const overlay = document.createElement('div');
-        overlay.id = 'sv-siem-failure-drawer';
+        overlay.id = 'ag-siem-failure-drawer';
         overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1100;display:flex;justify-content:flex-end;';
         overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 
         const panel = document.createElement('div');
-        panel.style.cssText = 'width:min(480px,95vw);max-width:480px;height:100%;background:var(--bg-card);border-left:1px solid var(--border-light);box-shadow:-6px 0 24px rgba(0,0,0,0.35);display:flex;flex-direction:column;overflow:hidden;animation:sv-drawer-in 0.18s ease-out;';
+        panel.style.cssText = 'width:min(480px,95vw);max-width:480px;height:100%;background:var(--bg-card);border-left:1px solid var(--border-light);box-shadow:-6px 0 24px rgba(0,0,0,0.35);display:flex;flex-direction:column;overflow:hidden;animation:ag-drawer-in 0.18s ease-out;';
 
         // One-time keyframe + scrollbar polish.
-        if (!document.getElementById('sv-siem-drawer-style')) {
+        if (!document.getElementById('ag-siem-drawer-style')) {
             const s = document.createElement('style');
-            s.id = 'sv-siem-drawer-style';
-            s.textContent = '@keyframes sv-drawer-in{from{transform:translateX(30px);opacity:0;}to{transform:translateX(0);opacity:1;}}';
+            s.id = 'ag-siem-drawer-style';
+            s.textContent = '@keyframes ag-drawer-in{from{transform:translateX(30px);opacity:0;}to{transform:translateX(0);opacity:1;}}';
             document.head.appendChild(s);
         }
 
@@ -2409,9 +2409,9 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
         secretHint.innerHTML = `
             <strong style="color:var(--text-secondary);">Where is this stored?</strong>
             In a separate file with <code>0600</code> permissions (owner-only) inside your app data directory: <strong>never in SQLite</strong>. The database row carries only an opaque reference. Deleted when you delete this destination.
-            <a href="#" data-sv-goto-guide="section-siem-forwarder" style="color:var(--accent-primary);text-decoration:underline;">Details →</a>
+            <a href="#" data-ag-goto-guide="section-siem-forwarder" style="color:var(--accent-primary);text-decoration:underline;">Details →</a>
         `;
-        secretHint.querySelector('[data-sv-goto-guide]')?.addEventListener('click', (e) => {
+        secretHint.querySelector('[data-ag-goto-guide]')?.addEventListener('click', (e) => {
             e.preventDefault();
             if (window.Sidebar) {
                 Sidebar._pendingScroll = 'section-siem-forwarder';

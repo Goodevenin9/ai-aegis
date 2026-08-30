@@ -12,7 +12,7 @@
  * CSS variables the rest of the app uses.
  */
 const Tour = {
-    DONE_KEY: 'sv-tour-completed',
+    DONE_KEY: 'ag-tour-completed',
     _i: 0,
     _open: false,
 
@@ -101,52 +101,52 @@ const Tour = {
     },
 
     _injectStyle() {
-        if (document.getElementById('sv-tour-style')) return;
+        if (document.getElementById('ag-tour-style')) return;
         const st = document.createElement('style');
-        st.id = 'sv-tour-style';
+        st.id = 'ag-tour-style';
         st.textContent = `
-            .sv-tour-backdrop { position:fixed; inset:0; z-index:9998; background:transparent; cursor:default; }
-            .sv-tour-ring { position:fixed; z-index:9999; border-radius:11px; pointer-events:none;
-                box-shadow:0 0 0 3px var(--accent-primary,#5eadb8), 0 0 0 9999px rgba(3,7,13,.66), 0 0 22px rgba(94,173,184,.5);
+            .ag-tour-backdrop { position:fixed; inset:0; z-index:9998; background:transparent; cursor:default; }
+            .ag-tour-ring { position:fixed; z-index:9999; border-radius:11px; pointer-events:none;
+                box-shadow:0 0 0 3px var(--accent-primary,#7c6cff), 0 0 0 9999px rgba(3,7,13,.66), 0 0 22px rgba(124,108,255,.5);
                 transition:top .32s cubic-bezier(.4,0,.2,1), left .32s cubic-bezier(.4,0,.2,1),
                     width .32s cubic-bezier(.4,0,.2,1), height .32s cubic-bezier(.4,0,.2,1); }
-            .sv-tour-card { position:fixed; z-index:10000; width:340px; max-width:calc(100vw - 32px);
-                background:var(--bg-card,#161b22); color:var(--text-primary,#e6edf3);
-                border:1px solid var(--border-default,#30363d); border-radius:14px;
+            .ag-tour-card { position:fixed; z-index:10000; width:340px; max-width:calc(100vw - 32px);
+                background:var(--bg-card,#131a30); color:var(--text-primary,#eef1fb);
+                border:1px solid var(--border-default,#283152); border-radius:14px;
                 box-shadow:0 18px 50px rgba(0,0,0,.5); padding:18px 18px 14px;
                 font-family:'Avenir Next',Avenir,system-ui,sans-serif;
                 opacity:0; transform:translateY(6px); transition:opacity .22s ease, transform .22s ease; }
-            .sv-tour-card.in { opacity:1; transform:translateY(0); }
+            .ag-tour-card.in { opacity:1; transform:translateY(0); }
             /* left-pointing caret toward the spotlight */
-            .sv-tour-card::before { content:''; position:absolute; left:-8px; top:26px; width:14px; height:14px;
-                background:var(--bg-card,#161b22); border-left:1px solid var(--border-default,#30363d);
-                border-bottom:1px solid var(--border-default,#30363d); transform:rotate(45deg); }
-            .sv-tour-card.caret-right::before { left:auto; right:-8px; transform:rotate(225deg); }
-            .sv-tour-card.caret-none::before { display:none; }
-            .sv-tour-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-            .sv-tour-badge { font-size:10px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
-                color:var(--accent-primary,#5eadb8); background:color-mix(in srgb, var(--accent-primary,#5eadb8) 14%, transparent);
-                border:1px solid color-mix(in srgb, var(--accent-primary,#5eadb8) 34%, transparent);
+            .ag-tour-card::before { content:''; position:absolute; left:-8px; top:26px; width:14px; height:14px;
+                background:var(--bg-card,#131a30); border-left:1px solid var(--border-default,#283152);
+                border-bottom:1px solid var(--border-default,#283152); transform:rotate(45deg); }
+            .ag-tour-card.caret-right::before { left:auto; right:-8px; transform:rotate(225deg); }
+            .ag-tour-card.caret-none::before { display:none; }
+            .ag-tour-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+            .ag-tour-badge { font-size:10px; font-weight:800; letter-spacing:.6px; text-transform:uppercase;
+                color:var(--accent-primary,#7c6cff); background:color-mix(in srgb, var(--accent-primary,#7c6cff) 14%, transparent);
+                border:1px solid color-mix(in srgb, var(--accent-primary,#7c6cff) 34%, transparent);
                 padding:3px 9px; border-radius:999px; }
-            .sv-tour-x { background:none; border:none; color:var(--text-muted,#7d8590); font-size:18px; line-height:1;
+            .ag-tour-x { background:none; border:none; color:var(--text-muted,#7d8590); font-size:18px; line-height:1;
                 cursor:pointer; padding:2px 6px; border-radius:6px; transition:color .12s, background .12s; }
-            .sv-tour-x:hover { color:var(--text-primary,#e6edf3); background:var(--bg-hover,#21262d); }
-            .sv-tour-title { font-size:16px; font-weight:800; margin:0 0 7px; color:var(--text-primary,#e6edf3); }
-            .sv-tour-body { font-size:13px; line-height:1.62; color:var(--text-secondary,#b1bac4); margin:0 0 15px; }
-            .sv-tour-body b { color:var(--text-primary,#e6edf3); font-weight:700; }
-            .sv-tour-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; }
-            .sv-tour-dots { display:flex; gap:5px; }
-            .sv-tour-dots i { width:6px; height:6px; border-radius:50%; background:var(--border-default,#30363d); transition:background .2s, transform .2s; }
-            .sv-tour-dots i.on { background:var(--accent-primary,#5eadb8); transform:scale(1.35); }
-            .sv-tour-btns { display:flex; gap:8px; }
-            .sv-tour-btn { font:700 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; padding:7px 14px; border-radius:8px;
-                cursor:pointer; border:1px solid var(--border-default,#30363d); background:transparent;
+            .ag-tour-x:hover { color:var(--text-primary,#eef1fb); background:var(--bg-hover,#21262d); }
+            .ag-tour-title { font-size:16px; font-weight:800; margin:0 0 7px; color:var(--text-primary,#eef1fb); }
+            .ag-tour-body { font-size:13px; line-height:1.62; color:var(--text-secondary,#b1bac4); margin:0 0 15px; }
+            .ag-tour-body b { color:var(--text-primary,#eef1fb); font-weight:700; }
+            .ag-tour-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+            .ag-tour-dots { display:flex; gap:5px; }
+            .ag-tour-dots i { width:6px; height:6px; border-radius:50%; background:var(--border-default,#283152); transition:background .2s, transform .2s; }
+            .ag-tour-dots i.on { background:var(--accent-primary,#7c6cff); transform:scale(1.35); }
+            .ag-tour-btns { display:flex; gap:8px; }
+            .ag-tour-btn { font:700 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; padding:7px 14px; border-radius:8px;
+                cursor:pointer; border:1px solid var(--border-default,#283152); background:transparent;
                 color:var(--text-secondary,#b1bac4); transition:background .12s, color .12s, border-color .12s; }
-            .sv-tour-btn:hover { background:var(--bg-hover,#21262d); color:var(--text-primary,#e6edf3); }
-            .sv-tour-btn.primary { background:var(--accent-primary,#5eadb8); border-color:var(--accent-primary,#5eadb8); color:#fff; }
-            .sv-tour-btn.primary:hover { filter:brightness(1.06); color:#fff; }
-            .sv-tour-skip { font-size:11.5px; color:var(--text-muted,#7d8590); cursor:pointer; background:none; border:none; padding:4px; }
-            .sv-tour-skip:hover { color:var(--text-secondary,#b1bac4); text-decoration:underline; }
+            .ag-tour-btn:hover { background:var(--bg-hover,#21262d); color:var(--text-primary,#eef1fb); }
+            .ag-tour-btn.primary { background:var(--accent-primary,#7c6cff); border-color:var(--accent-primary,#7c6cff); color:#fff; }
+            .ag-tour-btn.primary:hover { filter:brightness(1.06); color:#fff; }
+            .ag-tour-skip { font-size:11.5px; color:var(--text-muted,#7d8590); cursor:pointer; background:none; border:none; padding:4px; }
+            .ag-tour-skip:hover { color:var(--text-secondary,#b1bac4); text-decoration:underline; }
         `;
         document.head.appendChild(st);
     },
@@ -157,16 +157,16 @@ const Tour = {
         this._i = fromStep || 0;
 
         this._backdrop = document.createElement('div');
-        this._backdrop.className = 'sv-tour-backdrop';
+        this._backdrop.className = 'ag-tour-backdrop';
         // Block accidental app interaction; clicking the dim area does nothing
         // (Skip / Esc to leave) so a stray click can't silently end the tour.
         this._backdrop.addEventListener('click', (e) => e.stopPropagation());
 
         this._ring = document.createElement('div');
-        this._ring.className = 'sv-tour-ring';
+        this._ring.className = 'ag-tour-ring';
 
         this._card = document.createElement('div');
-        this._card.className = 'sv-tour-card';
+        this._card.className = 'ag-tour-card';
         this._card.setAttribute('role', 'dialog');
         this._card.setAttribute('aria-modal', 'true');
         this._card.setAttribute('aria-label', 'Product tour');
@@ -270,14 +270,14 @@ const Tour = {
         this._card.textContent = '';
 
         const top = document.createElement('div');
-        top.className = 'sv-tour-top';
+        top.className = 'ag-tour-top';
         const badge = document.createElement('span');
-        badge.className = 'sv-tour-badge';
+        badge.className = 'ag-tour-badge';
         // badge / badgeSvg are authored static strings (no user input).
         badge.innerHTML = (step.badgeSvg || '') + (step.badge || `Step ${this._i + 1}`);
         top.appendChild(badge);
         const x = document.createElement('button');
-        x.className = 'sv-tour-x';
+        x.className = 'ag-tour-x';
         x.setAttribute('aria-label', 'Close tour');
         x.textContent = '×';
         x.addEventListener('click', () => this.end(false));
@@ -285,20 +285,20 @@ const Tour = {
         this._card.appendChild(top);
 
         const h = document.createElement('div');
-        h.className = 'sv-tour-title';
+        h.className = 'ag-tour-title';
         h.textContent = `${this._i + 1}. ${step.title}`;
         this._card.appendChild(h);
 
         const body = document.createElement('div');
-        body.className = 'sv-tour-body';
+        body.className = 'ag-tour-body';
         body.innerHTML = step.body;  // static, authored copy — no user input
         this._card.appendChild(body);
 
         const foot = document.createElement('div');
-        foot.className = 'sv-tour-foot';
+        foot.className = 'ag-tour-foot';
 
         const dots = document.createElement('div');
-        dots.className = 'sv-tour-dots';
+        dots.className = 'ag-tour-dots';
         for (let k = 0; k < total; k++) {
             const d = document.createElement('i');
             if (k === this._i) d.className = 'on';
@@ -307,16 +307,16 @@ const Tour = {
         foot.appendChild(dots);
 
         const btns = document.createElement('div');
-        btns.className = 'sv-tour-btns';
+        btns.className = 'ag-tour-btns';
         if (this._i > 0) {
             const back = document.createElement('button');
-            back.className = 'sv-tour-btn';
+            back.className = 'ag-tour-btn';
             back.textContent = 'Back';
             back.addEventListener('click', () => this.prev());
             btns.appendChild(back);
         }
         const next = document.createElement('button');
-        next.className = 'sv-tour-btn primary';
+        next.className = 'ag-tour-btn primary';
         next.textContent = this._i === total - 1 ? 'Finish' : 'Next';
         next.addEventListener('click', () => this.next());
         btns.appendChild(next);
@@ -328,7 +328,7 @@ const Tour = {
             const skipRow = document.createElement('div');
             skipRow.style.cssText = 'text-align:center; margin-top:9px;';
             const skip = document.createElement('button');
-            skip.className = 'sv-tour-skip';
+            skip.className = 'ag-tour-skip';
             skip.textContent = 'Skip tour';
             skip.addEventListener('click', () => this.end(false));
             skipRow.appendChild(skip);

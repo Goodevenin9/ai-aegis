@@ -447,7 +447,7 @@ const Sidebar = {
                 iconDot.title = 'Core feature';
                 iconDot.dataset.coreDot = item.id;
                 // Hide permanently if already visited
-                if (localStorage.getItem('sv-visited-core-' + item.id)) iconDot.style.display = 'none';
+                if (localStorage.getItem('ag-visited-core-' + item.id)) iconDot.style.display = 'none';
                 iconWrap.appendChild(iconDot);
                 navItem.appendChild(iconWrap);
             } else {
@@ -476,7 +476,7 @@ const Sidebar = {
             if (CLOUD_TIER.has(item.id)) {
                 const tier = document.createElement('span');
                 tier.textContent = isCloudLocked ? '🔒 Cloud' : 'Cloud';
-                tier.style.cssText = 'flex-shrink: 0; margin-left: 6px; padding: 1px 6px; font-size: 9px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; border-radius: 999px; background: rgba(6, 182, 212, 0.14); color: var(--cyan-600, #0891b2); border: 1px solid rgba(6, 182, 212, 0.32); line-height: 1.4;';
+                tier.style.cssText = 'flex-shrink: 0; margin-left: 6px; padding: 1px 6px; font-size: 9px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; border-radius: 999px; background: rgba(6, 182, 212, 0.14); color: var(--cyan-600, #7c6cff); border: 1px solid rgba(6, 182, 212, 0.32); line-height: 1.4;';
                 navItem.appendChild(tier);
             }
 
@@ -490,16 +490,16 @@ const Sidebar = {
             const isPersist = persistNewItems.includes(item.id);
             const isSession = sessionNewItems.includes(item.id);
             const shouldShow = isPersist
-                ? !localStorage.getItem('sv-new-dismissed-' + item.id)
-                : isSession && !sessionStorage.getItem('sv-new-seen-' + item.id);
+                ? !localStorage.getItem('ag-new-dismissed-' + item.id)
+                : isSession && !sessionStorage.getItem('ag-new-seen-' + item.id);
             if (shouldShow) {
                 const newBadge = document.createElement('span');
                 newBadge.style.cssText = 'display: inline-flex; align-items: center; gap: 2px; font-size: 8px; font-weight: 700; padding: 1px 3px 1px 4px; border-radius: 3px; background: rgba(180,83,9,0.2); color: #d97706; letter-spacing: 0.3px; line-height: 1; flex-shrink: 0;';
                 const newText = document.createTextNode('NEW');
                 newBadge.appendChild(newText);
                 const dismissBadge = () => {
-                    if (isPersist) localStorage.setItem('sv-new-dismissed-' + item.id, '1');
-                    else sessionStorage.setItem('sv-new-seen-' + item.id, '1');
+                    if (isPersist) localStorage.setItem('ag-new-dismissed-' + item.id, '1');
+                    else sessionStorage.setItem('ag-new-seen-' + item.id, '1');
                     newBadge.remove();
                 };
                 if (isPersist) {
@@ -650,12 +650,12 @@ const Sidebar = {
                         subNavItem.appendChild(jitBadge);
                     }
 
-                    if (subNewItems.includes(subItem.id) && !sessionStorage.getItem('sv-new-seen-' + subItem.id)) {
+                    if (subNewItems.includes(subItem.id) && !sessionStorage.getItem('ag-new-seen-' + subItem.id)) {
                         const newBadge = document.createElement('span');
                         newBadge.style.cssText = 'display: inline-flex; align-items: center; font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 3px; background: rgba(180,83,9,0.2); color: #d97706; letter-spacing: 0.3px; line-height: 1; flex-shrink: 0;';
                         newBadge.textContent = 'NEW';
                         const dismiss = () => {
-                            sessionStorage.setItem('sv-new-seen-' + subItem.id, '1');
+                            sessionStorage.setItem('ag-new-seen-' + subItem.id, '1');
                             newBadge.remove();
                         };
                         subNavItem.appendChild(newBadge);
@@ -808,7 +808,7 @@ const Sidebar = {
         statusStack.style.cssText = 'padding-bottom: 10px;';
         bottomSection.appendChild(statusStack);
 
-        const STATUS_COLLAPSE_KEY = 'sv-status-stack-collapsed';
+        const STATUS_COLLAPSE_KEY = 'ag-status-stack-collapsed';
         const applyStatusCollapsed = (collapsed) => {
             statusStack.style.display = collapsed ? 'none' : 'block';
             statusChevron.textContent = collapsed ? '\u25b8' : '\u25be';
@@ -841,8 +841,8 @@ const Sidebar = {
         const proxyBanner = document.createElement('div');
         proxyBanner.id = 'integration-proxy-banner';
         proxyBanner.className = 'proxy-banner-pulse';
-        proxyBanner.style.cssText = 'display: none; margin: 8px 12px 0; padding: 4px 10px; border-radius: 6px; cursor: pointer; background: transparent; border: 1px solid rgba(94,173,184,0.35); align-items: center; gap: 6px; transition: background 0.15s;';
-        proxyBanner.addEventListener('mouseenter', () => { proxyBanner.style.background = 'rgba(94,173,184,0.06)'; });
+        proxyBanner.style.cssText = 'display: none; margin: 8px 12px 0; padding: 4px 10px; border-radius: 6px; cursor: pointer; background: transparent; border: 1px solid rgba(124,108,255,0.35); align-items: center; gap: 6px; transition: background 0.15s;';
+        proxyBanner.addEventListener('mouseenter', () => { proxyBanner.style.background = 'rgba(124,108,255,0.06)'; });
         proxyBanner.addEventListener('mouseleave', () => { proxyBanner.style.background = 'transparent'; });
 
         const bannerDot = document.createElement('span');
@@ -911,12 +911,12 @@ const Sidebar = {
         // ~/.codex) so it doesn't shout when nothing is in flight.
         //
         // Neutral dot (runtimes are labels, not statuses) — see the Codex
-        // plugin manifest's brandColor (cyan #5EADB8): cyan collides
+        // plugin manifest's brandColor (indigo #7c6cff): indigo collides
         // with this same sidebar's integration-proxy banner border
-        // (also #5EADB8 / rgba(94,173,184,*)). Two cyan single-line
+        // (also #7c6cff / rgba(124,108,255,*)). Two indigo single-line
         // banners stacked together are visually indistinguishable.
         // Coral picks a distinct fourth hue so the bottom-section now
-        // reads: CC purple · Codex coral · proxy cyan · SIEM green.
+        // reads: CC purple · Codex coral · proxy indigo · SIEM green.
         // Padding + margin match the CC banner exactly (`8px 12px 0`)
         // so the four banners stack as equal-rhythm rows; hover alpha
         // matches CC's `0.06`.
@@ -1096,12 +1096,12 @@ const Sidebar = {
     // indistinguishable black dots at 18px, and the widest tonal span each
     // theme actually contains is what separates them by eye.
     THEMES: [
-        { id: 'dark',  label: 'Dark',  page: '#090b0f', edge: '#1a2029' },
-        { id: 'black', label: 'Black', page: '#000000', edge: '#16181c' },
-        { id: 'slate', label: 'Slate', page: '#151a23', edge: '#2a3340' },
-        { id: 'azure', label: 'Azure', page: '#071019', edge: '#1b3149' },
-        { id: 'ember', label: 'Ember', page: '#100c09', edge: '#2d2019' },
-        { id: 'light', label: 'Light', page: '#ffffff', edge: '#dfe5ec' },
+        { id: 'dark',  label: 'Space',  page: '#0b0f1e', edge: '#1e2740' },
+        { id: 'black', label: 'Void',   page: '#04060e', edge: '#141a30' },
+        { id: 'slate', label: 'Nebula', page: '#161c2e', edge: '#2a3454' },
+        { id: 'azure', label: 'Indigo', page: '#0a0f28', edge: '#202e5e' },
+        { id: 'ember', label: 'Pulsar', page: '#120b1e', edge: '#2c2050' },
+        { id: 'light', label: 'Light',  page: '#ffffff', edge: '#e5e2f0' },
     ],
 
     currentTheme() {
@@ -1163,25 +1163,25 @@ const Sidebar = {
         row.appendChild(trigger);
 
         const menu = document.createElement('div');
-        menu.className = 'sv-theme-menu';
+        menu.className = 'ag-theme-menu';
         menu.setAttribute('role', 'menu');
         menu.setAttribute('aria-label', 'Colour theme');
 
         this.THEMES.forEach(t => {
             const opt = document.createElement('button');
             opt.type = 'button';
-            opt.className = 'sv-theme-opt' + (t.id === active ? ' on' : '');
+            opt.className = 'ag-theme-opt' + (t.id === active ? ' on' : '');
             opt.setAttribute('role', 'menuitemradio');
             opt.setAttribute('aria-checked', t.id === active ? 'true' : 'false');
             opt.dataset.theme = t.id;
 
             const sw = document.createElement('span');
-            sw.className = 'sv-swatch';
+            sw.className = 'ag-swatch';
             sw.style.background = this._swatchFill(t);
             opt.appendChild(sw);
 
             const nm = document.createElement('span');
-            nm.className = 'sv-theme-opt-name';
+            nm.className = 'ag-theme-opt-name';
             nm.textContent = t.label;
             opt.appendChild(nm);
 
@@ -1409,7 +1409,7 @@ const Sidebar = {
         crewai: { icon: '👥', label: 'CREWAI PROXY', color: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', page: 'proxy-crewai' },
         hermes: { icon: '🪽', label: 'HERMES PROXY', color: 'linear-gradient(135deg, #f59e0b, #d97706)', page: 'proxy-hermes' },
         n8n: { icon: '⚡', label: 'N8N PROXY', color: 'linear-gradient(135deg, #ef4444, #dc2626)', page: 'proxy-n8n' },
-        default: { icon: '', label: 'PROXY', color: 'linear-gradient(135deg, #5eadb8, #c0655e)', page: 'integrations' },
+        default: { icon: '', label: 'PROXY', color: 'linear-gradient(135deg, #7c6cff, #c0655e)', page: 'integrations' },
     },
 
     async checkProxyStatus() {
@@ -1768,8 +1768,8 @@ const Sidebar = {
 
         // Remove core icon badge dot on first visit
         const coreDot = document.querySelector(`[data-core-dot="${page}"]`);
-        if (coreDot && !localStorage.getItem('sv-visited-core-' + page)) {
-            localStorage.setItem('sv-visited-core-' + page, '1');
+        if (coreDot && !localStorage.getItem('ag-visited-core-' + page)) {
+            localStorage.setItem('ag-visited-core-' + page, '1');
             coreDot.style.transition = 'opacity 0.3s';
             coreDot.style.opacity = '0';
             setTimeout(() => coreDot.remove(), 300);

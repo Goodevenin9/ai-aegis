@@ -19,7 +19,7 @@ const ObsTabs = {
     // The name is keyed by the run's trace_id and persisted locally so it
     // reflects everywhere the agent appears — Map, Runs, Timeline. Local-only
     // (localStorage); the audit log itself is never rewritten.
-    AGENT_NAMES_KEY: 'sv-agent-names',
+    AGENT_NAMES_KEY: 'ag-agent-names',
     _agentNames() {
         try { return JSON.parse(localStorage.getItem(this.AGENT_NAMES_KEY) || '{}') || {}; }
         catch (_) { return {}; }
@@ -44,17 +44,17 @@ const ObsTabs = {
     // Clicking it opens the Guide and scrolls to the matching how-to-read
     // section. Keeps both views pointing at one source of truth.
     _injectHowtoStyle() {
-        if (document.getElementById('sv-howto-style')) return;
+        if (document.getElementById('ag-howto-style')) return;
         const st = document.createElement('style');
-        st.id = 'sv-howto-style';
+        st.id = 'ag-howto-style';
         st.textContent = `
-            .sv-howto-link { display:inline-flex; align-items:center; gap:5px; background:transparent; cursor:pointer;
-                border:1px solid var(--border-default,#30363d); border-radius:999px; padding:3px 10px;
+            .ag-howto-link { display:inline-flex; align-items:center; gap:5px; background:transparent; cursor:pointer;
+                border:1px solid var(--border-default,#283152); border-radius:999px; padding:3px 10px;
                 color:var(--text-secondary,#b1bac4); font:600 11.5px 'Avenir Next',Avenir,system-ui,sans-serif;
                 transition:color .12s, border-color .12s, background .12s; white-space:nowrap; }
-            .sv-howto-link:hover { color:var(--accent-primary,#5eadb8); border-color:var(--accent-primary,#5eadb8);
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 8%, transparent); }
-            .sv-howto-link svg { width:13px; height:13px; flex:0 0 auto; }
+            .ag-howto-link:hover { color:var(--accent-primary,#7c6cff); border-color:var(--accent-primary,#7c6cff);
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 8%, transparent); }
+            .ag-howto-link svg { width:13px; height:13px; flex:0 0 auto; }
         `;
         document.head.appendChild(st);
     },
@@ -63,7 +63,7 @@ const ObsTabs = {
         this._injectHowtoStyle();
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'sv-howto-link';
+        btn.className = 'ag-howto-link';
         btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
             'stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/>' +
             '<path d="M12 16v-4M12 8h.01"/></svg><span></span>';
@@ -109,20 +109,20 @@ const ObsTabs = {
      *  items: [{ label, onClick }] */
     exportMenu(items) {
         const wrap = document.createElement('div');
-        wrap.className = 'sv-export-wrap';
+        wrap.className = 'ag-export-wrap';
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'sv-export-btn';
+        btn.className = 'ag-export-btn';
         btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" ' +
             'stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg><span>Export</span>' +
             '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" ' +
             'stroke-linecap="round" stroke-linejoin="round" style="margin-left:1px"><path d="M6 9l6 6 6-6"/></svg>';
         const menu = document.createElement('div');
-        menu.className = 'sv-export-menu';
+        menu.className = 'ag-export-menu';
         items.forEach(it => {
             const mi = document.createElement('button');
             mi.type = 'button';
-            mi.className = 'sv-export-item';
+            mi.className = 'ag-export-item';
             mi.textContent = it.label;
             mi.addEventListener('click', (e) => { e.stopPropagation(); menu.classList.remove('open'); it.onClick(); });
             menu.appendChild(mi);
@@ -192,14 +192,14 @@ const ObsTabs = {
     ],
 
     _injectStyle() {
-        if (document.getElementById('sv-obs-tabs-style')) return;
+        if (document.getElementById('ag-obs-tabs-style')) return;
         const st = document.createElement('style');
-        st.id = 'sv-obs-tabs-style';
+        st.id = 'ag-obs-tabs-style';
         st.textContent = `
             /* One-line header: tabs + page filters + legend on a single row to
                save vertical space. Wraps only when the viewport is narrow. */
             .obs-header { display:flex; align-items:center; gap:12px 14px; flex-wrap:wrap; margin-bottom:10px; }
-            .obs-header .sv-obs-tabs { margin-bottom:0; }
+            .obs-header .ag-obs-tabs { margin-bottom:0; }
             .obs-header .filter-group { margin:0; }
             /* Push the whole filter+export cluster to the far right edge, well
                clear of the tabs (margin-left:auto on the toolbar itself). */
@@ -208,38 +208,38 @@ const ObsTabs = {
             /* Keep every filter group the same height so their controls sit on a
                single bottom line (short ones like a lone checkbox don't float). */
             .obs-header .filter-group { min-height:40px; justify-content:flex-end; }
-            .obs-header .filter-group > .sv-check, .obs-header .filter-group > .ar-kind-checks,
-            .obs-header .filter-group > .sv-kind-checks { min-height:34px; align-items:center; }
-            .sv-obs-tabs { display:inline-flex; gap:4px; padding:4px; border-radius:11px;
-                background:var(--bg-tertiary,#21262d); border:1px solid var(--border-default,#30363d);
+            .obs-header .filter-group > .ag-check, .obs-header .filter-group > .ar-kind-checks,
+            .obs-header .filter-group > .ag-kind-checks { min-height:34px; align-items:center; }
+            .ag-obs-tabs { display:inline-flex; gap:4px; padding:4px; border-radius:11px;
+                background:var(--bg-tertiary,#21262d); border:1px solid var(--border-default,#283152);
                 margin-bottom:14px; box-shadow:var(--shadow-sm,0 1px 2px rgba(0,0,0,.2)) inset; }
-            .sv-obs-tab { display:inline-flex; align-items:center; gap:7px; border:1px solid transparent;
+            .ag-obs-tab { display:inline-flex; align-items:center; gap:7px; border:1px solid transparent;
                 background:transparent; color:var(--text-secondary,#b1bac4);
                 font:700 13px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.2px;
                 padding:8px 18px; border-radius:8px; cursor:pointer;
                 transition:color .12s,background .12s,border-color .12s,box-shadow .12s; }
-            .sv-obs-tab svg { width:16px; height:16px; flex:0 0 auto; }
-            .sv-obs-tab.on { background:var(--accent-primary,#5eadb8); color:#fff; border-color:var(--accent-primary,#5eadb8);
+            .ag-obs-tab svg { width:16px; height:16px; flex:0 0 auto; }
+            .ag-obs-tab.on { background:var(--accent-primary,#7c6cff); color:#fff; border-color:var(--accent-primary,#7c6cff);
                 box-shadow:0 1px 3px rgba(0,0,0,.25); }
-            .sv-obs-tab.on svg { stroke:#fff; }
-            .sv-obs-tab:not(.on) svg { stroke:var(--text-secondary,#b1bac4); }
-            .sv-obs-tab:hover:not(.on) { color:var(--text-primary,#e6edf3); background:var(--bg-hover,#30363d); }
-            .sv-obs-tab:hover:not(.on) svg { stroke:var(--text-primary,#e6edf3); }
-            .sv-obs-tab:focus-visible { outline:2px solid var(--accent-primary,#5eadb8); outline-offset:2px; }
-            .sv-export-btn { display:inline-flex; align-items:center; gap:6px; padding:7px 13px; border-radius:8px;
-                border:1px solid var(--border-default,#30363d); background:var(--bg-card,#161b22); color:var(--text-primary,#e6edf3);
+            .ag-obs-tab.on svg { stroke:#fff; }
+            .ag-obs-tab:not(.on) svg { stroke:var(--text-secondary,#b1bac4); }
+            .ag-obs-tab:hover:not(.on) { color:var(--text-primary,#eef1fb); background:var(--bg-hover,#283152); }
+            .ag-obs-tab:hover:not(.on) svg { stroke:var(--text-primary,#eef1fb); }
+            .ag-obs-tab:focus-visible { outline:2px solid var(--accent-primary,#7c6cff); outline-offset:2px; }
+            .ag-export-btn { display:inline-flex; align-items:center; gap:6px; padding:7px 13px; border-radius:8px;
+                border:1px solid var(--border-default,#283152); background:var(--bg-card,#131a30); color:var(--text-primary,#eef1fb);
                 font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; cursor:pointer; transition:background .12s,border-color .12s; }
-            .sv-export-btn:hover { background:var(--bg-hover,#21262d); border-color:var(--accent-primary,#5eadb8); }
-            .sv-export-btn:focus-visible { outline:2px solid var(--accent-primary,#5eadb8); outline-offset:2px; }
-            .sv-export-btn svg { color:var(--accent-primary,#5eadb8); }
-            .sv-export-wrap { position:relative; display:inline-flex; }
-            .sv-export-menu { position:absolute; right:0; top:calc(100% + 5px); z-index:30; display:none; flex-direction:column;
-                min-width:128px; padding:4px; border-radius:9px; background:var(--bg-card,#161b22);
-                border:1px solid var(--border-default,#30363d); box-shadow:var(--shadow-lg,0 8px 24px rgba(0,0,0,.4)); }
-            .sv-export-menu.open { display:flex; }
-            .sv-export-item { display:flex; align-items:center; gap:8px; padding:7px 11px; border:0; border-radius:6px; background:transparent;
-                color:var(--text-primary,#e6edf3); font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; text-align:left; cursor:pointer; }
-            .sv-export-item:hover { background:var(--bg-hover,#21262d); }
+            .ag-export-btn:hover { background:var(--bg-hover,#21262d); border-color:var(--accent-primary,#7c6cff); }
+            .ag-export-btn:focus-visible { outline:2px solid var(--accent-primary,#7c6cff); outline-offset:2px; }
+            .ag-export-btn svg { color:var(--accent-primary,#7c6cff); }
+            .ag-export-wrap { position:relative; display:inline-flex; }
+            .ag-export-menu { position:absolute; right:0; top:calc(100% + 5px); z-index:30; display:none; flex-direction:column;
+                min-width:128px; padding:4px; border-radius:9px; background:var(--bg-card,#131a30);
+                border:1px solid var(--border-default,#283152); box-shadow:var(--shadow-lg,0 8px 24px rgba(0,0,0,.4)); }
+            .ag-export-menu.open { display:flex; }
+            .ag-export-item { display:flex; align-items:center; gap:8px; padding:7px 11px; border:0; border-radius:6px; background:transparent;
+                color:var(--text-primary,#eef1fb); font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; text-align:left; cursor:pointer; }
+            .ag-export-item:hover { background:var(--bg-hover,#21262d); }
         `;
         document.head.appendChild(st);
     },
@@ -254,7 +254,7 @@ const ObsTabs = {
     render(container, active) {
         this._injectStyle();
         const wrap = document.createElement('div');
-        wrap.className = 'sv-obs-tabs';
+        wrap.className = 'ag-obs-tabs';
         wrap.setAttribute('role', 'tablist');
         // 'storylines' (the retired Sessions page) maps to the Activity tab so
         // a deep link still highlights the merged view.
@@ -262,7 +262,7 @@ const ObsTabs = {
         this._TABS.forEach(t => {
             const b = document.createElement('button');
             b.type = 'button';
-            b.className = 'sv-obs-tab' + (t.page === activePage ? ' on' : '');
+            b.className = 'ag-obs-tab' + (t.page === activePage ? ' on' : '');
             b.setAttribute('role', 'tab');
             b.setAttribute('aria-selected', t.page === activePage ? 'true' : 'false');
             b.dataset.p = t.page;
@@ -281,24 +281,24 @@ const ObsTabs = {
 
     /** Small segmented "By trace | Live feed" control shown on the Traces tab. */
     _viewToggle(active) {
-        if (!document.getElementById('sv-obs-viewtoggle-style')) {
+        if (!document.getElementById('ag-obs-viewtoggle-style')) {
             const st = document.createElement('style');
-            st.id = 'sv-obs-viewtoggle-style';
+            st.id = 'ag-obs-viewtoggle-style';
             st.textContent = `
-                .sv-obs-viewtoggle { display:inline-flex; gap:2px; padding:3px; border-radius:9px;
-                    background:var(--bg-tertiary,#21262d); border:1px solid var(--border-default,#30363d); }
-                .sv-obs-viewbtn { border:0; background:transparent; color:var(--text-secondary,#b1bac4);
+                .ag-obs-viewtoggle { display:inline-flex; gap:2px; padding:3px; border-radius:9px;
+                    background:var(--bg-tertiary,#21262d); border:1px solid var(--border-default,#283152); }
+                .ag-obs-viewbtn { border:0; background:transparent; color:var(--text-secondary,#b1bac4);
                     font:600 11.5px 'Avenir Next',Avenir,system-ui,sans-serif; padding:5px 12px;
                     border-radius:6px; cursor:pointer; transition:color .12s, background .12s; white-space:nowrap; }
-                .sv-obs-viewbtn.on { background:var(--bg-card,#161b22); color:var(--text-primary,#e6edf3);
+                .ag-obs-viewbtn.on { background:var(--bg-card,#131a30); color:var(--text-primary,#eef1fb);
                     box-shadow:0 1px 2px rgba(0,0,0,.25); }
-                .sv-obs-viewbtn:hover:not(.on) { color:var(--text-primary,#e6edf3); }
-                .sv-obs-viewbtn:focus-visible { outline:2px solid var(--accent-primary,#5eadb8); outline-offset:2px; }
+                .ag-obs-viewbtn:hover:not(.on) { color:var(--text-primary,#eef1fb); }
+                .ag-obs-viewbtn:focus-visible { outline:2px solid var(--accent-primary,#7c6cff); outline-offset:2px; }
             `;
             document.head.appendChild(st);
         }
         const wrap = document.createElement('div');
-        wrap.className = 'sv-obs-viewtoggle';
+        wrap.className = 'ag-obs-viewtoggle';
         wrap.setAttribute('role', 'group');
         wrap.setAttribute('aria-label', 'Traces view');
         // "Waterfall" = one trace's runs in order (the default). "Live feed" =
@@ -310,7 +310,7 @@ const ObsTabs = {
         ].forEach(v => {
             const b = document.createElement('button');
             b.type = 'button';
-            b.className = 'sv-obs-viewbtn' + (v.on ? ' on' : '');
+            b.className = 'ag-obs-viewbtn' + (v.on ? ' on' : '');
             b.setAttribute('aria-pressed', v.on ? 'true' : 'false');
             b.textContent = v.label;
             b.addEventListener('click', () => { if (!v.on && window.App) App.loadPage(v.page); });

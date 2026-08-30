@@ -138,15 +138,15 @@ const CostsPage = {
         bar.textContent = '';
 
         const wrap = document.createElement('div');
-        wrap.className = 'sv-obs-tabs';
+        wrap.className = 'ag-obs-tabs';
         wrap.setAttribute('role', 'tablist');
 
         this._TABS.forEach(({ id, label, icon }) => {
             const btn = document.createElement('button');
             const isActive = this.activeTab === id;
-            if (isActive) localStorage.setItem('sv-tab-seen-costs-' + id, '1');
+            if (isActive) localStorage.setItem('ag-tab-seen-costs-' + id, '1');
             btn.type = 'button';
-            btn.className = 'sv-obs-tab' + (isActive ? ' on' : '');
+            btn.className = 'ag-obs-tab' + (isActive ? ' on' : '');
             btn.setAttribute('role', 'tab');
             btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
             btn.innerHTML =
@@ -415,7 +415,7 @@ const CostsPage = {
                     // Order in column-reverse: last appended = top.
                     seg('#475569', bucket.cacheRead);   // muted slate
                     seg('#64748b', bucket.cacheWrite);  // slate (light)
-                    seg('#5eadb8', bucket.input);       // teal
+                    seg('#7c6cff', bucket.input);       // teal
                     seg('#8ccdd6', bucket.output);      // light teal
                     barArea.appendChild(stack);
                 } else {
@@ -452,7 +452,7 @@ const CostsPage = {
             legend.style.cssText = 'display: flex; gap: 14px; margin-top: 8px; font-size: 11px; color: var(--text-secondary); flex-wrap: wrap;';
             [
                 ['#8ccdd6', 'Output'],
-                ['#5eadb8', 'Input'],
+                ['#7c6cff', 'Input'],
                 ['#64748b', 'Cache write'],
                 ['#475569', 'Cache read'],
             ].forEach(([color, label]) => {
@@ -709,7 +709,7 @@ const CostsPage = {
                     };
                     // column-reverse: last appended = top
                     seg('#475569', bucket.cacheRead);  // muted slate (biggest)
-                    seg('#5eadb8', bucket.input);      // teal
+                    seg('#7c6cff', bucket.input);      // teal
                     seg('#8ccdd6', bucket.output);     // light teal
                     seg('#34707a', bucket.reasoning);  // deep teal
                     barArea.appendChild(stack);
@@ -747,7 +747,7 @@ const CostsPage = {
             [
                 ['#34707a', 'Reasoning'],
                 ['#8ccdd6', 'Output'],
-                ['#5eadb8', 'Input'],
+                ['#7c6cff', 'Input'],
                 ['#475569', 'Cache read'],
             ].forEach(([color, label]) => {
                 const item = document.createElement('span');
@@ -997,7 +997,7 @@ const CostsPage = {
                     };
                     // column-reverse: last appended = top
                     seg('#475569', bucket.cacheRead);   // muted slate (biggest)
-                    seg('#5eadb8', bucket.input);       // teal
+                    seg('#7c6cff', bucket.input);       // teal
                     seg('#8ccdd6', bucket.output);      // light teal
                     seg('#64748b', bucket.cacheWrite);  // slate (light) — cache priming
                     barArea.appendChild(stack);
@@ -1035,7 +1035,7 @@ const CostsPage = {
             [
                 ['#64748b', 'Cache write'],
                 ['#8ccdd6', 'Output'],
-                ['#5eadb8', 'Input'],
+                ['#7c6cff', 'Input'],
                 ['#475569', 'Cache read'],
             ].forEach(([color, label]) => {
                 const item = document.createElement('span');
@@ -1266,7 +1266,7 @@ const CostsPage = {
                     };
                     // column-reverse: last appended = top
                     seg('#475569', bucket.cacheRead);   // muted slate (biggest)
-                    seg('#5eadb8', bucket.input);       // teal
+                    seg('#7c6cff', bucket.input);       // teal
                     seg('#8ccdd6', bucket.output);      // light teal
                     seg('#64748b', bucket.cacheWrite);  // slate (light) — cache priming
                     barArea.appendChild(stack);
@@ -1304,7 +1304,7 @@ const CostsPage = {
             [
                 ['#64748b', 'Cache write'],
                 ['#8ccdd6', 'Output'],
-                ['#5eadb8', 'Input'],
+                ['#7c6cff', 'Input'],
                 ['#475569', 'Cache read'],
             ].forEach(([color, label]) => {
                 const item = document.createElement('span');
@@ -1350,23 +1350,23 @@ const CostsPage = {
             return;
         }
 
-        const isFirstRender = !document.getElementById('sv-costs-cards');
+        const isFirstRender = !document.getElementById('ag-costs-cards');
 
         if (isFirstRender) {
             content.textContent = '';
 
             // Budget progress bar at top (read-only summary)
             const budgetBar = document.createElement('div');
-            budgetBar.id = 'sv-costs-budget-bar';
+            budgetBar.id = 'ag-costs-budget-bar';
             content.appendChild(budgetBar);
 
             // Scaffold the layout with stable IDs — never rebuilt on polls
             const cardsEl = document.createElement('div');
-            cardsEl.id = 'sv-costs-cards';
+            cardsEl.id = 'ag-costs-cards';
             content.appendChild(cardsEl);
 
             const chartContainer = document.createElement('div');
-            chartContainer.id = 'sv-costs-chart';
+            chartContainer.id = 'ag-costs-chart';
             content.appendChild(chartContainer);
             await this._initCostChart(chartContainer);
 
@@ -1384,11 +1384,11 @@ const CostsPage = {
             content.appendChild(refreshBtn);
 
             const guardianEl = document.createElement('div');
-            guardianEl.id = 'sv-costs-guardian';
+            guardianEl.id = 'ag-costs-guardian';
             content.appendChild(guardianEl);
 
             const agentsEl = document.createElement('div');
-            agentsEl.id = 'sv-costs-agents';
+            agentsEl.id = 'ag-costs-agents';
             content.appendChild(agentsEl);
         }
 
@@ -1413,7 +1413,7 @@ const CostsPage = {
             || (totals.input_tokens || 0) > 0
             || (totals.output_tokens || 0) > 0
         );
-        const ids = ['sv-costs-cards', 'sv-costs-chart', 'sv-costs-agents'];
+        const ids = ['ag-costs-cards', 'ag-costs-chart', 'ag-costs-agents'];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = proxyHasData ? '' : 'none';
@@ -1430,11 +1430,11 @@ const CostsPage = {
         // Wording calls out both possibilities the user might be in:
         // (a) proxy not running / unreachable on the local machine, or
         // (b) proxy running but nothing has been routed through it.
-        let placeholder = document.getElementById('sv-proxy-cost-placeholder');
+        let placeholder = document.getElementById('ag-proxy-cost-placeholder');
         if (!proxyHasData) {
             if (!placeholder) {
                 placeholder = document.createElement('div');
-                placeholder.id = 'sv-proxy-cost-placeholder';
+                placeholder.id = 'ag-proxy-cost-placeholder';
                 placeholder.style.cssText = 'padding: 28px 24px; margin-top: 8px; background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 12px; text-align: center;';
                 placeholder.textContent = '';
                 const icon = document.createElement('div');
@@ -1463,7 +1463,7 @@ const CostsPage = {
     },
 
     _updateBudgetBar() {
-        const el = document.getElementById('sv-costs-budget-bar');
+        const el = document.getElementById('ag-costs-budget-bar');
         if (!el) return;
         el.textContent = '';
         const budget = this.budgetData;
@@ -1504,7 +1504,7 @@ const CostsPage = {
     },
 
     _updateSummaryCards() {
-        const el = document.getElementById('sv-costs-cards');
+        const el = document.getElementById('ag-costs-cards');
         if (!el) return;
         el.textContent = '';
         const totals = (this.summaryData && this.summaryData.totals) || {};
@@ -1540,7 +1540,7 @@ const CostsPage = {
     },
 
     _updateGuardianAlerts() {
-        const el = document.getElementById('sv-costs-guardian');
+        const el = document.getElementById('ag-costs-guardian');
         if (!el) return;
         el.textContent = '';
         const gd = this._guardianData;
@@ -1590,7 +1590,7 @@ const CostsPage = {
     },
 
     _updateAgentsSection() {
-        const el = document.getElementById('sv-costs-agents');
+        const el = document.getElementById('ag-costs-agents');
         if (!el) return;
         el.textContent = '';
         const agents = (this.summaryData && this.summaryData.agents) || [];
@@ -1930,7 +1930,7 @@ const CostsPage = {
             return row;
         };
         const banner = document.createElement('div');
-        banner.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 8px; background: rgba(94,173,184,0.08); border: 1px solid rgba(94,173,184,0.25);';
+        banner.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 8px; background: rgba(124,108,255,0.08); border: 1px solid rgba(124,108,255,0.25);';
         const costVal = document.createElement('div');
         costVal.style.cssText = 'font-size: 28px; font-weight: 800; color: var(--accent-primary); font-family: monospace;';
         costVal.textContent = '$' + r.total_cost_usd.toFixed(6);
@@ -2643,7 +2643,7 @@ const CostsPage = {
 
         const widget = document.createElement('div');
         widget.id = 'global-budget-widget';
-        widget.style.cssText = 'margin-bottom: 1.5rem; background: var(--bg-secondary); border: 2px solid rgba(94,173,184,0.35); border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 4px rgba(94,173,184,0.06);';
+        widget.style.cssText = 'margin-bottom: 1.5rem; background: var(--bg-secondary); border: 2px solid rgba(124,108,255,0.35); border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 4px rgba(124,108,255,0.06);';
 
         // ── Header ──────────────────────────────────────────────────────
         const topRow = document.createElement('div');
@@ -3082,7 +3082,7 @@ const CostsPage = {
 
         const applyBtn = document.createElement('button');
         applyBtn.textContent = 'Apply';
-        applyBtn.style.cssText = 'background: rgba(94,173,184,0.15); border: 1px solid rgba(94,173,184,0.4); border-radius: 6px; color: rgba(94,173,184,1); cursor: pointer; padding: 4px 12px; font-size: 12px; white-space: nowrap;';
+        applyBtn.style.cssText = 'background: rgba(124,108,255,0.15); border: 1px solid rgba(124,108,255,0.4); border-radius: 6px; color: rgba(124,108,255,1); cursor: pointer; padding: 4px 12px; font-size: 12px; white-space: nowrap;';
 
         const clearBtn = document.createElement('button');
         clearBtn.textContent = 'Clear';
@@ -3168,13 +3168,13 @@ const CostsPage = {
             const bar = document.createElement('div');
             bar.style.cssText = `width: 100%; height: ${pct}px; border-radius: 2px 2px 0 0; transition: background 0.1s; box-sizing: border-box;`;
             bar.style.background = d.future
-                ? 'rgba(94,173,184,0.08)'
-                : isToday ? 'rgba(94,173,184,0.85)' : 'rgba(94,173,184,0.4)';
+                ? 'rgba(124,108,255,0.08)'
+                : isToday ? 'rgba(124,108,255,0.85)' : 'rgba(124,108,255,0.4)';
             bar.title = d.future ? `${d.dateKey}: —` : `${d.dateKey}: $${d.cost.toFixed(4)}`;
 
             if (!d.future) {
-                bar.addEventListener('mouseenter', () => { bar.style.background = 'rgba(94,173,184,0.9)'; });
-                bar.addEventListener('mouseleave', () => { bar.style.background = isToday ? 'rgba(94,173,184,0.85)' : 'rgba(94,173,184,0.4)'; });
+                bar.addEventListener('mouseenter', () => { bar.style.background = 'rgba(124,108,255,0.9)'; });
+                bar.addEventListener('mouseleave', () => { bar.style.background = isToday ? 'rgba(124,108,255,0.85)' : 'rgba(124,108,255,0.4)'; });
             }
             col.appendChild(bar);
 
@@ -3182,7 +3182,7 @@ const CostsPage = {
             const dayNum = parseInt(d.label.split('-').pop() || d.label, 10);
             if (dayNum === 1 || dayNum % 5 === 0 || isToday) {
                 const lbl = document.createElement('div');
-                lbl.style.cssText = `position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 9px; line-height: 14px; white-space: nowrap; color: ${isToday ? 'rgba(94,173,184,0.9)' : 'var(--text-secondary)'};`;
+                lbl.style.cssText = `position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 9px; line-height: 14px; white-space: nowrap; color: ${isToday ? 'rgba(124,108,255,0.9)' : 'var(--text-secondary)'};`;
                 lbl.textContent = d.label;
                 col.appendChild(lbl);
             }

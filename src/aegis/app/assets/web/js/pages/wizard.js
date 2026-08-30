@@ -178,7 +178,7 @@ const ConnectWizardPage = {
         done.className = 'wiz-btn wiz-btn-primary';
         done.textContent = protectedCount > 0 ? 'Done: open the Dashboard' : 'Skip for now: open the Dashboard';
         done.addEventListener('click', () => {
-            localStorage.setItem('sv-wizard-done', '1');
+            localStorage.setItem('ag-wizard-done', '1');
             if (window.App) App.loadPage('dashboard');
         });
         footer.appendChild(done);

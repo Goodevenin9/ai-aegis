@@ -37,7 +37,7 @@ const AR_VIRUS_SVG = (c = '#ef4444', s = 12) => `<svg viewBox="0 0 24 24" width=
 const AR_LOCK_SVG = (c = '#f59e0b', s = 12) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" style="vertical-align:-2px"><path fill="${c}" d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5zm3 8H9V6a3 3 0 0 1 6 0z"/></svg>`;
 // Robot glyph for Generation (LLM turn) spans — mirrors the header Guardian
 // robot so "LLM" reads consistently across the app. Teal, not a security colour.
-const AR_ROBOT_SVG = (c = '#5eadb8', s = 12) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="8" width="16" height="11" rx="2.5"/><path d="M12 8V4M9 4h6"/><circle cx="9" cy="13" r="1.3" fill="${c}" stroke="none"/><circle cx="15" cy="13" r="1.3" fill="${c}" stroke="none"/></svg>`;
+const AR_ROBOT_SVG = (c = '#7c6cff', s = 12) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><rect x="4" y="8" width="16" height="11" rx="2.5"/><path d="M12 8V4M9 4h6"/><circle cx="9" cy="13" r="1.3" fill="${c}" stroke="none"/><circle cx="15" cy="13" r="1.3" fill="${c}" stroke="none"/></svg>`;
 
 const AgentRunsPage = {
     windowDays: 7,
@@ -247,7 +247,7 @@ const AgentRunsPage = {
     // any new blocked / threat / secret hits. Only provable deltas are shown
     // (the list endpoint can't see LLM runs, so they are never claimed).
     _AWAY_MS: 600000, // 10 min — shorter gaps aren't "away", they're a coffee
-    _snapKey: 'sv-away-traces',
+    _snapKey: 'ag-away-traces',
 
     _snapLoad() {
         try { return JSON.parse(localStorage.getItem(this._snapKey)); } catch (e) { return null; }
@@ -424,7 +424,7 @@ const AgentRunsPage = {
             .ar-cols span { text-align:right; }
             .ar-cols .col-name { text-align:left; }
             .ar-row-caret { width:12px; height:12px; color:var(--text-muted,#7d8590); transition:transform .16s; }
-            .ar-run.open .ar-row-caret { transform:rotate(90deg); color:var(--accent-primary,#5eadb8); }
+            .ar-run.open .ar-row-caret { transform:rotate(90deg); color:var(--accent-primary,#7c6cff); }
             .ar-row-name { display:flex; align-items:center; gap:8px; min-width:0; }
             .ar-row-id { font-family:var(--font-mono,monospace); font-size:10.5px; color:var(--text-secondary,#8b949e); opacity:.65; letter-spacing:.02em; flex:0 0 auto; }
             .ar-row-c { text-align:right; font-size:11.5px; color:var(--text-secondary,#b1bac4); white-space:nowrap; }
@@ -437,11 +437,11 @@ const AgentRunsPage = {
             .ar-rail-head { display:flex; align-items:baseline; gap:8px; padding:2px 4px 0;
                 font:600 11px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.6px; text-transform:uppercase;
                 color:var(--text-muted,#7d8590); }
-            .ar-rail-head b { font:700 12px ui-monospace,'JetBrains Mono',Menlo,monospace; color:var(--text-primary,#e6edf3);
+            .ar-rail-head b { font:700 12px ui-monospace,'JetBrains Mono',Menlo,monospace; color:var(--text-primary,#eef1fb);
                 font-variant-numeric:tabular-nums; }
-            .ar-rail-live { display:inline-flex; align-items:center; gap:5px; color:var(--accent-primary,#5eadb8);
+            .ar-rail-live { display:inline-flex; align-items:center; gap:5px; color:var(--accent-primary,#7c6cff);
                 font-weight:700; letter-spacing:.8px; }
-            .ar-rail-live::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--accent-primary,#5eadb8);
+            .ar-rail-live::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--accent-primary,#7c6cff);
                 animation:arLivePulse 1.6s ease-in-out infinite; }
             .ar-rail-win { margin-left:auto; letter-spacing:.4px; }
             /* --- Runtime group headers: the list's first level is the
@@ -453,7 +453,7 @@ const AgentRunsPage = {
             .ar-group-head:hover { background:var(--bg-hover,#21262d); }
             .ar-group-head .ar-caret { transform:rotate(90deg); }
             .ar-group-head.closed .ar-caret { transform:none; }
-            .ar-group-rt { font:700 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3); }
+            .ar-group-rt { font:700 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb); }
             .ar-group-n { font:11px ui-monospace,'JetBrains Mono',Menlo,monospace; color:var(--text-muted,#7d8590);
                 font-variant-numeric:tabular-nums; }
             .ar-group-flag { font:600 10.5px 'Avenir Next',Avenir,system-ui,sans-serif; white-space:nowrap; }
@@ -465,20 +465,20 @@ const AgentRunsPage = {
             /* "While you were away" digest strip — one line, above the layout.
                Neutral by default; red/amber ONLY on the security chips. */
             .ar-away { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:0 0 12px;
-                padding:8px 12px; border:1px solid var(--border-default,#30363d); border-radius:8px;
-                background:var(--bg-card,#161b22); border-left:3px solid var(--accent-primary,#5eadb8);
+                padding:8px 12px; border:1px solid var(--border-default,#283152); border-radius:8px;
+                background:var(--bg-card,#131a30); border-left:3px solid var(--accent-primary,#7c6cff);
                 animation:arAwayIn .25s ease-out; }
             @keyframes arAwayIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
             .ar-away-k { font:700 10.5px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.8px;
-                text-transform:uppercase; color:var(--accent-primary,#5eadb8); }
+                text-transform:uppercase; color:var(--accent-primary,#7c6cff); }
             .ar-away-since { font:500 11.5px 'Avenir Next',Avenir,system-ui,sans-serif;
                 color:var(--text-muted,#7d8590); margin-right:4px; }
             .ar-away-chip { display:inline-flex; align-items:center; gap:5px; border-radius:20px;
-                padding:3px 10px; border:1px solid var(--border-default,#30363d);
-                background:var(--bg-secondary,#0d1117); color:var(--text-secondary,#b1bac4);
+                padding:3px 10px; border:1px solid var(--border-default,#283152);
+                background:var(--bg-secondary,#0b0f1e); color:var(--text-secondary,#b1bac4);
                 font:500 12px 'Avenir Next',Avenir,system-ui,sans-serif; }
             .ar-away-chip b { font:700 12px ui-monospace,'JetBrains Mono',Menlo,monospace;
-                color:var(--text-primary,#e6edf3); }
+                color:var(--text-primary,#eef1fb); }
             button.ar-away-chip { cursor:pointer; transition:background .12s,border-color .12s; }
             .ar-away-chip.danger { border-color:rgba(239,68,68,0.45); color:#ef4444; }
             .ar-away-chip.danger b { color:#ef4444; }
@@ -489,31 +489,31 @@ const AgentRunsPage = {
             .ar-away-x { margin-left:auto; cursor:pointer; border:none; background:none;
                 color:var(--text-muted,#7d8590); font-size:16px; line-height:1; padding:2px 6px;
                 border-radius:4px; }
-            .ar-away-x:hover { color:var(--text-primary,#e6edf3); background:var(--bg-hover,#21262d); }
+            .ar-away-x:hover { color:var(--text-primary,#eef1fb); background:var(--bg-hover,#21262d); }
             @media (prefers-reduced-motion: reduce) { .ar-away { animation:none; } }
             .ar-runlist { display:flex; flex-direction:column; gap:9px; padding:2px; }
-            .ar-detail { min-width:0; border:1px solid var(--border-default,#30363d); border-radius:14px;
-                background:linear-gradient(180deg, var(--bg-card,#161b22), color-mix(in srgb, var(--bg-card,#161b22) 88%, #000)); padding:18px 20px; min-height:320px; }
+            .ar-detail { min-width:0; border:1px solid var(--border-default,#283152); border-radius:14px;
+                background:linear-gradient(180deg, var(--bg-card,#131a30), color-mix(in srgb, var(--bg-card,#131a30) 88%, #000)); padding:18px 20px; min-height:320px; }
             /* Run cards: runtime-coloured left rail, lift on hover, accent when selected.
                flex:0 0 auto is load-bearing, the runlist is a flex column with max-height,
                so without it many runs flex-shrink every card to ~24px and crush the text. */
-            .ar-run { position:relative; flex:0 0 auto; text-align:left; cursor:pointer; border:1px solid var(--border-default,#30363d); border-radius:12px;
-                background:var(--bg-card,#161b22); padding:9px 13px 9px 16px; overflow:hidden;
+            .ar-run { position:relative; flex:0 0 auto; text-align:left; cursor:pointer; border:1px solid var(--border-default,#283152); border-radius:12px;
+                background:var(--bg-card,#131a30); padding:9px 13px 9px 16px; overflow:hidden;
                 transition:border-color .14s,background .14s,box-shadow .14s,transform .14s; }
-            .ar-run::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ar-accent,#5eadb8); opacity:.5; transition:opacity .14s,width .14s; }
-            .ar-run:hover { border-color:var(--accent-primary,#5eadb8); box-shadow:0 4px 14px rgba(0,0,0,.22); transform:translateY(-1px); }
+            .ar-run::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--ar-accent,#7c6cff); opacity:.5; transition:opacity .14s,width .14s; }
+            .ar-run:hover { border-color:var(--accent-primary,#7c6cff); box-shadow:0 4px 14px rgba(0,0,0,.22); transform:translateY(-1px); }
             .ar-run:hover::before { opacity:.9; }
-            .ar-run.sel { border-color:var(--accent-primary,#5eadb8); background:color-mix(in srgb, var(--accent-primary,#5eadb8) 9%, var(--bg-card,#161b22)); }
+            .ar-run.sel { border-color:var(--accent-primary,#7c6cff); background:color-mix(in srgb, var(--accent-primary,#7c6cff) 9%, var(--bg-card,#131a30)); }
             .ar-run.sel::before { opacity:1; width:4px; }
             .ar-run-top { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
-            .ar-run-rt { font:700 13px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3); letter-spacing:.2px;
+            .ar-run-rt { font:700 13px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb); letter-spacing:.2px;
                 min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
             .ar-run-sub { font:600 10px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-muted,#7d8590); text-transform:lowercase;
-                border:1px solid var(--border-default,#30363d); border-radius:999px; padding:1px 7px; letter-spacing:.2px; flex:0 0 auto; white-space:nowrap; }
-            .ar-run-dot { width:9px; height:9px; border-radius:50%; flex:0 0 auto; box-shadow:0 0 0 3px color-mix(in srgb, var(--ar-accent,#5eadb8) 22%, transparent); }
+                border:1px solid var(--border-default,#283152); border-radius:999px; padding:1px 7px; letter-spacing:.2px; flex:0 0 auto; white-space:nowrap; }
+            .ar-run-dot { width:9px; height:9px; border-radius:50%; flex:0 0 auto; box-shadow:0 0 0 3px color-mix(in srgb, var(--ar-accent,#7c6cff) 22%, transparent); }
             .ar-run-meta { font-size:11.5px; color:var(--text-secondary,#b1bac4); display:flex; gap:11px; flex-wrap:wrap; align-items:center; }
             .ar-run-time { margin-left:auto; color:var(--text-muted,#7d8590); font-size:11px; white-space:nowrap; }
-            .ar-num { font-family:ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace; font-variant-numeric:tabular-nums; color:var(--text-primary,#e6edf3); }
+            .ar-num { font-family:ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace; font-variant-numeric:tabular-nums; color:var(--text-primary,#eef1fb); }
             .ar-blk { color:var(--danger,#ef4444); }
             /* Per-trace security signal on the list card — red threat, amber
                secret (SOC colour discipline). Turns the list into triage. */
@@ -521,18 +521,18 @@ const AgentRunsPage = {
             .ar-sec { color:#f59e0b; display:inline-flex; align-items:center; gap:4px; }
             .ar-risk { margin-left:auto; width:10px; height:10px; border-radius:50%; }
             .ar-det-head { display:flex; align-items:center; gap:10px; margin-bottom:3px; }
-            .ar-det-title { font:700 17px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3); letter-spacing:.2px; }
+            .ar-det-title { font:700 17px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb); letter-spacing:.2px; }
             /* Masthead — the trace's vitals as a stat strip: monospace values,
                small-caps labels, one dim detail line. Numbers you scan, not a
                sentence you parse. Danger cell (blocked) is the only red. */
-            .ar-masthead { display:flex; flex-wrap:wrap; margin:12px 0 10px; border:1px solid var(--border-default,#30363d);
+            .ar-masthead { display:flex; flex-wrap:wrap; margin:12px 0 10px; border:1px solid var(--border-default,#283152);
                 border-radius:12px; overflow:hidden;
-                background:color-mix(in srgb, var(--bg-primary,#010409) 45%, var(--bg-card,#161b22)); }
+                background:color-mix(in srgb, var(--bg-primary,#04060e) 45%, var(--bg-card,#131a30)); }
             .ar-stat { flex:1 1 auto; min-width:118px; padding:11px 16px 10px;
-                border-right:1px solid var(--border-default,#30363d); }
+                border-right:1px solid var(--border-default,#283152); }
             .ar-stat:last-child { border-right:0; }
             .ar-stat-v { font:700 17px ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace; line-height:1.15;
-                color:var(--text-primary,#e6edf3); font-variant-numeric:tabular-nums; }
+                color:var(--text-primary,#eef1fb); font-variant-numeric:tabular-nums; }
             .ar-stat-l { margin-top:3px; font:700 9.5px 'Avenir Next',Avenir,system-ui,sans-serif;
                 letter-spacing:.9px; text-transform:uppercase; color:var(--text-muted,#7d8590); }
             .ar-stat-d { margin-top:2px; font-size:10.5px; color:var(--text-muted,#7d8590); white-space:nowrap; }
@@ -544,176 +544,176 @@ const AgentRunsPage = {
                the left list reads as a list of traces and the right as its runs. */
             .ar-det-x { cursor:pointer; border:none; background:none; color:var(--text-muted,#7d8590);
                 font-size:17px; line-height:1; padding:2px 7px; border-radius:6px; }
-            .ar-det-x:hover { color:var(--text-primary,#e6edf3); background:var(--bg-hover,#21262d); }
+            .ar-det-x:hover { color:var(--text-primary,#eef1fb); background:var(--bg-hover,#21262d); }
             .ar-det-eyebrow { margin-left:auto; font:700 9.5px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:1.2px;
-                text-transform:uppercase; color:var(--accent-primary,#5eadb8); border-radius:999px; padding:3px 10px;
-                border:1px solid color-mix(in srgb, var(--accent-primary,#5eadb8) 50%, transparent);
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 10%, transparent); }
+                text-transform:uppercase; color:var(--accent-primary,#7c6cff); border-radius:999px; padding:3px 10px;
+                border:1px solid color-mix(in srgb, var(--accent-primary,#7c6cff) 50%, transparent);
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 10%, transparent); }
             /* "Runs in this trace" heading over the waterfall — makes the
                trace→run containment explicit (answers "which run is whose"). */
             .ar-runs-heading { display:flex; align-items:center; gap:10px; margin:4px 0 10px; }
-            .ar-runs-heading b { font:700 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3);
+            .ar-runs-heading b { font:700 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb);
                 letter-spacing:.2px; flex:0 0 auto; }
             .ar-runs-count { font-size:11px; color:var(--text-muted,#7d8590); margin-left:auto; flex:0 0 auto; white-space:nowrap; }
             /* Live following: teal = the app's single accent — "running" is an
                activity state, not a security outcome, so it must not be green/red. */
             .ar-live { display:inline-flex; align-items:center; gap:4px; flex:0 0 auto;
                 font:700 9px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:1.2px; text-transform:uppercase;
-                color:var(--accent-primary,#5eadb8); border:1px solid rgba(94,173,184,0.45); border-radius:9px; padding:1px 7px 1px 6px; }
-            .ar-live::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--accent-primary,#5eadb8);
+                color:var(--accent-primary,#7c6cff); border:1px solid rgba(124,108,255,0.45); border-radius:9px; padding:1px 7px 1px 6px; }
+            .ar-live::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--accent-primary,#7c6cff);
                 animation:arLivePulse 1.6s ease-in-out infinite; }
             @keyframes arLivePulse { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
-            @keyframes arCardTick { from { box-shadow:0 0 0 1px rgba(94,173,184,0.7) inset; background:rgba(94,173,184,0.10); } to { box-shadow:none; } }
+            @keyframes arCardTick { from { box-shadow:0 0 0 1px rgba(124,108,255,0.7) inset; background:rgba(124,108,255,0.10); } to { box-shadow:none; } }
             .ar-card-tick { animation:arCardTick 1.2s ease-out; }
             .ar-live-pill { display:inline-flex; align-items:center; gap:5px; cursor:pointer; flex:0 0 auto;
-                font:600 10.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--accent-primary,#5eadb8);
-                background:rgba(94,173,184,0.10); border:1px solid rgba(94,173,184,0.45); border-radius:11px; padding:2px 9px;
+                font:600 10.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--accent-primary,#7c6cff);
+                background:rgba(124,108,255,0.10); border:1px solid rgba(124,108,255,0.45); border-radius:11px; padding:2px 9px;
                 animation:arFade .16s ease-out; }
-            .ar-live-pill::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--accent-primary,#5eadb8);
+            .ar-live-pill::before { content:''; width:5px; height:5px; border-radius:50%; background:var(--accent-primary,#7c6cff);
                 animation:arLivePulse 1.6s ease-in-out infinite; }
-            .ar-live-pill:hover { background:rgba(94,173,184,0.18); }
+            .ar-live-pill:hover { background:rgba(124,108,255,0.18); }
             /* Hold-still switch beside the LIVE badge: neutral chrome, teal on
                hover; the "paused" state carries the accent so it can't be
                missed while updates are frozen. */
             .ar-live-pause { display:inline-flex; align-items:center; gap:4px; cursor:pointer; flex:0 0 auto;
                 font:600 10px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.3px;
                 color:var(--text-secondary,#b1bac4); background:var(--bg-tertiary,#21262d);
-                border:1px solid var(--border-default,#30363d); border-radius:9px; padding:2px 8px; }
-            .ar-live-pause:hover { color:var(--text-primary,#e6edf3); border-color:var(--accent-primary,#5eadb8); }
-            .ar-live-pause.paused { color:var(--accent-primary,#5eadb8);
-                border-color:color-mix(in srgb, var(--accent-primary,#5eadb8) 55%, transparent);
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 12%, transparent); }
+                border:1px solid var(--border-default,#283152); border-radius:9px; padding:2px 8px; }
+            .ar-live-pause:hover { color:var(--text-primary,#eef1fb); border-color:var(--accent-primary,#7c6cff); }
+            .ar-live-pause.paused { color:var(--accent-primary,#7c6cff);
+                border-color:color-mix(in srgb, var(--accent-primary,#7c6cff) 55%, transparent);
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 12%, transparent); }
             @media (prefers-reduced-motion: reduce) {
                 .ar-live::before, .ar-live-pill::before { animation:none; }
                 .ar-card-tick { animation:none; }
             }
             /* In-trace search — filter the loaded runs without a round-trip. */
             .ar-run-search { flex:0 1 250px; min-width:120px; box-sizing:border-box; padding:5px 10px;
-                border:1px solid var(--border-default,#30363d); border-radius:7px; background:var(--bg-primary,#010409);
-                color:var(--text-primary,#e6edf3); font:500 12px 'Avenir Next',Avenir,system-ui,sans-serif; outline:none;
+                border:1px solid var(--border-default,#283152); border-radius:7px; background:var(--bg-primary,#04060e);
+                color:var(--text-primary,#eef1fb); font:500 12px 'Avenir Next',Avenir,system-ui,sans-serif; outline:none;
                 transition:border-color .12s; }
             .ar-run-search::placeholder { color:var(--text-muted,#7d8590); }
-            .ar-run-search:focus { border-color:var(--accent-primary,#5eadb8); }
+            .ar-run-search:focus { border-color:var(--accent-primary,#7c6cff); }
             .ar-search-hidden { display:none !important; }
             .ar-sid { display:inline-flex; align-items:center; gap:6px; margin-top:6px; }
-            .ar-sid code { font:600 11px ui-monospace,'JetBrains Mono',Menlo,monospace; color:var(--text-primary,#e6edf3); user-select:all; }
-            .ar-copy { border:1px solid var(--border-default,#30363d); background:var(--bg-card,#161b22); color:var(--text-secondary,#b1bac4);
+            .ar-sid code { font:600 11px ui-monospace,'JetBrains Mono',Menlo,monospace; color:var(--text-primary,#eef1fb); user-select:all; }
+            .ar-copy { border:1px solid var(--border-default,#283152); background:var(--bg-card,#131a30); color:var(--text-secondary,#b1bac4);
                 border-radius:6px; padding:2px 7px; font:600 10px 'Avenir Next',Avenir,system-ui,sans-serif; cursor:pointer; }
-            .ar-copy:hover { border-color:var(--accent-primary,#5eadb8); color:var(--text-primary,#e6edf3); }
+            .ar-copy:hover { border-color:var(--accent-primary,#7c6cff); color:var(--text-primary,#eef1fb); }
             /* Waterfall spine — gradient rail, glowing verdict dots. */
             .ar-span { position:relative; padding:0 0 20px 30px; }
             .ar-span::before { content:''; position:absolute; left:7px; top:16px; bottom:-3px; width:2px;
-                background:linear-gradient(180deg, var(--border-default,#30363d), color-mix(in srgb, var(--border-default,#30363d) 40%, transparent)); }
+                background:linear-gradient(180deg, var(--border-default,#283152), color-mix(in srgb, var(--border-default,#283152) 40%, transparent)); }
             .ar-span:last-child::before { display:none; }
             .ar-span-dot { position:absolute; left:0; top:4px; width:15px; height:15px; border-radius:50%;
-                border:3px solid var(--bg-card,#161b22); box-sizing:content-box; box-shadow:0 0 0 4px color-mix(in srgb, currentColor 0%, transparent); }
+                border:3px solid var(--bg-card,#131a30); box-sizing:content-box; box-shadow:0 0 0 4px color-mix(in srgb, currentColor 0%, transparent); }
             .ar-span-row { display:flex; align-items:center; gap:11px; cursor:pointer; border-radius:8px;
                 padding:5px 8px; margin:-5px -8px; transition:background .12s; }
             .ar-span-row:hover { background:var(--bg-hover,#21262d); }
             .ar-caret { width:13px; height:13px; flex:0 0 auto; color:var(--text-muted,#7d8590); transition:transform .14s; }
-            .ar-span.open .ar-caret { transform:rotate(90deg); color:var(--accent-primary,#5eadb8); }
-            .ar-span-tool { font:600 13.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3);
+            .ar-span.open .ar-caret { transform:rotate(90deg); color:var(--accent-primary,#7c6cff); }
+            .ar-span-tool { font:600 13.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb);
                 min-width:0; flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
             /* Built-in (harness) vs external (MCP/plugin) tool chip. */
             .ar-kind { font:700 9.5px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.6px; text-transform:uppercase;
-                padding:2px 8px; border-radius:6px; border:1px solid var(--border-default,#30363d); color:var(--text-secondary,#b1bac4); }
-            .ar-kind.ext { color:var(--accent-primary,#5eadb8); border-color:color-mix(in srgb, var(--accent-primary,#5eadb8) 55%, transparent);
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 12%, transparent); }
+                padding:2px 8px; border-radius:6px; border:1px solid var(--border-default,#283152); color:var(--text-secondary,#b1bac4); }
+            .ar-kind.ext { color:var(--accent-primary,#7c6cff); border-color:color-mix(in srgb, var(--accent-primary,#7c6cff) 55%, transparent);
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 12%, transparent); }
             /* --- Generation (LLM turn) spans — teal accent, no verdict --- */
             .ar-span-gen .ar-span-dot.ar-gen-dot { display:flex; align-items:center; justify-content:center;
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 16%, var(--bg-card,#161b22));
-                border-color:var(--bg-card,#161b22); }
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 16%, var(--bg-card,#131a30));
+                border-color:var(--bg-card,#131a30); }
             .ar-span-gen .ar-gen-model { font-family:ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace;
-                font-size:12.5px; font-weight:600; color:var(--text-primary,#e6edf3); }
-            .ar-kind.ar-gen-kind { color:var(--accent-primary,#5eadb8);
-                border-color:color-mix(in srgb, var(--accent-primary,#5eadb8) 55%, transparent);
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 12%, transparent); }
+                font-size:12.5px; font-weight:600; color:var(--text-primary,#eef1fb); }
+            .ar-kind.ar-gen-kind { color:var(--accent-primary,#7c6cff);
+                border-color:color-mix(in srgb, var(--accent-primary,#7c6cff) 55%, transparent);
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 12%, transparent); }
             .ar-gen-flow { display:inline-flex; align-items:center; gap:5px; font-family:ui-monospace,'JetBrains Mono',Menlo,monospace;
                 font-size:11.5px; color:var(--text-secondary,#b1bac4); }
             .ar-gen-arrow { color:var(--text-muted,#7d8590); }
             .ar-gen-toklabel { font-size:9.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted,#7d8590); }
             .ar-gen-cost { font-family:ui-monospace,'JetBrains Mono',Menlo,monospace; font-size:11.5px;
-                color:var(--text-primary,#e6edf3); font-variant-numeric:tabular-nums; }
+                color:var(--text-primary,#eef1fb); font-variant-numeric:tabular-nums; }
             .ar-gen-stop { font:600 9.5px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.4px; text-transform:uppercase;
                 padding:2px 7px; border-radius:6px; color:var(--text-muted,#7d8590);
-                border:1px solid var(--border-default,#30363d); }
+                border:1px solid var(--border-default,#283152); }
             /* "→ Bash" — the tool(s) this LLM run asked to call. Teal (the one
                interactive accent), not a security colour; text-case preserved so
                tool names read naturally (Bash, WebFetch). */
-            .ar-gen-stop.ar-gen-tooluse { text-transform:none; letter-spacing:0; color:var(--accent-primary,#5eadb8);
-                border-color:color-mix(in srgb, var(--accent-primary,#5eadb8) 45%, transparent);
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 10%, transparent);
+            .ar-gen-stop.ar-gen-tooluse { text-transform:none; letter-spacing:0; color:var(--accent-primary,#7c6cff);
+                border-color:color-mix(in srgb, var(--accent-primary,#7c6cff) 45%, transparent);
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 10%, transparent);
                 font-family:ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace; font-size:11px; }
             .ar-gen-toolarrow { opacity:.7; }
             .ar-gen-io { margin-top:11px; }
             .ar-gen-io:first-child { margin-top:0; }
-            .ar-gen-pre { margin:0; padding:9px 11px; border-radius:8px; background:var(--bg-primary,#010409);
-                border:1px solid var(--border-light,var(--border-default,#30363d)); color:var(--text-primary,#e6edf3);
+            .ar-gen-pre { margin:0; padding:9px 11px; border-radius:8px; background:var(--bg-primary,#04060e);
+                border:1px solid var(--border-light,var(--border-default,#283152)); color:var(--text-primary,#eef1fb);
                 box-shadow:var(--elevate-1,none);
                 font:11.5px ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace; white-space:pre-wrap; word-break:break-word;
                 max-height:220px; overflow:auto; }
             .ar-gen-ellipsis { color:var(--text-muted,#7d8590); }
             .ar-gen-note { font-size:11.5px; color:var(--text-muted,#7d8590); line-height:1.5; font-style:italic; }
             .ar-gen-privacy { margin-top:10px; font-size:10.5px; color:var(--text-muted,#7d8590); line-height:1.5;
-                padding-top:8px; border-top:1px dashed var(--border-default,#30363d); }
+                padding-top:8px; border-top:1px dashed var(--border-default,#283152); }
             /* Tool results (Pillar 3) — what each called tool returned. */
             .ar-tr { margin-top:8px; }
             .ar-tr:first-child { margin-top:4px; }
             .ar-tr-head { display:flex; align-items:center; gap:6px; margin-bottom:3px;
                 font:600 11.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-secondary,#b1bac4); }
-            .ar-tr-head b { color:var(--text-primary,#e6edf3); font-family:ui-monospace,'JetBrains Mono',Menlo,monospace; font-size:11.5px; }
-            .ar-tr-arrow { color:var(--accent-primary,#5eadb8); font-weight:700; }
+            .ar-tr-head b { color:var(--text-primary,#eef1fb); font-family:ui-monospace,'JetBrains Mono',Menlo,monospace; font-size:11.5px; }
+            .ar-tr-arrow { color:var(--accent-primary,#7c6cff); font-weight:700; }
             .ar-tr-err { font:700 9px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.4px; text-transform:uppercase;
                 padding:1px 6px; border-radius:5px; color:#ef4444; background:rgba(239,68,68,0.13); }
             /* --- Session replay bar (§3.1) --- */
             .ar-replay { display:flex; align-items:center; gap:10px; margin:2px 0 14px; }
             .ar-replay-enter { display:inline-flex; align-items:center; gap:7px; padding:6px 13px; border-radius:8px;
-                border:1px solid var(--border-default,#30363d); background:var(--bg-card,#161b22); color:var(--text-primary,#e6edf3);
+                border:1px solid var(--border-default,#283152); background:var(--bg-card,#131a30); color:var(--text-primary,#eef1fb);
                 font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; cursor:pointer; transition:background .12s,border-color .12s; }
-            .ar-replay-enter:hover:not(:disabled) { border-color:var(--accent-primary,#5eadb8); background:var(--bg-hover,#21262d); }
-            .ar-replay-enter svg { color:var(--accent-primary,#5eadb8); }
+            .ar-replay-enter:hover:not(:disabled) { border-color:var(--accent-primary,#7c6cff); background:var(--bg-hover,#21262d); }
+            .ar-replay-enter svg { color:var(--accent-primary,#7c6cff); }
             .ar-replay-enter:disabled { opacity:.45; cursor:default; }
-            .ar-replay.on { padding:8px 12px; border-radius:11px; background:var(--bg-tertiary,#0d1117);
-                border:1px solid var(--border-default,#30363d); box-shadow:var(--elevate-1,none); }
+            .ar-replay.on { padding:8px 12px; border-radius:11px; background:var(--bg-tertiary,#0b0f1e);
+                border:1px solid var(--border-default,#283152); box-shadow:var(--elevate-1,none); }
             .ar-rp-btn { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; flex:0 0 auto;
-                border:1px solid var(--border-default,#30363d); border-radius:7px; background:var(--bg-card,#161b22);
+                border:1px solid var(--border-default,#283152); border-radius:7px; background:var(--bg-card,#131a30);
                 color:var(--text-secondary,#b1bac4); cursor:pointer; transition:color .12s,background .12s,border-color .12s; }
-            .ar-rp-btn:hover:not(:disabled) { color:var(--text-primary,#e6edf3); background:var(--bg-hover,#21262d); }
+            .ar-rp-btn:hover:not(:disabled) { color:var(--text-primary,#eef1fb); background:var(--bg-hover,#21262d); }
             .ar-rp-btn:disabled { opacity:.35; cursor:default; }
-            .ar-rp-btn.play { color:#fff; background:var(--accent-primary,#5eadb8); border-color:var(--accent-primary,#5eadb8); }
-            .ar-rp-btn.play:hover:not(:disabled) { filter:brightness(1.08); background:var(--accent-primary,#5eadb8); }
+            .ar-rp-btn.play { color:#fff; background:var(--accent-primary,#7c6cff); border-color:var(--accent-primary,#7c6cff); }
+            .ar-rp-btn.play:hover:not(:disabled) { filter:brightness(1.08); background:var(--accent-primary,#7c6cff); }
             .ar-rp-btn.exit { margin-left:2px; }
-            .ar-rp-scrub { flex:1 1 auto; min-width:80px; accent-color:var(--accent-primary,#5eadb8); cursor:pointer; height:4px; }
+            .ar-rp-scrub { flex:1 1 auto; min-width:80px; accent-color:var(--accent-primary,#7c6cff); cursor:pointer; height:4px; }
             .ar-rp-read { display:flex; flex-direction:column; align-items:flex-end; line-height:1.25; flex:0 0 auto; }
-            .ar-rp-pos { font:700 12px ui-monospace,'JetBrains Mono',Menlo,monospace; color:var(--text-primary,#e6edf3); font-variant-numeric:tabular-nums; }
+            .ar-rp-pos { font:700 12px ui-monospace,'JetBrains Mono',Menlo,monospace; color:var(--text-primary,#eef1fb); font-variant-numeric:tabular-nums; }
             .ar-rp-clock { font-size:10px; color:var(--text-muted,#7d8590); white-space:nowrap; }
             .ar-rp-speed { display:inline-flex; gap:2px; flex:0 0 auto; }
-            .ar-rp-sp { border:1px solid var(--border-default,#30363d); background:var(--bg-card,#161b22); color:var(--text-secondary,#b1bac4);
+            .ar-rp-sp { border:1px solid var(--border-default,#283152); background:var(--bg-card,#131a30); color:var(--text-secondary,#b1bac4);
                 font:700 10.5px ui-monospace,'JetBrains Mono',Menlo,monospace; padding:5px 7px; border-radius:6px; cursor:pointer; }
-            .ar-rp-sp.on { color:#fff; background:var(--accent-primary,#5eadb8); border-color:var(--accent-primary,#5eadb8); }
+            .ar-rp-sp.on { color:#fff; background:var(--accent-primary,#7c6cff); border-color:var(--accent-primary,#7c6cff); }
             /* --- Collapsed LLM-turn group + toggle --- */
             .ar-gentoggle { display:inline-flex; align-items:center; gap:7px; margin:0 0 10px; padding:5px 11px; border-radius:8px;
-                border:1px dashed var(--border-default,#30363d); background:transparent; color:var(--text-secondary,#b1bac4);
+                border:1px dashed var(--border-default,#283152); background:transparent; color:var(--text-secondary,#b1bac4);
                 font:600 11.5px 'Avenir Next',Avenir,system-ui,sans-serif; cursor:pointer; transition:border-color .12s,color .12s; }
-            .ar-gentoggle:hover { border-color:var(--accent-primary,#5eadb8); color:var(--text-primary,#e6edf3); }
-            .ar-gentoggle-act { color:var(--accent-primary,#5eadb8); font-weight:700; }
+            .ar-gentoggle:hover { border-color:var(--accent-primary,#7c6cff); color:var(--text-primary,#eef1fb); }
+            .ar-gentoggle-act { color:var(--accent-primary,#7c6cff); font-weight:700; }
             .ar-gen-group { position:relative; margin:2px 0; }
             /* Collapsed group sits on the SAME spine as individual run rows:
                30px left gutter holds its robot marker, content starts at the
                row grid (matching .ar-span's caret) so the left column doesn't
                zigzag when groups and single rows interleave. */
             .ar-gen-group-head { position:relative; display:flex; align-items:center; gap:9px; width:100%; text-align:left; cursor:pointer;
-                padding:7px 11px 7px 30px; border-radius:8px; border:1px solid var(--border-default,#30363d);
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 6%, var(--bg-card,#161b22));
+                padding:7px 11px 7px 30px; border-radius:8px; border:1px solid var(--border-default,#283152);
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 6%, var(--bg-card,#131a30));
                 color:var(--text-secondary,#b1bac4); transition:background .12s,border-color .12s; }
             .ar-gen-group-dot { position:absolute; left:3px; top:50%; transform:translateY(-50%);
                 display:flex; align-items:center; justify-content:center; width:16px; height:16px; }
-            .ar-gen-group-head:hover { border-color:var(--accent-primary,#5eadb8); background:var(--bg-hover,#21262d); }
-            .ar-gen-group.open > .ar-gen-group-head .ar-caret { transform:rotate(90deg); color:var(--accent-primary,#5eadb8); }
-            .ar-gen-group-n { font:700 12px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3); }
+            .ar-gen-group-head:hover { border-color:var(--accent-primary,#7c6cff); background:var(--bg-hover,#21262d); }
+            .ar-gen-group.open > .ar-gen-group-head .ar-caret { transform:rotate(90deg); color:var(--accent-primary,#7c6cff); }
+            .ar-gen-group-n { font:700 12px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb); }
             .ar-gen-group-meta { font:11px ui-monospace,'JetBrains Mono',Menlo,monospace; color:var(--text-muted,#7d8590);
                 font-variant-numeric:tabular-nums; }
-            .ar-gen-group-body { padding-left:14px; margin-top:2px; border-left:2px solid color-mix(in srgb, var(--accent-primary,#5eadb8) 30%, transparent); }
+            .ar-gen-group-body { padding-left:14px; margin-top:2px; border-left:2px solid color-mix(in srgb, var(--accent-primary,#7c6cff) 30%, transparent); }
             /* --- Nested trace tree (Pillar 1): tool runs indented under the LLM
                run that requested them. Stepped drilldown: each child hangs
                off the parent spine with an explicit ELBOW connector (vertical
@@ -721,11 +721,11 @@ const AgentRunsPage = {
                reads as drawn structure, not just indentation. --- */
             .ar-turn-children { margin-left:7px; padding-left:24px; }
             .ar-turn-children .ar-span::before { display:block; left:-24px; top:-20px; bottom:0; width:2px;
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 30%, transparent); }
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 30%, transparent); }
             /* Rail stops AT the last child's elbow — no dangling tail. */
             .ar-turn-children .ar-span:last-child::before { display:block; height:34px; bottom:auto; }
             .ar-turn-children .ar-span::after { content:''; position:absolute; left:-24px; top:12px; width:22px; height:2px;
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 30%, transparent); }
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 30%, transparent); }
             .ar-turn-children .ar-span:last-child { padding-bottom:6px; }
             /* One STEP = one LLM turn + the tool calls it triggered. The wrapper
                breaks the spine between steps so the trace reads as numbered,
@@ -741,36 +741,36 @@ const AgentRunsPage = {
                dot when tree view can number the turn. */
             .ar-step-dot { display:flex; align-items:center; justify-content:center;
                 font:700 9px ui-monospace,'JetBrains Mono',Menlo,monospace; letter-spacing:-.3px;
-                color:var(--accent-primary,#5eadb8); font-variant-numeric:tabular-nums; }
+                color:var(--accent-primary,#7c6cff); font-variant-numeric:tabular-nums; }
             /* Honest per-run timing: "+2.3s" = this run STARTED that long after
                the previous run (wall clock between starts: we don't have
                per-run latency and never fake it). */
             .ar-delta { flex:0 0 auto; font:600 10px ui-monospace,'JetBrains Mono',Menlo,monospace;
                 color:var(--text-muted,#7d8590); font-variant-numeric:tabular-nums; min-width:46px; text-align:right; }
-            .ar-delta.first { color:color-mix(in srgb, var(--accent-primary,#5eadb8) 70%, var(--text-muted,#7d8590));
+            .ar-delta.first { color:color-mix(in srgb, var(--accent-primary,#7c6cff) 70%, var(--text-muted,#7d8590));
                 letter-spacing:.5px; text-transform:uppercase; font-size:9px; }
             /* Position mini-timeline: WHERE in the trace window this run
                happened (tick position = start time, not a duration bar). */
             .ar-tl { flex:0 0 auto; position:relative; width:72px; height:6px; border-radius:3px;
-                background:color-mix(in srgb, var(--border-default,#30363d) 60%, transparent); overflow:hidden; }
+                background:color-mix(in srgb, var(--border-default,#283152) 60%, transparent); overflow:hidden; }
             .ar-tl i { position:absolute; top:0; bottom:0; width:5px; border-radius:2px; }
             @media (max-width:980px) { .ar-tl { display:none; } .ar-delta { min-width:0; } }
             /* Replay visibility: hide events past the playhead; spotlight current. */
             .ar-replay-hidden { display:none !important; }
-            .ar-replay-current > .ar-span-row { background:color-mix(in srgb, var(--accent-primary,#5eadb8) 15%, transparent);
-                box-shadow:inset 3px 0 0 var(--accent-primary,#5eadb8); border-radius:8px; }
+            .ar-replay-current > .ar-span-row { background:color-mix(in srgb, var(--accent-primary,#7c6cff) 15%, transparent);
+                box-shadow:inset 3px 0 0 var(--accent-primary,#7c6cff); border-radius:8px; }
             /* Expandable per-step detail panel. */
-            .ar-detail-body { margin-top:10px; padding:12px 14px; border:1px solid var(--border-default,#30363d);
-                border-radius:10px; background:var(--bg-tertiary,#0d1117); display:none; }
+            .ar-detail-body { margin-top:10px; padding:12px 14px; border:1px solid var(--border-default,#283152);
+                border-radius:10px; background:var(--bg-tertiary,#0b0f1e); display:none; }
             .ar-span.open .ar-detail-body { display:block; animation:arFade .16s ease-out; }
             .ar-kv { display:grid; grid-template-columns:104px 1fr; gap:6px 14px; font-size:12px; }
             .ar-kv dt { color:var(--text-muted,#7d8590); font-weight:600; }
-            .ar-kv dd { margin:0; color:var(--text-primary,#e6edf3); word-break:break-word;
+            .ar-kv dd { margin:0; color:var(--text-primary,#eef1fb); word-break:break-word;
                 font-family:ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace; }
             .ar-args { margin-top:11px; }
             .ar-args-label { font-size:10px; letter-spacing:.5px; text-transform:uppercase; color:var(--text-muted,#7d8590); margin-bottom:4px; }
-            .ar-args pre { margin:0; padding:9px 11px; border-radius:8px; background:var(--bg-card,#161b22);
-                border:1px solid var(--border-default,#30363d); color:var(--text-secondary,#b1bac4);
+            .ar-args pre { margin:0; padding:9px 11px; border-radius:8px; background:var(--bg-card,#131a30);
+                border:1px solid var(--border-default,#283152); color:var(--text-secondary,#b1bac4);
                 font:11.5px ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace; white-space:pre-wrap; word-break:break-word;
                 max-height:220px; overflow:auto; }
             /* Scanned-content panel: the LLM I/O excerpt Aegis actually
@@ -780,8 +780,8 @@ const AgentRunsPage = {
             .ar-scan-item { margin-bottom:8px; }
             .ar-scan-item:last-child { margin-bottom:0; }
             .ar-scan-meta { font-size:10.5px; color:var(--text-muted,#7d8590); margin-bottom:3px; }
-            .ar-scan-item pre { margin:0; padding:9px 11px; border-radius:8px; background:var(--bg-card,#161b22);
-                border:1px solid var(--border-default,#30363d); color:var(--text-secondary,#b1bac4);
+            .ar-scan-item pre { margin:0; padding:9px 11px; border-radius:8px; background:var(--bg-card,#131a30);
+                border:1px solid var(--border-default,#283152); color:var(--text-secondary,#b1bac4);
                 font:11.5px ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace; white-space:pre-wrap; word-break:break-word;
                 max-height:260px; overflow:auto; }
             .ar-turn { font-family:ui-monospace,'JetBrains Mono',Menlo,monospace; font-size:11px; color:var(--text-muted,#7d8590); min-width:26px; }
@@ -801,7 +801,7 @@ const AgentRunsPage = {
                 border-left:2.5px solid; width:fit-content; max-width:100%; }
             .ar-span-detection.det-threat { border-left-color:#ef4444; background:rgba(239,68,68,0.09); }
             .ar-span-detection.det-secret { border-left-color:#f59e0b; background:rgba(245,158,11,0.09); }
-            .ar-det-what { font:700 11.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3); }
+            .ar-det-what { font:700 11.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb); }
             .ar-det-rules { font-size:11px; color:var(--text-secondary,#b1bac4); }
             /* Mechanism 1 FP-triage pill on the detection row. */
             .ar-det-fp { font:700 10px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.2px;
@@ -809,7 +809,7 @@ const AgentRunsPage = {
             .ar-det-fp.uncertain { color:var(--text-muted,#7d8590); background:rgba(125,133,144,0.15); }
             .ar-det-clickable { cursor:pointer; }
             .ar-det-clickable:hover { filter:brightness(1.15); }
-            .ar-det-view { font:600 11px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--accent-primary,#5eadb8); opacity:.85; }
+            .ar-det-view { font:600 11px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--accent-primary,#7c6cff); opacity:.85; }
             .ar-det-clickable:hover .ar-det-view { opacity:1; text-decoration:underline; }
             /* Allowed-vs-blocked outcome pill ON the detection — the key
                "detected ≠ blocked" clarity fix. Amber = ran anyway (act on it),
@@ -822,9 +822,9 @@ const AgentRunsPage = {
             .ar-flag-strip { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px; }
             .ar-flag-chip { display:inline-flex; align-items:center; gap:5px; cursor:pointer;
                 font:600 12px 'Avenir Next',Avenir,system-ui,sans-serif; padding:4px 11px; border-radius:20px;
-                border:1px solid var(--border-default,#30363d); background:var(--bg-secondary,#161b22);
+                border:1px solid var(--border-default,#283152); background:var(--bg-secondary,#131a30);
                 color:var(--text-secondary,#b1bac4); transition:background .12s,border-color .12s; }
-            .ar-flag-chip b { color:var(--text-primary,#e6edf3); }
+            .ar-flag-chip b { color:var(--text-primary,#eef1fb); }
             .ar-flag-chip:hover { background:var(--bg-hover,#21262d); }
             .ar-flag-chip.threat.active { border-color:#ef4444; background:rgba(239,68,68,0.12); }
             .ar-flag-chip.secret.active { border-color:#f59e0b; background:rgba(245,158,11,0.12); }
@@ -833,37 +833,37 @@ const AgentRunsPage = {
             .ar-empty { padding:60px 18px; text-align:center; color:var(--text-secondary,#94a3b8); }
             /* Runtime drill-down filter chip (set by a Map agent-node click) */
             .ar-filter-chip { display:inline-flex; align-items:center; gap:7px; cursor:pointer; align-self:flex-start;
-                border:1px solid var(--accent-primary,#5eadb8); border-radius:999px; padding:5px 11px; margin-bottom:3px;
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 12%, var(--bg-card,#161b22));
-                color:var(--text-primary,#e6edf3); font:600 12px 'Avenir Next',Avenir,system-ui,sans-serif;
+                border:1px solid var(--accent-primary,#7c6cff); border-radius:999px; padding:5px 11px; margin-bottom:3px;
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 12%, var(--bg-card,#131a30));
+                color:var(--text-primary,#eef1fb); font:600 12px 'Avenir Next',Avenir,system-ui,sans-serif;
                 transition:background .14s,border-color .14s; }
-            .ar-filter-chip:hover { background:color-mix(in srgb, var(--accent-primary,#5eadb8) 20%, var(--bg-card,#161b22)); }
+            .ar-filter-chip:hover { background:color-mix(in srgb, var(--accent-primary,#7c6cff) 20%, var(--bg-card,#131a30)); }
             .ar-filter-chip b { font-weight:700; }
             .ar-chip-dot { width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
             .ar-chip-x { margin-left:2px; font-size:11px; color:var(--text-secondary,#b1bac4); }
-            .ar-filter-chip:hover .ar-chip-x { color:var(--text-primary,#e6edf3); }
+            .ar-filter-chip:hover .ar-chip-x { color:var(--text-primary,#eef1fb); }
             /* Tool-kind checkbox filter */
             .ar-kind-checks { display:inline-flex; align-items:center; gap:14px; }
             .ar-check { display:inline-flex; align-items:center; gap:6px; cursor:pointer;
-                font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3); user-select:none; }
-            .ar-check input { width:14px; height:14px; cursor:pointer; accent-color:var(--accent-primary,#5eadb8); margin:0; }
+                font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb); user-select:none; }
+            .ar-check input { width:14px; height:14px; cursor:pointer; accent-color:var(--accent-primary,#7c6cff); margin:0; }
             .ar-check-dot { width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
             /* --- Triage quick views (list-level saved views) --- */
             .ar-view-chips { display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:2px 0 4px; }
             .ar-view-chip { display:inline-flex; align-items:center; cursor:pointer;
                 font:600 11.5px 'Avenir Next',Avenir,system-ui,sans-serif; padding:4px 12px; border-radius:999px;
-                border:1px solid var(--border-default,#30363d); background:var(--bg-secondary,#161b22);
+                border:1px solid var(--border-default,#283152); background:var(--bg-secondary,#131a30);
                 color:var(--text-secondary,#b1bac4); transition:background .12s,border-color .12s,color .12s; }
             .ar-view-chip b { font:700 11.5px ui-monospace,'JetBrains Mono',Menlo,monospace;
-                font-variant-numeric:tabular-nums; color:var(--text-primary,#e6edf3); }
+                font-variant-numeric:tabular-nums; color:var(--text-primary,#eef1fb); }
             .ar-view-chip:hover { background:var(--bg-hover,#21262d); }
-            .ar-view-chip.active { border-color:var(--accent-primary,#5eadb8);
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 14%, var(--bg-card,#161b22));
-                color:var(--text-primary,#e6edf3); }
+            .ar-view-chip.active { border-color:var(--accent-primary,#7c6cff);
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 14%, var(--bg-card,#131a30));
+                color:var(--text-primary,#eef1fb); }
             /* --- Session minimap (trace summary strip) --- */
             .ar-minimap { display:flex; align-items:center; gap:10px; margin:8px 0 2px;
-                padding:6px 10px; border:1px solid var(--border-default,#30363d); border-radius:10px;
-                background:var(--bg-secondary,#161b22); }
+                padding:6px 10px; border:1px solid var(--border-default,#283152); border-radius:10px;
+                background:var(--bg-secondary,#131a30); }
             .ar-mini-track { position:relative; flex:1; height:34px; min-width:0; cursor:pointer; }
             .ar-mini-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
             .ar-mini-tick { position:absolute; top:2px; bottom:2px; width:5px; margin-left:-2.5px;
@@ -875,41 +875,41 @@ const AgentRunsPage = {
                 color:var(--text-muted,#7d8590); white-space:nowrap; font-variant-numeric:tabular-nums; }
             .ar-mini-nav { display:inline-flex; align-items:center; gap:4px; flex:0 0 auto; margin-left:2px; }
             .ar-mini-navbtn { width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center;
-                cursor:pointer; border:1px solid var(--border-default,#30363d); border-radius:6px;
-                background:var(--bg-card,#161b22); color:var(--text-secondary,#b1bac4);
+                cursor:pointer; border:1px solid var(--border-default,#283152); border-radius:6px;
+                background:var(--bg-card,#131a30); color:var(--text-secondary,#b1bac4);
                 font:700 13px 'Avenir Next',Avenir,system-ui,sans-serif; line-height:1; padding:0 0 2px; }
-            .ar-mini-navbtn:hover { background:var(--bg-hover,#21262d); color:var(--text-primary,#e6edf3);
-                border-color:var(--accent-primary,#5eadb8); }
+            .ar-mini-navbtn:hover { background:var(--bg-hover,#21262d); color:var(--text-primary,#eef1fb);
+                border-color:var(--accent-primary,#7c6cff); }
             .ar-mini-count { font:600 10.5px ui-monospace,'JetBrains Mono',Menlo,monospace;
                 color:var(--text-secondary,#b1bac4); white-space:nowrap; font-variant-numeric:tabular-nums;
                 min-width:52px; text-align:center; }
             /* Jump-flash: two soft pulses on the row the minimap landed on.
                Teal (attention), not a security color. */
             @keyframes arJumpHit {
-                0%, 55% { box-shadow:0 0 0 2px color-mix(in srgb, var(--accent-primary,#5eadb8) 65%, transparent);
-                          background:color-mix(in srgb, var(--accent-primary,#5eadb8) 10%, transparent); }
+                0%, 55% { box-shadow:0 0 0 2px color-mix(in srgb, var(--accent-primary,#7c6cff) 65%, transparent);
+                          background:color-mix(in srgb, var(--accent-primary,#7c6cff) 10%, transparent); }
                 27%, 100% { box-shadow:0 0 0 2px transparent; background:transparent; }
             }
             .ar-jump-hit { animation:arJumpHit 1.6s ease-out 1; border-radius:8px; }
             /* --- Chat-style LLM turn I/O --- */
             .ar-chat { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
-            .ar-msg { max-width:88%; border:1px solid var(--border-default,#30363d); border-radius:12px;
-                padding:7px 10px 8px; background:var(--bg-secondary,#161b22); }
+            .ar-msg { max-width:88%; border:1px solid var(--border-default,#283152); border-radius:12px;
+                padding:7px 10px 8px; background:var(--bg-secondary,#131a30); }
             .ar-msg.prompt { align-self:flex-start; border-top-left-radius:4px; }
             .ar-msg.model { align-self:flex-end; border-top-right-radius:4px;
-                border-color:color-mix(in srgb, var(--accent-primary,#5eadb8) 45%, var(--border-default,#30363d));
-                background:color-mix(in srgb, var(--accent-primary,#5eadb8) 7%, var(--bg-secondary,#161b22)); }
+                border-color:color-mix(in srgb, var(--accent-primary,#7c6cff) 45%, var(--border-default,#283152));
+                background:color-mix(in srgb, var(--accent-primary,#7c6cff) 7%, var(--bg-secondary,#131a30)); }
             .ar-msg.tool { align-self:flex-start; max-width:82%; margin-left:14px; border-radius:10px;
                 border-style:dashed; background:transparent; }
             .ar-msg-role { display:flex; align-items:center; gap:5px; margin-bottom:4px;
                 font:700 9.5px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.8px;
                 text-transform:uppercase; color:var(--text-muted,#7d8590); }
-            .ar-msg.model .ar-msg-role { color:var(--accent-primary,#5eadb8); }
+            .ar-msg.model .ar-msg-role { color:var(--accent-primary,#7c6cff); }
             .ar-msg .ar-gen-pre { margin:0; border:none; background:transparent; padding:0; }
             .ar-msg .ar-gen-note { margin:0; }
             /* --- Per-row gap bar (inline duration signal) --- */
             .ar-gapbar { flex:0 0 auto; width:52px; height:3.5px; border-radius:2px; overflow:hidden;
-                background:color-mix(in srgb, var(--border-default,#30363d) 60%, transparent); }
+                background:color-mix(in srgb, var(--border-default,#283152) 60%, transparent); }
             .ar-gapbar i { display:block; height:100%; border-radius:2px;
                 background:var(--text-muted,#7d8590); opacity:.75; }
             .ar-gapbar.first { visibility:hidden; }
@@ -972,7 +972,7 @@ const AgentRunsPage = {
         kwrap.className = 'ar-kind-checks';
         [
             { key: 'builtin', label: 'Built-in', color: '#64748b' },
-            { key: 'external', label: 'External MCP', color: 'var(--accent-primary,#5eadb8)' },
+            { key: 'external', label: 'External MCP', color: 'var(--accent-primary,#7c6cff)' },
         ].forEach(k => {
             const lab = document.createElement('label');
             lab.className = 'ar-check';
@@ -1373,7 +1373,7 @@ const AgentRunsPage = {
             byRt.get(k).runs.push(r);
         });
         if (!this._groupsCollapsed) {
-            try { this._groupsCollapsed = JSON.parse(localStorage.getItem('sv-ar-groups') || '{}'); }
+            try { this._groupsCollapsed = JSON.parse(localStorage.getItem('ag-ar-groups') || '{}'); }
             catch (e) { this._groupsCollapsed = {}; }
         }
         const collapsed = this._groupsCollapsed;
@@ -1448,7 +1448,7 @@ const AgentRunsPage = {
                 body.hidden = closing;
                 head.classList.toggle('closed', closing);
                 collapsed[g.rt] = closing;
-                try { localStorage.setItem('sv-ar-groups', JSON.stringify(collapsed)); } catch (e) { /* private mode */ }
+                try { localStorage.setItem('ag-ar-groups', JSON.stringify(collapsed)); } catch (e) { /* private mode */ }
             });
             list.appendChild(head);
             list.appendChild(body);
@@ -1710,7 +1710,7 @@ const AgentRunsPage = {
             t.className = 'ar-gentoggle';
             t.innerHTML = this.collapseGens
                 ? `${AR_ROBOT_SVG('#8b949e', 12)}<span>LLM runs collapsed</span><span class="ar-gentoggle-act">Expand all</span>`
-                : `${AR_ROBOT_SVG('#5eadb8', 12)}<span>LLM runs expanded</span><span class="ar-gentoggle-act">Collapse</span>`;
+                : `${AR_ROBOT_SVG('#7c6cff', 12)}<span>LLM runs expanded</span><span class="ar-gentoggle-act">Collapse</span>`;
             t.addEventListener('click', () => { this.collapseGens = !this.collapseGens; this.renderWaterfall(this._trace); });
             detail.appendChild(t);
         }
@@ -2047,7 +2047,7 @@ const AgentRunsPage = {
         head.type = 'button';
         head.className = 'ar-gen-group-head';
         head.innerHTML =
-            `<span class="ar-gen-group-dot">${AR_ROBOT_SVG('#5eadb8', 13)}</span>` +
+            `<span class="ar-gen-group-dot">${AR_ROBOT_SVG('#7c6cff', 13)}</span>` +
             `<svg class="ar-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>` +
             `<span class="ar-gen-group-n">${group.length} LLM runs</span>` +
             `<span class="ar-gen-group-meta">${this._esc(modelLabel)} · ${this._fmtTok(inTok)}→${this._fmtTok(outTok)} tok${costLabel}</span>`;
@@ -2259,7 +2259,7 @@ const AgentRunsPage = {
         }
         const dotHtml = (stepN != null)
             ? `<span class="ar-span-dot ar-gen-dot ar-step-dot" title="Step ${stepN} — chronological order within this trace">${stepN}</span>`
-            : `<span class="ar-span-dot ar-gen-dot">${AR_ROBOT_SVG('#5eadb8', 12)}</span>`;
+            : `<span class="ar-span-dot ar-gen-dot">${AR_ROBOT_SVG('#7c6cff', 12)}</span>`;
         span.innerHTML =
             dotHtml +
             `<div class="ar-span-row">${caret}<span class="ar-turn">#${s.turn_index ?? '–'}</span>` +
@@ -2270,7 +2270,7 @@ const AgentRunsPage = {
             `<span class="ar-gen-toklabel">tok</span></span>` +
             `<span class="ar-gen-cost" title="Estimated: transcript token counts × API list price. Not metered billing: on a subscription plan this usage is included.">${cost}</span>${stop}` +
             `<span class="ar-time">${this._fmtTime(s.called_at)}</span>` +
-            this._timingHtml(s, '#5eadb8') + `</div>` +
+            this._timingHtml(s, '#7c6cff') + `</div>` +
             this._genDetail(s);
         span.querySelector('.ar-span-row').addEventListener('click', () => span.classList.toggle('open'));
         return span;
@@ -2316,7 +2316,7 @@ const AgentRunsPage = {
             bubble('prompt', promptRole, 'LLM input: prompt (redacted preview)',
                 s.input_preview, s.input_truncated,
                 s.input_is_tool_result ? 'Turn driven by a tool result (no prompt text).' : 'No text in this turn (tool call / reasoning only).') +
-            bubble('model', `${AR_ROBOT_SVG('#5eadb8', 11)} ${this._esc(this._prettyModel(s.model))}`,
+            bubble('model', `${AR_ROBOT_SVG('#7c6cff', 11)} ${this._esc(this._prettyModel(s.model))}`,
                 'LLM output: response (redacted preview)',
                 s.output_preview, s.output_truncated, 'No text in this turn (tool call / reasoning only).') +
             resultsHtml +

@@ -72,7 +72,7 @@ const AgentTimelinePage = {
         st.id = 'agent-tl-style';
         st.textContent = `
             .tl-feed { position:relative; margin:4px 2px; padding-left:22px; }
-            .tl-feed::before { content:''; position:absolute; left:5px; top:6px; bottom:6px; width:2px; background:var(--border-default,#30363d); }
+            .tl-feed::before { content:''; position:absolute; left:5px; top:6px; bottom:6px; width:2px; background:var(--border-default,#283152); }
             .tl-day { position:relative; margin:18px 0 10px -22px; padding-left:22px; font:700 11px 'Avenir Next',Avenir,system-ui,sans-serif;
                 letter-spacing:.6px; text-transform:uppercase; color:var(--text-muted,#7d8590); }
             .tl-day:first-child { margin-top:2px; }
@@ -80,26 +80,26 @@ const AgentTimelinePage = {
                 margin:0 -8px; transition:background .12s; }
             .tl-row:hover { background:var(--bg-hover,#21262d); }
             .tl-dot { position:absolute; left:-22px; top:13px; width:11px; height:11px; border-radius:50%;
-                border:2.5px solid var(--bg-page,#0d1117); box-sizing:content-box;
+                border:2.5px solid var(--bg-page,#0b0f1e); box-sizing:content-box;
                 box-shadow:0 0 0 3px color-mix(in srgb, currentColor 0%, transparent); }
             .tl-time { font-family:ui-monospace,'JetBrains Mono','SF Mono',Menlo,monospace; font-size:11px;
                 color:var(--text-muted,#7d8590); width:52px; flex:0 0 auto; }
             .tl-rt { font-size:11px; color:var(--text-secondary,#b1bac4); width:88px; flex:0 0 auto; overflow:hidden;
                 text-overflow:ellipsis; white-space:nowrap; }
-            .tl-tool { font:600 13px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3);
+            .tl-tool { font:600 13px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb);
                 overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
             .tl-kind { font:600 9.5px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.5px; text-transform:uppercase;
-                padding:2px 7px; border-radius:5px; border:1px solid var(--border-default,#30363d); color:var(--text-secondary,#b1bac4); flex:0 0 auto; }
-            .tl-kind.ext { color:var(--accent-primary,#5eadb8); border-color:var(--accent-primary,#5eadb8); }
+                padding:2px 7px; border-radius:5px; border:1px solid var(--border-default,#283152); color:var(--text-secondary,#b1bac4); flex:0 0 auto; }
+            .tl-kind.ext { color:var(--accent-primary,#7c6cff); border-color:var(--accent-primary,#7c6cff); }
             .tl-badge { font:600 10px 'Avenir Next',Avenir,system-ui,sans-serif; letter-spacing:.4px; padding:2px 8px; border-radius:20px;
                 display:inline-flex; align-items:center; gap:4px; margin-left:auto; flex:0 0 auto; }
             .tl-reason { margin:-2px 0 6px 0; padding-left:0; font-size:11.5px; color:var(--text-secondary,#b1bac4); }
             .tl-reason.blk { color:var(--danger,#ef4444); }
-            .tl-chart-wrap { background:var(--bg-card,#161b22); border:1px solid var(--border-default,#30363d);
+            .tl-chart-wrap { background:var(--bg-card,#131a30); border:1px solid var(--border-default,#283152);
                 border-radius:11px; padding:10px 12px 6px; margin:0 2px 14px; }
             .tl-chart-legend { display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:4px;
                 font-size:11.5px; color:var(--text-secondary,#b1bac4); }
-            .tl-chart-title { font-weight:700; color:var(--text-primary,#e6edf3); }
+            .tl-chart-title { font-weight:700; color:var(--text-primary,#eef1fb); }
             .tl-leg { display:inline-flex; align-items:center; gap:6px; }
             .tl-leg i { display:inline-block; width:11px; height:2.5px; border-radius:2px; }
             .tl-empty { padding:54px 18px; text-align:center; color:var(--text-secondary,#94a3b8); }
@@ -107,12 +107,12 @@ const AgentTimelinePage = {
             .tl-empty .t2 { font-size:13px; }
             .tl-trunc { margin:18px 0 6px; padding:10px 12px; border-radius:9px; font-size:12px;
                 color:var(--text-muted,#7d8590); background:var(--bg-subtle,rgba(125,133,144,.06));
-                border:1px dashed var(--border-default,#30363d); text-align:center; }
+                border:1px dashed var(--border-default,#283152); text-align:center; }
             /* Tool-kind checkbox filter */
             .tl-kind-checks { display:inline-flex; align-items:center; gap:14px; }
             .tl-check { display:inline-flex; align-items:center; gap:6px; cursor:pointer;
-                font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#e6edf3); user-select:none; }
-            .tl-check input { width:14px; height:14px; cursor:pointer; accent-color:var(--accent-primary,#5eadb8); margin:0; }
+                font:600 12.5px 'Avenir Next',Avenir,system-ui,sans-serif; color:var(--text-primary,#eef1fb); user-select:none; }
+            .tl-check input { width:14px; height:14px; cursor:pointer; accent-color:var(--accent-primary,#7c6cff); margin:0; }
             .tl-check-dot { width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
         `;
         document.head.appendChild(st);
@@ -154,7 +154,7 @@ const AgentTimelinePage = {
         kwrap.className = 'tl-kind-checks';
         [
             { key: 'builtin', label: 'Built-in', color: '#64748b' },
-            { key: 'external', label: 'External MCP', color: 'var(--accent-primary,#5eadb8)' },
+            { key: 'external', label: 'External MCP', color: 'var(--accent-primary,#7c6cff)' },
         ].forEach(k => {
             const lab = document.createElement('label');
             lab.className = 'tl-check';
@@ -350,7 +350,7 @@ const AgentTimelinePage = {
         const yax = document.createElementNS(TL_SVG_NS, 'line');
         yax.setAttribute('x1', PL); yax.setAttribute('x2', PL);
         yax.setAttribute('y1', PT); yax.setAttribute('y2', PT + ph);
-        yax.setAttribute('stroke', 'var(--border-default,#30363d)'); yax.setAttribute('opacity', '0.8');
+        yax.setAttribute('stroke', 'var(--border-default,#283152)'); yax.setAttribute('opacity', '0.8');
         svg.appendChild(yax);
 
         // Horizontal gridlines at "nice" y ticks (0 … yMax), each labelled.
@@ -364,7 +364,7 @@ const AgentTimelinePage = {
             const ln = document.createElementNS(TL_SVG_NS, 'line');
             ln.setAttribute('x1', PL); ln.setAttribute('x2', W - PR);
             ln.setAttribute('y1', yAt(v)); ln.setAttribute('y2', yAt(v));
-            ln.setAttribute('stroke', 'var(--border-default,#30363d)');
+            ln.setAttribute('stroke', 'var(--border-default,#283152)');
             ln.setAttribute('stroke-dasharray', v === 0 ? '0' : '2,3');
             ln.setAttribute('opacity', v === 0 ? '0.8' : '0.4');
             svg.appendChild(ln);
@@ -425,7 +425,7 @@ const AgentTimelinePage = {
                 if (!v) return;
                 const c = document.createElementNS(TL_SVG_NS, 'circle');
                 c.setAttribute('cx', xAt(i)); c.setAttribute('cy', yAt(v)); c.setAttribute('r', '2.6');
-                c.setAttribute('fill', s.color); c.setAttribute('stroke', 'var(--bg-card,#161b22)'); c.setAttribute('stroke-width', '1.5');
+                c.setAttribute('fill', s.color); c.setAttribute('stroke', 'var(--bg-card,#131a30)'); c.setAttribute('stroke-width', '1.5');
                 svg.appendChild(c);
             });
         });

@@ -12,7 +12,7 @@
  *     no feedback loop.
  *   - Code blocks, terminals and log surfaces are skipped (data must stay
  *     machine-readable). Brand / product names stay as-is.
- *   - Choice persists in localStorage ('sv-lang').
+ *   - Choice persists in localStorage ('ag-lang').
  *
  * Zero dependencies, native browser APIs only.
  */
@@ -22,7 +22,7 @@
     var DICT = (typeof window !== 'undefined' && window.SV_DICT) || {};
     var PATTERNS = (typeof window !== 'undefined' && window.SV_PATTERNS) || [];
 
-    var STORAGE_KEY = 'sv-lang';
+    var STORAGE_KEY = 'ag-lang';
 
     // Elements whose content must stay machine-readable English.
     var SKIP_RE = /(^|\s)(code-block|code|terminal|term|log|logs|mono|monospace|command-box|console|output|env-var|inline-code|copied|language-|json|bash|clipboard|keyboard|code-)(\s|$)/i;

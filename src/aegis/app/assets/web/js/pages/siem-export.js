@@ -192,7 +192,7 @@ const SiemExportPage = {
         tplCallout.style.cssText = 'display:none;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:12px 14px;border:1px solid var(--accent-primary);border-radius:10px;background:var(--bg-card);flex-wrap:wrap;';
         tplCallout.innerHTML = `
             <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
-                <span aria-hidden="true" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;background:rgba(94,173,184,0.12);border:1px solid rgba(94,173,184,0.35);border-radius:8px;color:var(--accent-primary);">
+                <span aria-hidden="true" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;flex-shrink:0;background:rgba(124,108,255,0.12);border:1px solid rgba(124,108,255,0.35);border-radius:8px;color:var(--accent-primary);">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8"/><rect x="12" y="6" width="3" height="12"/><rect x="17" y="13" width="3" height="5"/></svg>
                 </span>
                 <div style="font-size:12.5px;color:var(--text-secondary);line-height:1.5;min-width:0;">
@@ -204,7 +204,7 @@ const SiemExportPage = {
                 <button type="button" class="btn btn-secondary btn-compact" data-tpl="splunk">Splunk</button>
                 <button type="button" class="btn btn-secondary btn-compact" data-tpl="datadog">Datadog</button>
                 <button type="button" class="btn btn-secondary btn-compact" data-tpl="grafana">Grafana</button>
-                <a href="#" data-sv-goto-guide="section-siem-forwarder" class="btn btn-secondary btn-compact" style="text-decoration:none;">Install steps →</a>
+                <a href="#" data-ag-goto-guide="section-siem-forwarder" class="btn btn-secondary btn-compact" style="text-decoration:none;">Install steps →</a>
             </div>
         `;
         tplCallout.querySelectorAll('button[data-tpl]').forEach(btn => {
@@ -212,7 +212,7 @@ const SiemExportPage = {
                 SiemExportPage.openTemplateModal(btn.getAttribute('data-tpl'));
             });
         });
-        tplCallout.querySelector('[data-sv-goto-guide]')?.addEventListener('click', (e) => {
+        tplCallout.querySelector('[data-ag-goto-guide]')?.addEventListener('click', (e) => {
             e.preventDefault();
             if (window.Sidebar) {
                 Sidebar._pendingScroll = 'section-siem-forwarder';
@@ -456,7 +456,7 @@ const SiemExportPage = {
         grid.appendChild(card({
             name: 'Standard · Default',
             subtitle: 'Most production feeds',
-            accent: '#5eadb8',
+            accent: '#7c6cff',
             ships: [
                 'Everything from Minimal, plus:',
                 'threat_score, confidence_score',
@@ -500,9 +500,9 @@ const SiemExportPage = {
         tierGuideFooter.innerHTML = `
             <strong style="color:var(--text-secondary);">Reference material →</strong>
             Per-tier redaction breakdown, OCSF schema, example payloads, supported destinations, and ready-made Splunk / Sentinel dashboards live in the
-            <a href="#" data-sv-goto-guide="section-siem-forwarder" style="color:var(--accent-primary);text-decoration:underline;">Guide → SIEM Forwarder section</a>.
+            <a href="#" data-ag-goto-guide="section-siem-forwarder" style="color:var(--accent-primary);text-decoration:underline;">Guide → SIEM Forwarder section</a>.
         `;
-        tierGuideFooter.querySelector('[data-sv-goto-guide]')?.addEventListener('click', (e) => {
+        tierGuideFooter.querySelector('[data-ag-goto-guide]')?.addEventListener('click', (e) => {
             e.preventDefault();
             if (window.Sidebar) {
                 Sidebar._pendingScroll = 'section-siem-forwarder';

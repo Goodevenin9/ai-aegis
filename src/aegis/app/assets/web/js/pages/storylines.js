@@ -257,7 +257,7 @@ const StorylinesPage = {
             stories.push({
                 kind,
                 label: STORY_RUNTIME_LABEL[kind] || kind,
-                color: STORY_RUNTIME_COLOR[kind] || 'var(--accent-primary, #5eadb8)',
+                color: STORY_RUNTIME_COLOR[kind] || 'var(--accent-primary, #7c6cff)',
                 chapters,
                 sessions: runs.length,
                 steps: runs.reduce((s, r) => s + (r.spans || 0), 0),
@@ -475,7 +475,7 @@ const StorylinesPage = {
 
         // What-changed drift chips — the storyline's whole point.
         if (ch.isFirst) {
-            line.appendChild(this._chip('first session', 'var(--accent-primary, #5eadb8)'));
+            line.appendChild(this._chip('first session', 'var(--accent-primary, #7c6cff)'));
         } else if (ch.newTools.length) {
             const shown = ch.newTools.slice(0, 2);
             shown.forEach(tname => line.appendChild(this._chip(`new tool: ${tname}`, '#f59e0b')));
@@ -922,7 +922,7 @@ const StorylinesPage = {
 
         const dot = document.createElement('span');
         dot.className = 'story-wf-dot';
-        dot.style.background = 'var(--accent-primary, #5eadb8)';
+        dot.style.background = 'var(--accent-primary, #7c6cff)';
         row.appendChild(dot);
 
         const idx = document.createElement('span');
@@ -1144,9 +1144,9 @@ const StorylinesPage = {
 /* Generation (LLM turn) node — teal LLM tag + token flow. */
 .story-gen-flow { color: var(--text-secondary); font-size: 11px; font-family: ui-monospace, Menlo, monospace;
     font-variant-numeric: tabular-nums; flex: none; }
-.story-wf-gen .story-llm-tag { color: var(--accent-primary, #5eadb8);
-    border-color: color-mix(in srgb, var(--accent-primary, #5eadb8) 55%, transparent);
-    background: color-mix(in srgb, var(--accent-primary, #5eadb8) 12%, transparent); }
+.story-wf-gen .story-llm-tag { color: var(--accent-primary, #7c6cff);
+    border-color: color-mix(in srgb, var(--accent-primary, #7c6cff) 55%, transparent);
+    background: color-mix(in srgb, var(--accent-primary, #7c6cff) 12%, transparent); }
 .story-detail-foot { margin-top: 10px; }
 .story-trace-note { font-size: 11px; color: var(--text-muted); letter-spacing: .2px; padding-left: 22px; }
 .story-llm-tag { font-size: 9.5px; font-weight: 800; letter-spacing: .7px; color: var(--text-secondary);
