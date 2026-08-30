@@ -1,0 +1,117 @@
+SecureVector AI Threat Monitor
+Copyright 2025-2026 SecureVector
+
+Aegis (灵盾) AI Threat Monitor
+Copyright 2026 Aegis
+
+Aegis is a derived work of SecureVector AI Threat Monitor
+(https://github.com/Secure-Vector/ai-threat-monitor), Copyright
+2025-2026 SecureVector. It is distributed under the Apache License,
+Version 2.0, with modifications made by the Aegis team.
+
+This product includes software developed by SecureVector.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+================================================================================
+
+THIRD-PARTY DEPENDENCIES:
+
+This software includes the following third-party dependencies:
+
+PyYAML
+- License: MIT License
+- Copyright: Kirill Simonov
+- Website: https://pyyaml.org/
+
+================================================================================
+
+OPEN STANDARDS CONFORMED TO (no redistributed content):
+
+Aegis emits events that conform to the following open schemas /
+identifier namespaces. No schema files, documentation, or derivative works
+are bundled; the project uses these as format specifications only.
+
+Open Cybersecurity Schema Framework (OCSF)
+- Version: 1.3.0
+- License: Apache License 2.0
+- Steward: OCSF Project, hosted by the Linux Foundation
+- Website: https://ocsf.io/
+- Usage: siem_ocsf.py emits events conforming to OCSF 1.3.0 class_uid
+  2001 (Scan Finding) and 1007 (Process Activity / tool-call audit).
+
+MITRE ATT&CK(R)
+- License: Apache License 2.0 for the framework; content licensed under
+  Creative Commons Attribution 4.0 International (CC BY 4.0)
+- Steward: The MITRE Corporation
+- Website: https://attack.mitre.org/
+- Usage: Rule metadata references ATT&CK technique IDs (e.g., T1055,
+  T1059) as identifiers only. No ATT&CK names, descriptions, or other
+  copyrighted content is redistributed. ATT&CK(R) is a registered
+  trademark of The MITRE Corporation; Aegis is not affiliated
+  with or endorsed by MITRE.
+
+AGENT RUNTIMES & FRAMEWORKS (nominative references only)
+- Anthropic, Claude, and Claude Code are trademarks of Anthropic, PBC.
+- LangChain and LangGraph are trademarks of LangChain, Inc.
+- CrewAI is a trademark of CrewAI, Inc.
+- Hermes and Nous Research are trademarks of Nous Research.
+- Usage: Aegis's plugins and framework SDK adapters integrate with
+  these runtimes and reference their names nominatively to identify the
+  target framework. No third-party logos, code, or copyrighted content are
+  redistributed. Aegis is an independent project and is not
+  affiliated with or endorsed by Anthropic, LangChain, CrewAI, or Nous
+  Research.
+
+Aegis is not affiliated with or endorsed by the Linux Foundation,
+the OCSF Project, The MITRE Corporation, Anthropic, LangChain, CrewAI, or Nous Research. Product and company names
+referenced here may be trademarks of their respective owners; references
+are nominative / fair-use for interoperability purposes only.
+
+================================================================================
+
+CONTRIBUTOR ACKNOWLEDGMENTS:
+
+This project welcomes contributions from the open source community.
+All contributors retain attribution rights for their contributions.
+By contributing, contributors agree that Aegis may use their 
+contributions in future commercial versions while maintaining proper attribution.
+
+For a complete list of contributors, see:
+https://github.com/Wanshanghao/ai-aegis/graphs/contributors
+
+================================================================================
+
+TRADEMARK NOTICE:
+
+"Aegis" and "Aegis AI Threat Monitor" are trademarks of Aegis.
+These marks are claimed under common law trademark rights.
+
+The Apache 2.0 License (Section 6) does not grant permission to use the trade
+names, trademarks, or service marks of Aegis except as required for
+reasonable and customary use in describing the origin of the Work.
+
+For trademark usage guidelines, see docs/legal/TRADEMARK_POLICY.md
+
+================================================================================
+
+COMMERCIAL DEVELOPMENT NOTICE:
+
+This open source project may be used as the foundation for future 
+commercial products by Aegis. Enhanced, professional, and 
+enterprise versions with additional features may be developed.
+
+All open source contributions will remain available under Apache 2.0 license.
+Commercial versions may include proprietary enhancements and features.
+
+For commercial licensing inquiries: Create GitHub issue with "commercial" label

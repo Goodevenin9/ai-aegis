@@ -1,0 +1,31 @@
+{
+  "id": "aegis-guard",
+  "name": "Aegis Guard",
+  "version": "1.0.0",
+  "description": "Real-time AI threat monitoring and tool permission enforcement for OpenClaw agents",
+  "entry": "index.ts",
+  "kind": "security",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "Aegis API base URL (auto-detected from svconfig.yml if not set)"
+      },
+      "threshold": {
+        "type": "number",
+        "default": 50,
+        "minimum": 0,
+        "maximum": 100,
+        "description": "Minimum risk score to surface threat alerts"
+      }
+    }
+  },
+  "uiHints": {
+    "url": {
+      "label": "Aegis URL",
+      "help": "Base URL of the Aegis instance (fallback: AEGIS_URL env var)."
+    }
+  }
+}

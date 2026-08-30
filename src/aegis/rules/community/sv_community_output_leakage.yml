@@ -1,0 +1,229 @@
+rules:
+- category: data_leakage
+  description: Detects potential credential or API key leakage in LLM outputs
+  id: sv_community_output_001_credential_leak
+  metadata:
+    author: Aegis Community
+    created_at: '2026-02-02T00:00:00Z'
+    # Was legacy `output` (dead value → normalized to `both`), which let the
+    # entropy-token heuristic fire on test fixtures and code read as incoming
+    # context (2026-07 flood). Model-side only; real secret VALUES in tool
+    # output are still covered by the PEM/PII value rules below (`both`).
+    direction: outgoing
+    tags:
+    - credential_leak
+    - api_key
+    - secret_exposure
+  name: Output Credential Leakage Detection
+  severity: critical
+  tier: community
+  pattern_type: regex
+  patterns:
+  # Credential keyword + high-entropy VALUE. The value must follow an explicit
+  # assignment/colon, contain BOTH a letter and a digit, and be 16+ chars from
+  # the base62+`-` charset. Underscore is deliberately EXCLUDED from the value
+  # so ordinary snake_case identifiers (`access_token_refresh_handler`,
+  # `api_key_validation_middleware`) don't qualify as a credential value — they
+  # are pervasive in source/binary `strings` dumps and were the dominant FP.
+  - "(?:api[_-]?key|api[_-]?secret|access[_-]?token|auth[_-]?token)\\s*[:=]\\s*['\\\"]?(?=[A-Za-z0-9\\-]*[A-Za-z])(?=[A-Za-z0-9\\-]*[0-9])[A-Za-z0-9\\-]{16,}['\\\"]?"
+  # Password keyword + value. Requires an explicit `:`/`=` (the old `\bis\b`
+  # arm matched prose like "password is required") and the value must carry a
+  # digit or special char, so a bare lowercase English word doesn't qualify.
+  - "(?:password|passwd|pwd)\\s*[:=]\\s*['\\\"]?(?=\\S*[0-9!@#$%^&*])\\S{8,64}['\\\"]?"
+  - (?:Password|password)\d{2,}
+  - \b(?:qwerty|letmein|123456|passw0rd|p@ssword)\d*\b
+  # Bulleted/numbered list with a high-entropy token (letters+digits+special).
+  # The token must NOT contain path/URL/email delimiters (/, :, ., @) — real
+  # credentials don't include those, and excluding them prevents this pattern
+  # from matching ordinary prose with URLs, file paths, or numbered points
+  # containing references like "1. See /var/log/foo.log". JWT-shaped credentials
+  # have their own dedicated pattern below (eyJ.../eyJ.../...).
+  #
+  # Bullet anchored to LINE START — `(?:^|\n)\s{0,4}` requires the bullet
+  # to be at the beginning of a line (with optional indentation), not
+  # mid-line. The earlier mid-line `-` matched the `-` inside regex
+  # character classes (`[a-zA-Z0-9_-]`) when the followed token had all
+  # the credential-shape properties, producing FPs on code-review prose.
+  #
+  # Lookaheads use `[^\s]*` (not `.*`) so they're scoped to the immediate
+  # non-whitespace token after the bullet. Combined with the line-start
+  # anchor, this ensures the rule only fires on real list items.
+  #
+  # Underscore `_` is NOT a qualifying "special char" (removed from the
+  # lookahead class) and is EXCLUDED from the token body. Underscore is
+  # pervasive in code identifiers (`Sha256_block`, `Model123_foo`,
+  # `responses2_websocket`); treating it as credential-shaped flooded the
+  # threat log on `strings`/`grep`/source dumps. A real credential at a
+  # bullet still needs a true special char (!@#$%^&*) plus a letter and a
+  # digit in the immediate token.
+  - "(?:^|\\n)\\s{0,4}(?:[•\\-\\*]|\\d+[\\.)\\]])\\s*`?(?=[^\\s]*[A-Za-z])(?=[^\\s]*[0-9])(?=[^\\s]*[!@#$%^&*])[^\\s/:.@_]{8,}`?"
+  - sk-[a-zA-Z0-9]{32,}
+  - sk_(?:test|live)_[a-zA-Z0-9]{20,}
+  - rk_(?:test|live)_[a-zA-Z0-9]{20,}
+  - pk_(?:test|live)_[a-zA-Z0-9]{20,}
+  - ghp_[a-zA-Z0-9]{36}
+  - gho_[a-zA-Z0-9]{36}
+  - github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}
+  - xox[baprs]-[a-zA-Z0-9\-]{10,}
+  # bearer/token keyword + high-entropy VALUE. The value must contain BOTH a
+  # letter and a digit and be 20+ chars of base62 (no `_`/`-`/`.`), so a bare
+  # identifier run after the word "token" (`token apply_patch_tool_type...`,
+  # `token configuration_option...`) — common in source/docs — does not fire.
+  - "(?:bearer|token)\\s*[:=]?\\s+['\\\"]?(?=[A-Za-z0-9]*[A-Za-z])(?=[A-Za-z0-9]*[0-9])[A-Za-z0-9]{20,}['\\\"]?"
+  - AKIA[A-Z0-9]{16}
+  - eyJ[a-zA-Z0-9_-]*\.eyJ[a-zA-Z0-9_-]*\.[a-zA-Z0-9_-]*
+
+- category: data_leakage
+  description: >-
+    PEM-formatted private-key block (SSH / RSA / EC / DSA / OpenSSH / generic
+    PRIVATE KEY). High-severity leak shape that AKIA / sk- / ghp_ patterns
+    don't catch — a tool response dumping ~/.ssh/id_rsa or a TLS key into the
+    agent's context is one of the cleanest credential leaks possible and
+    appeared as the canonical example in the v4.2.1 SBOM-for-MCP framing.
+  id: sv_community_output_003_pem_private_key_leak
+  metadata:
+    author: Aegis Community
+    created_at: '2026-05-24T00:00:00Z'
+    direction: output
+    tags:
+    - credential_leak
+    - private_key
+    - secret_exposure
+    - ssh
+    - tls
+    mitre_attack_ids:
+    - T1552.004  # Unsecured Credentials: Private Keys
+  name: PEM Private Key Leak Detection
+  severity: critical
+  tier: community
+  pattern_type: regex
+  patterns:
+  # All PEM-encoded private-key variants in one. Whitespace-flexible so a
+  # response that line-wraps with \r\n, leading spaces, or markdown
+  # fencing still matches.
+  - "-----BEGIN\\s+(?:RSA|DSA|EC|OPENSSH|ENCRYPTED|PGP)?\\s*PRIVATE\\s+KEY(?:\\s+BLOCK)?-----"
+  # OpenSSH key BLOB header — base64 line beginning with the magic
+  # "openssh-key-v1" carrier (less common but seen when keys are extracted
+  # from agent files without the full PEM envelope).
+  - "openssh-key-v1\\x00"
+
+- category: data_leakage
+  description: Detects system prompt or instruction leakage in LLM outputs
+  id: sv_community_output_002_prompt_leak
+  metadata:
+    author: Aegis Community
+    created_at: '2026-02-02T00:00:00Z'
+    direction: output
+    tags:
+    - prompt_leak
+    - system_instruction
+    - jailbreak_success
+  name: Output System Prompt Leakage Detection
+  severity: high
+  tier: community
+  pattern_type: regex
+  patterns:
+  - (?:my|the)\s+(?:system|initial)\s+(?:prompt|instructions?)\s+(?:is|are|says?)
+  - (?:my|the)\s+(?:original|hidden|secret)\s+(?:instructions?|rules?|guidelines?)
+  - (?:here\s+(?:is|are)|showing)\s+(?:my|the)\s+(?:system|full)\s+prompt
+  - \[SYSTEM\]|\[INST\]|\<\|system\|\>
+  - \<\<SYS\>\>.*\<\</SYS\>\>
+  - (?:never|do\s+not|don't)\s+(?:reveal|share|disclose)\s+(?:your|the|this)\s+(?:instructions?|prompt|rules?)
+  - (?:confidential|secret|hidden)\s+(?:instructions?|prompt|guidelines?)
+
+- category: data_leakage
+  description: Detects PII (Personally Identifiable Information) in LLM outputs
+  id: sv_community_output_003_pii_leak
+  metadata:
+    author: Aegis Community
+    created_at: '2026-02-02T00:00:00Z'
+    direction: output
+    tags:
+    - pii_leak
+    - privacy
+    - sensitive_data
+  name: Output PII Leakage Detection
+  severity: high
+  tier: community
+  pattern_type: regex
+  patterns:
+  - \b\d{3}-\d{2}-\d{4}\b
+  - \b\d{3}\s\d{2}\s\d{4}\b
+  - \b\d{16}\b
+  - \b\d{4}[- ]\d{4}[- ]\d{4}[- ]\d{4}\b
+  - \b[A-Z]{2}\d{6,9}\b
+  - (?:social\s+security|ssn)[:\s]*\d{3}[- ]?\d{2}[- ]?\d{4}
+  - (?:credit\s+card|card\s+number)[:\s]*\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}
+
+- category: jailbreak_success
+  description: Detects indicators that a jailbreak attempt succeeded
+  id: sv_community_output_004_jailbreak_success
+  metadata:
+    author: Aegis Community
+    created_at: '2026-02-02T00:00:00Z'
+    direction: output
+    tags:
+    - jailbreak
+    - bypass
+    - unrestricted
+  name: Output Jailbreak Success Detection
+  severity: critical
+  tier: community
+  pattern_type: regex
+  patterns:
+  - (?:i\s+can|i'll|let\s+me)\s+(?:help\s+you\s+)?(?:hack|exploit|bypass|break\s+into)
+  - (?:here'?s?\s+how\s+to|instructions?\s+(?:for|to))\s+(?:hack|exploit|bypass|attack)
+  - (?:malware|virus|trojan|ransomware)\s+(?:code|script|payload)
+  - (?:dan|developer)\s+mode\s+(?:enabled|activated|on)
+  - (?:restrictions?|limitations?|guardrails?)\s+(?:removed|disabled|bypassed)
+
+- category: data_leakage
+  description: Detects encoded or obfuscated content that may hide malicious data
+  id: sv_community_output_005_encoded_content
+  metadata:
+    author: Aegis Community
+    created_at: '2026-02-02T00:00:00Z'
+    direction: outgoing
+    tags:
+    - encoded
+    - obfuscated
+    - hidden_data
+  name: Output Encoded Content Detection
+  severity: medium
+  tier: community
+  pattern_type: regex
+  patterns:
+  - (?:base64|b64)[:\s]*[A-Za-z0-9+/=]{50,}
+  - \\x[0-9a-fA-F]{2}(?:\\x[0-9a-fA-F]{2}){10,}
+  - (?:0x[0-9a-fA-F]{2}[,\s]*){10,}
+  # NOTE: removed bare `eval(|exec(|subprocess|os.system` — code-execution
+  # detection is sv_attack_006_command_execution's job; matching it here made
+  # an "encoded content" rule fire on every benign code snippet (FP source).
+- category: data_leakage
+  description: Detects credentials embedded in a connection-string / URL
+    (scheme://user:password@host) — a common secret-leak shape in logs and output.
+  id: sv_community_055_connstring_credentials
+  metadata:
+    author: Aegis Community
+    created_at: '2026-06-04T00:00:00Z'
+    confidence: 0.85
+    direction: outgoing
+    tags:
+    - data_leakage
+    - connection_string
+    - credentials
+    mitre_attack_ids:
+    - T1552
+  name: Credentials in connection string / URL
+  severity: high
+  tier: community
+  pattern_type: regex
+  patterns:
+  - '(?i)\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqp|ftp|sftp|https?|jdbc:[a-z]+|mssql|oracle)://[^\s:/@]+:[^\s:/@]{3,}@[^\s/]+'
+  test_cases:
+  - description: postgres URL with password
+    expected_result: match
+    input: postgres://admin:Sup3rSecret@db.prod.internal:5432/maindb
+  - description: benign URL without credentials
+    expected_result: no_match
+    input: The dev server is at http://localhost:5432/api/v1/health

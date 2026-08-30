@@ -1,0 +1,726 @@
+"""
+OCSF 1.3.0 event encoder + per-destination translators for SIEM export.
+
+Why OCSF:
+  AWS Security Lake, CrowdStrike, Splunk, Palo Alto, IBM QRadar are all
+  converging on the Open Cybersecurity Schema Framework. Shipping OCSF
+  gives the customer's SOC a schema their existing dashboards already
+  understand, and it ages better than a home-grown taxonomy.
+
+Two classes cover every event we emit:
+  - class 2001  Security Finding      — scan verdict (prompt injection,
+                                        PII detection, jailbreak, etc.)
+  - class 1007  Process Activity      — tool call audit rows (with the
+                                        hash-chain fields in `unmapped`)
+
+`raw_data` is always `null`. Prompts, outputs, matched patterns, and
+reasoning text never leave this host, even to the customer's SIEM —
+same privacy contract as the cloud forwarder.
+
+Translators (webhook / splunk_hec / datadog / otlp_http) are small pure
+functions taking a list of OCSF events and returning
+``(body_bytes, content_type, extra_headers)``. Adding a fifth vendor
+takes ~20 lines and no SDK dependency.
+"""
+
+from __future__ import annotations
+
+import json
+import time
+from typing import Any, Callable, Optional
+
+# Pull the Aegis package version so the OCSF event metadata
+# (service.version) stays in sync with __init__.py. Avoids the bug
+# class where SIEM events stamp a stale version string after a bump.
+try:
+    from aegis import __version__ as _SV_PACKAGE_VERSION
+except ImportError:
+    _SV_PACKAGE_VERSION = "unknown"
+
+OCSF_VERSION = "1.3.0"
+PRODUCT_NAME = "Aegis Local Threat Monitor"
+VENDOR_NAME = "Aegis"
+# Item 16 — schema revision marker independent of OCSF version.
+# Downstream dashboards can branch on this when we change the shape of
+# `unmapped` fields or add new top-level keys. Bump on any breaking
+# change to the emitted event.
+AEGIS_SCHEMA_VERSION = "aegis:4.0"
+
+# OCSF severity_id mapping
+#   1=Informational 2=Low 3=Medium 4=High 5=Critical 6=Fatal 99=Other
+_SEVERITY_TO_ID = {
+    "info": 1, "informational": 1,
+    "low": 2,
+    "medium": 3,
+    "high": 4,
+    "critical": 5,
+}
+
+# OCSF Security Finding activity_id
+#   1=Create 2=Update 3=Close 99=Other
+_ACTIVITY_CREATE = 1
+
+# OCSF Process Activity activity_id (class 1007)
+#   1=Launch 2=Terminate 3=Open 4=Inject 5=Set User ID 6=Set Group ID 99=Other
+_PROCESS_LAUNCH = 1
+
+
+def _severity_from_rule(rule_severity: str) -> Optional[int]:
+    """Per-rule severity → OCSF severity_id. Returns None if unknown so
+    callers can fall back to verdict-based scoring."""
+    if not rule_severity:
+        return None
+    return _SEVERITY_TO_ID.get(str(rule_severity).lower())
+
+
+def _now_millis() -> int:
+    return int(time.time() * 1000)
+
+
+def _iso_to_millis(iso: Optional[str]) -> int:
+    """Best-effort parse — if we can't parse, fall back to now."""
+    if not iso:
+        return _now_millis()
+    try:
+        from datetime import datetime
+        # Handle trailing Z or explicit offset
+        normalized = iso.replace("Z", "+00:00")
+        return int(datetime.fromisoformat(normalized).timestamp() * 1000)
+    except Exception:
+        return _now_millis()
+
+
+def _verdict_to_severity_id(verdict: str, threat_score: float) -> int:
+    """Map our verdict + threat_score to OCSF severity_id.
+
+    v26 vocab: BLOCK / DETECTED / ALLOW. REVIEW + WARN collapse to DETECTED
+    at the encoder level — SOC analysts can filter on severity_id without
+    having to care about the internal distinction. The old values are still
+    accepted for rows already in the outbox at upgrade time.
+    """
+    v = (verdict or "").upper()
+    if v == "BLOCK":
+        return 5 if threat_score >= 0.9 else 4  # Critical / High
+    if v in ("DETECTED", "REVIEW"):
+        return 3  # Medium
+    if v == "WARN":
+        return 2  # Low — deprecated tier, still map cleanly
+    return 1  # Informational (ALLOW / unknown)
+
+
+def _metadata_block() -> dict[str, Any]:
+    return {
+        "version": OCSF_VERSION,
+        "product": {
+            "name": PRODUCT_NAME,
+            "vendor_name": VENDOR_NAME,
+        },
+        "log_name": "aegis-local-scan",
+        # Item 16 — vendor schema revision in OCSF's extension slot.
+        # `metadata.version` is pinned to OCSF 1.3.0 so dashboards parse
+        # correctly; our own schema rev lives here so they can branch on
+        # shape changes independently of OCSF.
+        "extension": {
+            "name": "aegis",
+            "version": AEGIS_SCHEMA_VERSION,
+        },
+    }
+
+
+def encode_scan_event(payload: dict[str, Any], *, redaction: str = "standard") -> dict[str, Any]:
+    """Encode a scan-result payload as an OCSF 2001 Security Finding.
+
+    `redaction` — one of:
+      - "minimal"   — severity + verdict + device.uid + SOC-correlation
+      - "standard"  — + threat_score, rule ids, model/conversation, MITRE
+      - "full"      — + raw_data (prompt text), llm_output, matched_patterns
+
+    Per-destination stripping already happened at enqueue time, so if a
+    `prompt_text` key is present in this payload the destination was
+    explicitly opted in. We still key on `redaction` here for belt-and-
+    suspenders: two independent gates (repo-level + encoder-level) have
+    to agree before raw data reaches the wire.
+
+    v26 field placement (OCSF-native where possible):
+      - device_id           → `device.uid`
+      - confidence_score    → top-level `confidence` (0-100) + `confidence_score` (0.0-1.0)
+      - mitre_techniques    → `finding.techniques` (list of {uid, name})
+      - actor_user/process  → `actor.user` / `actor.process`
+      - worst_rule_severity → overrides verdict-based severity_id
+      - finding_group_id    → `finding.related_events_uid` (SOC clustering)
+      - suppressed_count    → top-level + unmapped (burst-summary signal)
+    """
+    scan_id = str(payload.get("scan_id") or "")
+    verdict = str(payload.get("verdict") or "ALLOW").upper()
+    threat_score = float(payload.get("threat_score") or 0.0)
+
+    # Severity resolution: per-rule override wins over verdict+score.
+    severity_id = _verdict_to_severity_id(verdict, threat_score)
+    rule_sev = _severity_from_rule(str(payload.get("worst_rule_severity") or ""))
+    if rule_sev is not None:
+        severity_id = max(severity_id, rule_sev)
+
+    # MITRE techniques. OCSF finding.techniques items are {uid, name}.
+    techniques_raw = payload.get("mitre_techniques") or []
+    techniques: list[dict[str, str]] = []
+    for t in techniques_raw:
+        if isinstance(t, str) and t:
+            techniques.append({"uid": t, "name": t})
+        elif isinstance(t, dict):
+            uid = str(t.get("uid") or t.get("id") or "")
+            name = str(t.get("name") or uid)
+            if uid:
+                techniques.append({"uid": uid, "name": name})
+
+    finding: dict[str, Any] = {
+        "uid": scan_id,
+        "title": _finding_title(payload),
+        "types": list(payload.get("detected_types") or []) or ["threat_detected"],
+    }
+    if techniques:
+        finding["techniques"] = techniques
+    # SOC clustering: events sharing a finding_group_id are the same
+    # attack refired. Goes in `related_events_uid` per OCSF 1.3.0.
+    group_id = payload.get("finding_group_id")
+    if group_id:
+        finding["related_events_uid"] = [str(group_id)]
+    # Item 14 — OCSF-idiomatic way to express "this finding covers N
+    # matches" is a `related_events[]` array, not a scalar count.
+    # Each matched rule becomes one related_event with type_uid=2 (Rule Match).
+    rule_ids_for_related = payload.get("matched_rule_ids") or []
+    if rule_ids_for_related:
+        finding["related_events"] = [
+            {"type_uid": 2, "type": "Rule Match", "uid": str(rid)}
+            for rid in rule_ids_for_related
+        ]
+
+    observables = [
+        {"type_id": 0, "name": "verdict", "value": verdict},
+        {"type_id": 0, "name": "risk_level", "value": str(payload.get("risk_level") or "")},
+    ]
+
+    # ── Actor block (user + process). Only emit when we have something
+    # to say — empty actor is noise in dashboards.
+    actor: dict[str, Any] = {}
+    if payload.get("actor_user"):
+        actor["user"] = {"name": str(payload["actor_user"])}
+    if payload.get("actor_process"):
+        actor["process"] = {"name": str(payload["actor_process"])}
+
+    # ── Device block — `device.uid` is the proper OCSF path for a stable
+    # per-machine identifier. Pre-v26 we stuffed it into unmapped; now
+    # dashboards can pivot on `device.uid` without digging into the blob.
+    device: dict[str, Any] = {}
+    if payload.get("device_id"):
+        device["uid"] = str(payload["device_id"])
+        device["type_id"] = 0  # Unknown — we don't try to classify host OS
+        device["type"] = "Endpoint"
+
+    # Emit unmapped fields conditionally — only when the payload
+    # carries them. Previously we wrote zero/empty defaults for every
+    # field regardless of redaction tier, so `minimal` destinations
+    # saw misleading `threat_score: 0.0` + `detected_types: []` even
+    # though those fields were stripped by the repo-level redaction.
+    # Conditional emission honors the "at enqueue time" stripping
+    # contract: if the repo stripped it, the encoder doesn't resurrect
+    # it with a default.
+    unmapped: dict[str, Any] = {}
+    if "threat_score" in payload and payload.get("threat_score") is not None:
+        unmapped["threat_score"] = float(payload["threat_score"])
+    if "detected_items_count" in payload and payload.get("detected_items_count") is not None:
+        unmapped["detected_items_count"] = int(payload["detected_items_count"])
+    if payload.get("detected_types"):
+        unmapped["detected_types"] = list(payload["detected_types"])
+    if payload.get("ml_status"):
+        unmapped["ml_status"] = str(payload["ml_status"])
+    if "scan_duration_ms" in payload and payload.get("scan_duration_ms") is not None:
+        unmapped["scan_duration_ms"] = float(payload["scan_duration_ms"])
+
+    # Burst-summary: destination sees how many events were collapsed into
+    # this one. Kept at every tier — same reason as device.uid.
+    suppressed_count = int(payload.get("suppressed_count") or 0)
+
+    if redaction != "minimal":
+        if payload.get("conversation_id"):
+            unmapped["conversation_id"] = str(payload["conversation_id"])
+        if payload.get("model_id"):
+            unmapped["model_id"] = str(payload["model_id"])
+        rule_ids = payload.get("matched_rule_ids") or []
+        if rule_ids:
+            unmapped["matched_rule_ids"] = [str(r) for r in rule_ids]
+        if payload.get("worst_rule_severity"):
+            unmapped["worst_rule_severity"] = str(payload["worst_rule_severity"])
+        # runtime_kind is set on every scan POST by the plugin
+        # (claude-code-plugin / codex-plugin / openclaw). Without it
+        # in the SIEM event the SOC can't pivot "show me all Codex
+        # threats" — they'd see undifferentiated 2001 findings.
+        # Withheld at the `minimal` tier because that tier
+        # intentionally strips everything beyond the SOC-correlation
+        # essentials.
+        #
+        # ASYMMETRY CONTRACT (intentional, not a bug): the 1007 tool-audit
+        # encoder (`encode_tool_audit_event`) emits runtime_kind
+        # UNCONDITIONALLY — at every tier including minimal — because the
+        # audit row's whole value is per-agent attribution of which
+        # runtime made a tool call. Here, on the 2001 scan finding,
+        # runtime_kind is gated behind standard+. A SOC correlating a
+        # minimal-tier scan finding with its audit event will therefore
+        # find runtime_kind on the audit side but NOT on the scan side;
+        # that is by design (scan minimal = SOC-correlation essentials
+        # only), not a dropped field. See the matching note in
+        # `encode_tool_audit_event`.
+        if payload.get("runtime_kind"):
+            unmapped["runtime_kind"] = str(payload["runtime_kind"])
+
+    # Full tier — raw prompt text lands in OCSF's `raw_data` slot (that's
+    # what the schema field is for), LLM output + matched patterns go in
+    # unmapped. Only populated if the payload actually carries them,
+    # which only happens when the repo-level redaction permitted it.
+    raw_data: Optional[str] = None
+    if redaction == "full":
+        pt = payload.get("prompt_text")
+        if isinstance(pt, str) and pt:
+            raw_data = pt
+        if payload.get("llm_output"):
+            unmapped["llm_output"] = str(payload["llm_output"])
+        mp = payload.get("matched_patterns")
+        if isinstance(mp, list) and mp:
+            unmapped["matched_patterns"] = [str(m) for m in mp]
+
+    # Top-level confidence — OCSF 1.3 promotes this out of unmapped.
+    # We emit both the 0-100 int (confidence) and the 0.0-1.0 float
+    # (confidence_score) so dashboards that key on either shape work.
+    confidence_score = float(payload.get("confidence_score") or 0.0)
+
+    event: dict[str, Any] = {
+        "metadata": _metadata_block(),
+        "category_uid": 2,
+        "class_uid": 2001,
+        "class_name": "Security Finding",
+        "activity_id": _ACTIVITY_CREATE,
+        "severity_id": severity_id,
+        "severity": verdict,
+        "confidence": int(round(confidence_score * 100)),
+        "confidence_score": confidence_score,
+        "time": _iso_to_millis(payload.get("timestamp")),
+        "finding": finding,
+        "observables": observables,
+        "raw_data": raw_data,
+        "unmapped": unmapped,
+    }
+    if device:
+        event["device"] = device
+    if actor:
+        event["actor"] = actor
+    if suppressed_count > 0:
+        event["suppressed_count"] = suppressed_count
+        unmapped["suppressed_count"] = suppressed_count
+    return event
+
+
+def encode_tool_audit_event(payload: dict[str, Any], *, redaction: str = "standard") -> dict[str, Any]:
+    """Encode a tool-call-audit row as an OCSF 1007 Process Activity event.
+
+    The hash-chain fields (`seq`, `prev_hash`, `row_hash`) go into
+    `unmapped` so the customer's SIEM can verify the chain itself — this
+    is what makes the audit log tamper-evident *in the customer's
+    infrastructure*, not just locally.
+    """
+    action = str(payload.get("action") or "").lower()
+    risk = str(payload.get("risk") or "").lower()
+    severity_id = _SEVERITY_TO_ID.get(risk, 1)
+    # "block" decisions are inherently higher-severity than "allow"
+    if action == "block" and severity_id < 3:
+        severity_id = 3
+
+    process = {
+        "name": str(payload.get("function_name") or ""),
+        "uid": str(payload.get("tool_id") or ""),
+    }
+
+    unmapped: dict[str, Any] = {
+        "audit_id": int(payload.get("audit_id") or 0),
+        "action": action,
+        "risk": risk,
+        "is_essential": bool(payload.get("is_essential") or False),
+        # Hash-chain witness — lets the SIEM reconstruct the chain and
+        # detect tampering even if the local SQLite is later altered.
+        "seq": int(payload.get("seq") or 0),
+        "prev_hash": payload.get("prev_hash"),
+        "row_hash": str(payload.get("row_hash") or ""),
+    }
+    # runtime_kind pivots the SIEM dashboard's per-agent views
+    # ("show me all Codex activity vs Claude Code activity"). The
+    # local audit table carries this column on every row; before
+    # this addition the SIEM-forwarded OCSF event dropped it, so
+    # SOC consumers couldn't distinguish a Claude Code Bash call
+    # from a Codex exec_command call from an OpenClaw shell call —
+    # all three landed as identical 1007 events. Goes under
+    # `unmapped` (not a first-class OCSF field) and stays a
+    # nullable string for forward-compat with rows that pre-date
+    # the column.
+    #
+    # ASYMMETRY CONTRACT (intentional, not a bug): this is emitted
+    # UNCONDITIONALLY — at every redaction tier, including minimal —
+    # whereas the 2001 scan encoder (`encode_scan_event`) WITHHOLDS
+    # runtime_kind at the minimal tier. Per-agent attribution is the
+    # core purpose of an audit row, so it survives even minimal
+    # redaction; a scan finding's minimal tier is pared to
+    # SOC-correlation essentials only. Net effect: a SOC correlating a
+    # minimal-tier scan event with its audit event sees runtime_kind on
+    # the audit side but not the scan side — expected, not a regression.
+    # See the matching note in `encode_scan_event`.
+    if payload.get("runtime_kind"):
+        unmapped["runtime_kind"] = str(payload["runtime_kind"])
+
+    # Device / actor / MITRE — same promotion as the scan encoder so
+    # dashboards can reuse pivots across both classes.
+    device: dict[str, Any] = {}
+    if payload.get("device_id"):
+        device["uid"] = str(payload["device_id"])
+        device["type_id"] = 0
+        device["type"] = "Endpoint"
+
+    actor: dict[str, Any] = {}
+    if payload.get("actor_user"):
+        actor["user"] = {"name": str(payload["actor_user"])}
+    if payload.get("actor_process"):
+        actor["process"] = {"name": str(payload["actor_process"])}
+
+    techniques_raw = payload.get("mitre_techniques") or []
+    techniques: list[dict[str, str]] = []
+    for t in techniques_raw:
+        if isinstance(t, str) and t:
+            techniques.append({"uid": t, "name": t})
+        elif isinstance(t, dict):
+            uid = str(t.get("uid") or t.get("id") or "")
+            name = str(t.get("name") or uid)
+            if uid:
+                techniques.append({"uid": uid, "name": name})
+
+    group_id = payload.get("finding_group_id")
+    suppressed_count = int(payload.get("suppressed_count") or 0)
+
+    if redaction == "minimal":
+        # Minimal keeps the integrity witness (that's the point) but
+        # drops the specific tool identity.
+        process = {"name": "redacted", "uid": ""}
+
+    # Full tier — untruncated args + full policy reason. The repo layer
+    # already stripped these at enqueue time for non-full destinations,
+    # so this is the belt-and-suspenders encoder-side gate.
+    raw_data: Optional[str] = None
+    if redaction == "full":
+        if payload.get("args_full"):
+            raw_data = str(payload["args_full"])
+        if payload.get("reason_full"):
+            unmapped["reason_full"] = str(payload["reason_full"])
+
+    event: dict[str, Any] = {
+        "metadata": _metadata_block(),
+        "category_uid": 1,
+        "class_uid": 1007,
+        "class_name": "Process Activity",
+        "activity_id": _PROCESS_LAUNCH,
+        "severity_id": severity_id,
+        "time": _iso_to_millis(payload.get("called_at")),
+        "process": process,
+        "raw_data": raw_data,
+        "unmapped": unmapped,
+    }
+    if device:
+        event["device"] = device
+    if actor:
+        event["actor"] = actor
+    if techniques:
+        event["techniques"] = techniques
+    if group_id:
+        event["related_events_uid"] = [str(group_id)]
+    if suppressed_count > 0:
+        event["suppressed_count"] = suppressed_count
+        unmapped["suppressed_count"] = suppressed_count
+    return event
+
+
+def encode_batch(batch: list[dict[str, Any]], *, redaction: str = "standard") -> list[dict[str, Any]]:
+    """Encode a batch of outbox rows into OCSF events, preserving order."""
+    out: list[dict[str, Any]] = []
+    for row in batch:
+        kind = row.get("kind")
+        payload = row.get("payload") or {}
+        if kind == "scan" or kind == "output_scan":
+            out.append(encode_scan_event(payload, redaction=redaction))
+        elif kind == "tool_audit":
+            out.append(encode_tool_audit_event(payload, redaction=redaction))
+        # Unknown kinds are silently dropped — the outbox CHECK constraint
+        # should prevent this, so this is pure belt-and-suspenders.
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Aegis cloud fleet ingest (epic #151) — FLAT metadata JSONL.
+#
+# The cloud fleet receiver (llm-security-engine /ocsf/ingest) reads a
+# newline-delimited stream of FLAT metadata rows with top-level field names
+# (tool/tool_name, decision/action, trace_id, session_id, span_id,
+# parent_span_id, harness, agent, tool_kind, row_hash, timestamp). It builds
+# the fleet Agent Map (agent→tool edges) and Agent Runs (per-trace span
+# waterfalls) from these. This is a DIFFERENT shape from the SIEM OCSF
+# translators above (which nest fields under process/unmapped for a customer
+# SIEM) — so the enrollment (cloud) destination uses this encoder instead.
+#
+# Metadata only: ids, names, decisions, hashes — never args/reason/prompt text.
+# (The engine independently enforces a no-raw-text guard and rejects the whole
+# request on any forbidden field.)
+# ---------------------------------------------------------------------------
+
+
+def _fleet_tool_activity_row(p: dict[str, Any]) -> dict[str, Any]:
+    """Map a (standard-tier) tool_audit outbox payload to the flat fleet row
+    the cloud /ocsf/ingest expects."""
+    # Tool label parity with the LOCAL Map/Runs/Timeline. MCP detection
+    # mirrors ObsTabs.isExternalTool (':' in tool_id), and the label follows
+    # the local _toolLabel rule exactly:
+    #   - external MCP tool → the server segment of tool_id
+    #     ("mcp:github" → "github"), matching the local map node label;
+    #   - built-in tool   → function_name ("Read", "Bash"), tool_id fallback.
+    tool_id = str(p.get("tool_id") or "")
+    is_mcp = ":" in tool_id
+    tool = tool_id.split(":")[-1] if is_mcp else str(p.get("function_name") or tool_id or "")
+    tool_kind = "mcp" if is_mcp else "built-in"
+    return {
+        "ocsf_version": "1.3.0",
+        "category": "tool_activity",
+        "timestamp": p.get("called_at"),
+        "row_hash": p.get("row_hash"),
+        # tool identity — both keys for the engine's tool_name|tool fallback.
+        "tool_name": tool,
+        "tool": tool,
+        "tool_kind": tool_kind,
+        # decision — engine maps block→blocked, allow→allowed, log_only→log_only.
+        "action": p.get("action"),
+        "decision": p.get("action"),
+        "risk": p.get("risk"),
+        "is_essential": bool(p.get("is_essential") or False),
+        # run-correlation identity (#141/#144).
+        "trace_id": p.get("trace_id"),
+        "session_id": p.get("session_id"),
+        "turn_index": p.get("turn_index"),
+        "parent_span_id": p.get("parent_span_id"),
+        # each tool call is one span; row_hash is its unique id.
+        "span_id": p.get("row_hash"),
+        # agent identity — runtime_kind is the harness ("claude-code",
+        # "openclaw", "codex"). The AGENT tier is per-session, exactly like
+        # the local Agent Map (one "agent #N" node per run): a stable
+        # trace-scoped key the cloud read API renumbers by recency into
+        # "agent #N" per harness. Falls back to the harness when a row
+        # predates trace correlation.
+        "harness": p.get("runtime_kind") or "unknown",
+        "agent": (f"run-{str(p['trace_id'])[:12]}" if p.get("trace_id") else (p.get("runtime_kind") or "unknown")),
+        "device_id": p.get("device_id"),
+    }
+
+
+# Engine's threat aggregate only accepts these severities; anything else is
+# coerced to "info" server-side — coerce locally too so the wire is explicit.
+_FLEET_SEVERITIES = {"critical", "high", "medium", "low", "info"}
+
+
+def _fleet_scan_verdict_row(p: dict[str, Any]) -> dict[str, Any]:
+    """Map a scan/output_scan outbox payload to the flat scan-verdict fleet
+    row (OCSF 2001) the cloud /ocsf/ingest routes into the per-org threat
+    aggregate (story #197 Phase 2).
+
+    Built from an explicit field allowlist — NEVER by passing the payload
+    through — so raw-data fields a `full`-tier SIEM destination may carry
+    (prompt_text, llm_output, matched_patterns) cannot reach the cloud even
+    if redaction is misconfigured. The engine independently rejects the
+    whole request on any raw-text field; this keeps us from ever tripping it.
+    """
+    severity = str(p.get("worst_rule_severity") or p.get("risk_level") or "").lower()
+    if severity not in _FLEET_SEVERITIES:
+        severity = "info"
+    return {
+        "ocsf_version": "1.3.0",
+        # class marker the engine's scan-verdict router matches on — routes to
+        # the threat aggregate, NOT tool activity (a blocked verdict must not
+        # count as a blocked tool call).
+        "category": "scan_verdict",
+        "timestamp": p.get("timestamp"),
+        # Enforcement, not opinion. `verdict` only says what the rules thought
+        # the event deserved — on a device with block_threats off, a BLOCK
+        # verdict is still logged and the prompt went through. Reporting that
+        # as "blocked" would tell the console a threat was stopped when it was
+        # not, which is the one direction of error a security dashboard must
+        # never make. The engine counts blocked when decision ∈ {blocked,
+        # block, denied, ...}; "detected" lands in the non-blocked tally, and
+        # both count as detections either way.
+        "decision": (
+            "blocked"
+            if "block" in str(p.get("action_taken") or "").lower()
+            else "detected"
+        ),
+        "severity": severity,
+        # category slugs only (threat types / rule categories) — no rule text.
+        "detected_types": list(p.get("detected_types") or []) or None,
+        # scan_id doubles as row_hash so the engine can dedupe replayed
+        # batches if/when the threat path gains the rows-table novelty check.
+        "scan_id": p.get("scan_id"),
+        "row_hash": p.get("scan_id"),
+        "session_id": p.get("conversation_id"),
+        "device_id": p.get("device_id"),
+    }
+
+
+def encode_fleet_jsonl(batch: list[dict[str, Any]]) -> bytes:
+    """Encode outbox rows as newline-delimited flat fleet metadata (NDJSON).
+
+    tool_audit rows become tool-activity fleet rows. scan/output_scan rows
+    with a detection verdict (BLOCK/DETECTED) become scan-verdict rows so the
+    cloud console can show local-rule detections (#197 Phase 2) — ALLOW scans
+    are skipped: the engine counts every scan-verdict row as a detection, so
+    forwarding clean scans would inflate the detected figure. Returns UTF-8
+    NDJSON bytes ready to POST to the cloud /ocsf/ingest endpoint.
+    """
+    lines: list[str] = []
+    for row in batch:
+        kind = row.get("kind")
+        payload = row.get("payload") or {}
+        if kind == "tool_audit":
+            lines.append(json.dumps(_fleet_tool_activity_row(payload), separators=(",", ":")))
+        elif kind in ("scan", "output_scan"):
+            if str(payload.get("verdict") or "").upper() in ("BLOCK", "DETECTED"):
+                lines.append(json.dumps(_fleet_scan_verdict_row(payload), separators=(",", ":")))
+    return ("\n".join(lines)).encode("utf-8")
+
+
+def _finding_title(payload: dict[str, Any]) -> str:
+    verdict = str(payload.get("verdict") or "ALLOW").upper()
+    types = payload.get("detected_types") or []
+    if types:
+        first = str(types[0]).replace("_", " ").title()
+        return f"{verdict}: {first}"
+    return f"{verdict} decision"
+
+
+# ---------------------------------------------------------------------------
+# Destination translators
+#
+# Each translator takes (events, forwarder_dict) and returns
+# (body_bytes, content_type, extra_headers). They do NOT fetch secrets
+# or make HTTP calls — the forwarder service handles that. Keeping them
+# pure makes them trivially unit-testable.
+# ---------------------------------------------------------------------------
+
+
+Translator = Callable[
+    [list[dict[str, Any]], dict[str, Any]],
+    tuple[bytes, str, dict[str, str]],
+]
+
+
+def _t_webhook(events: list[dict[str, Any]], _fwd: dict[str, Any]) -> tuple[bytes, str, dict[str, str]]:
+    """Generic HTTPS webhook — JSON array of OCSF events.
+
+    Works with any endpoint that accepts JSON POST: Lambda URLs, Cloudflare
+    Workers, custom API routes, Zapier, n8n, Tines, etc.
+    """
+    body = json.dumps({"events": events, "schema": "ocsf-1.3.0"}, separators=(",", ":"))
+    return body.encode("utf-8"), "application/json", {}
+
+
+def _t_splunk_hec(events: list[dict[str, Any]], _fwd: dict[str, Any]) -> tuple[bytes, str, dict[str, str]]:
+    """Splunk HTTP Event Collector — newline-delimited JSON wrapped in
+    HEC envelope (``{"event": <ocsf>, "sourcetype": "aegis:ocsf"}``).
+
+    User must target the ``/services/collector/event`` endpoint on their
+    HEC host. Auth is via HEC token in the ``Authorization: Splunk <token>``
+    header — the forwarder service adds that header using the secret.
+    """
+    lines: list[str] = []
+    for ev in events:
+        lines.append(json.dumps({
+            "event": ev,
+            "sourcetype": "aegis:ocsf",
+            "source": "aegis-local",
+            "index": "main",
+            "time": (ev.get("time") or _now_millis()) / 1000.0,
+        }, separators=(",", ":")))
+    body = "\n".join(lines)
+    # HEC accepts application/json even for NDJSON bodies
+    return body.encode("utf-8"), "application/json", {}
+
+
+def _t_datadog(events: list[dict[str, Any]], _fwd: dict[str, Any]) -> tuple[bytes, str, dict[str, str]]:
+    """Datadog Logs intake — JSON array.
+
+    Target URL shape: ``https://http-intake.logs.<site>/api/v2/logs``
+    (the customer fills in their datadoghq.com / datadoghq.eu site).
+    Auth via ``DD-API-KEY`` header — the forwarder adds that from the
+    secret.
+    """
+    docs: list[dict[str, Any]] = []
+    for ev in events:
+        docs.append({
+            "ddsource": "aegis",
+            "service": "aegis-local",
+            "hostname": "aegis-agent",
+            "ddtags": "schema:ocsf-1.3.0",
+            "message": json.dumps(ev, separators=(",", ":")),
+        })
+    body = json.dumps(docs, separators=(",", ":"))
+    return body.encode("utf-8"), "application/json", {}
+
+
+def _t_otlp_http(events: list[dict[str, Any]], _fwd: dict[str, Any]) -> tuple[bytes, str, dict[str, str]]:
+    """OTLP/HTTP logs encoding — minimal handwritten (no otel SDK
+    dependency). Target: an OpenTelemetry Collector's ``/v1/logs`` HTTP
+    endpoint.
+
+    Body shape:
+      { resourceLogs: [ { resource, scopeLogs: [ { scope, logRecords[] } ] } ] }
+    """
+    log_records: list[dict[str, Any]] = []
+    for ev in events:
+        log_records.append({
+            "timeUnixNano": str(int((ev.get("time") or _now_millis()) * 1_000_000)),
+            "severityNumber": _ocsf_severity_to_otel(ev.get("severity_id", 1)),
+            "severityText": str(ev.get("severity") or ""),
+            "body": {"stringValue": json.dumps(ev, separators=(",", ":"))},
+            "attributes": [
+                {"key": "ocsf.class_uid", "value": {"intValue": ev.get("class_uid", 0)}},
+                {"key": "ocsf.category_uid", "value": {"intValue": ev.get("category_uid", 0)}},
+                {"key": "ocsf.schema_version", "value": {"stringValue": OCSF_VERSION}},
+            ],
+        })
+
+    envelope = {
+        "resourceLogs": [{
+            "resource": {
+                "attributes": [
+                    {"key": "service.name", "value": {"stringValue": "aegis-local"}},
+                    {"key": "service.version", "value": {"stringValue": _SV_PACKAGE_VERSION}},
+                ],
+            },
+            "scopeLogs": [{
+                "scope": {"name": "aegis.siem", "version": OCSF_VERSION},
+                "logRecords": log_records,
+            }],
+        }],
+    }
+    body = json.dumps(envelope, separators=(",", ":"))
+    return body.encode("utf-8"), "application/json", {}
+
+
+def _ocsf_severity_to_otel(sev_id: int) -> int:
+    """OCSF severity_id (1-6) → OpenTelemetry severityNumber (1-24).
+    Pragmatic mapping; both schemas are monotonic."""
+    return {1: 5, 2: 9, 3: 13, 4: 17, 5: 21, 6: 23}.get(int(sev_id or 1), 9)
+
+
+TRANSLATORS: dict[str, Translator] = {
+    "webhook": _t_webhook,
+    "splunk_hec": _t_splunk_hec,
+    "datadog": _t_datadog,
+    "otlp_http": _t_otlp_http,
+}

@@ -1,0 +1,3610 @@
+/**
+ * Integration Pages
+ * Shows setup instructions for different agent frameworks
+ * Each page has Option 1 (Agent Proxy) with provider dropdown and Option 2 (SDK)
+ */
+
+const IntegrationPage = {
+    // Proxy state
+    proxyStatus: { running: false, provider: null, multi: false },
+    currentIntegration: null, // Set when rendering an integration page
+
+    // Check proxy status
+    async checkProxyStatus() {
+        try {
+            const res = await fetch('/api/proxy/status');
+            this.proxyStatus = await res.json();
+            return this.proxyStatus;
+        } catch (e) {
+            return { running: false, provider: null, multi: false };
+        }
+    },
+
+    // Start proxy
+    async startProxy(provider, multi = false) {
+        try {
+            const integration = this.currentIntegration || null;
+            const res = await fetch('/api/proxy/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ provider, multi, integration })
+            });
+            return await res.json();
+        } catch (e) {
+            return { status: 'error', message: 'Failed to connect' };
+        }
+    },
+
+    // Stop proxy
+    async stopProxy() {
+        try {
+            const res = await fetch('/api/proxy/stop', { method: 'POST' });
+            return await res.json();
+        } catch (e) {
+            return { status: 'error', message: 'Failed to connect' };
+        }
+    },
+
+    // Update all proxy buttons
+    async updateProxyButtons() {
+        await this.checkProxyStatus();
+        const btn1 = document.getElementById('start-proxy-single');
+        const btn2 = document.getElementById('start-proxy-multi');
+        const stopBtn1 = document.getElementById('stop-proxy-single');
+        const stopBtn2 = document.getElementById('stop-proxy-multi');
+        const status1 = document.getElementById('proxy-status-single');
+        const status2 = document.getElementById('proxy-status-multi');
+
+        if (this.proxyStatus.running) {
+            const modeUpper = this.proxyStatus.multi ? 'MULTI-PROVIDER' : this.proxyStatus.provider?.toUpperCase();
+            if (btn1) { btn1.disabled = true; btn1.textContent = 'Proxy Running'; btn1.style.background = 'var(--accent-primary)'; }
+            if (btn2) { btn2.disabled = true; btn2.textContent = 'Proxy Running'; btn2.style.background = 'var(--accent-primary)'; }
+            if (stopBtn1) { stopBtn1.style.display = 'inline-block'; }
+            if (stopBtn2) { stopBtn2.style.display = 'inline-block'; }
+            if (status1) {
+                status1.textContent = '';
+                const s1 = document.createElement('strong'); s1.style.color = 'var(--success)'; s1.textContent = 'ACTIVE: ';
+                status1.appendChild(s1); status1.appendChild(document.createTextNode(`Aegis proxy (${modeUpper}) on port 8742`));
+            }
+            if (status2) {
+                status2.textContent = '';
+                const s2 = document.createElement('strong'); s2.style.color = 'var(--success)'; s2.textContent = 'ACTIVE: ';
+                status2.appendChild(s2); status2.appendChild(document.createTextNode(`Aegis proxy (${modeUpper}) on port 8742`));
+            }
+        } else {
+            if (btn1) { btn1.disabled = false; btn1.textContent = 'Start Proxy'; btn1.style.background = 'var(--accent-primary)'; }
+            if (btn2) { btn2.disabled = false; btn2.textContent = 'Start Proxy'; btn2.style.background = 'var(--accent-primary)'; }
+            if (stopBtn1) { stopBtn1.style.display = 'none'; }
+            if (stopBtn2) { stopBtn2.style.display = 'none'; }
+            if (status1) { status1.textContent = 'Not running'; status1.style.color = 'var(--text-secondary)'; }
+            if (status2) { status2.textContent = 'Not running'; status2.style.color = 'var(--text-secondary)'; }
+        }
+    },
+
+    // Update OpenClaw proxy button
+    async updateOpenClawProxyButton() {
+        await this.checkProxyStatus();
+        const btn = document.getElementById('start-proxy-openclaw');
+        const stopBtn = document.getElementById('stop-proxy-openclaw');
+        const status = document.getElementById('proxy-status-openclaw');
+
+        if (this.proxyStatus.running) {
+            const modeUpper = this.proxyStatus.multi ? 'MULTI-PROVIDER' : this.proxyStatus.provider?.toUpperCase();
+            if (btn) { btn.disabled = true; btn.textContent = 'Aegis Proxy Running'; btn.style.background = 'var(--accent-primary)'; }
+            if (stopBtn) { stopBtn.style.display = 'inline-block'; stopBtn.disabled = false; stopBtn.textContent = 'Stop Proxy'; }
+            if (status) {
+                status.textContent = '';
+                const s3 = document.createElement('strong'); s3.style.color = 'var(--success)'; s3.textContent = 'ACTIVE: ';
+                status.appendChild(s3); status.appendChild(document.createTextNode(`Aegis proxy (${modeUpper}) on port 8742`));
+            }
+        } else {
+            if (btn) { btn.disabled = false; btn.textContent = 'Start Multi-Provider Proxy'; btn.style.background = 'var(--accent-primary)'; }
+            if (stopBtn) { stopBtn.style.display = 'none'; }
+            if (status) { status.textContent = 'Not running'; status.style.color = 'var(--text-secondary)'; }
+        }
+    },
+
+    // Provider configurations
+    providers: {
+        openai: { label: 'OpenAI', env: 'OPENAI_BASE_URL', path: '/openai/v1' },
+        anthropic: { label: 'Anthropic', env: 'ANTHROPIC_BASE_URL', path: '/anthropic' },
+        ollama: { label: 'Ollama', env: 'OPENAI_BASE_URL', path: '/ollama/v1' },
+        groq: { label: 'Groq', env: 'OPENAI_BASE_URL', path: '/groq/v1' },
+        gemini: { label: 'Google Gemini', env: 'GEMINI_API_KEY', path: '/gemini/v1beta' },
+        mistral: { label: 'Mistral', env: 'OPENAI_BASE_URL', path: '/mistral/v1' },
+        deepseek: { label: 'DeepSeek', env: 'OPENAI_BASE_URL', path: '/deepseek/v1' },
+        together: { label: 'Together AI', env: 'OPENAI_BASE_URL', path: '/together/v1' },
+        cohere: { label: 'Cohere', env: 'OPENAI_BASE_URL', path: '/cohere/v1' },
+        xai: { label: 'xAI (Grok)', env: 'OPENAI_BASE_URL', path: '/xai/v1' },
+        cerebras: { label: 'Cerebras', env: 'OPENAI_BASE_URL', path: '/cerebras/v1' },
+        moonshot: { label: 'Moonshot', env: 'OPENAI_BASE_URL', path: '/moonshot/v1' },
+        minimax: { label: 'MiniMax', env: 'OPENAI_BASE_URL', path: '/minimax/v1' },
+    },
+
+    integrations: {
+        'proxy-langchain': {
+            name: 'LangChain',
+            description: 'Python framework for building LLM agents',
+            defaultProvider: 'openai',
+            runtimeKind: 'langchain',
+            sdkPackage: 'aegis-sdk-langchain',
+            sdkSnippet: `from langchain.agents import create_agent
+from aegis_sdk_langchain import secure_middleware
+
+# Secures every tool call: permissions + secret/data-leak + threat scan,
+# all written to the tamper-evident audit chain. observe (default) = log;
+# enforce = block a denied tool with a ToolMessage before it runs.
+agent = create_agent(
+    model, tools,
+    middleware=[secure_middleware(mode="enforce")],
+)`
+        },
+        'proxy-langgraph': {
+            name: 'LangGraph',
+            description: 'Stateful, multi-agent graphs',
+            defaultProvider: 'openai',
+            runtimeKind: 'langgraph',
+            sdkPackage: 'aegis-sdk-langgraph',
+            sdkSnippet: `from langchain.agents import create_agent  # langgraph-backed
+from aegis_sdk_langgraph import secure_middleware
+
+agent = create_agent(
+    model, tools,
+    middleware=[secure_middleware(mode="enforce")],
+)
+
+# Note: langgraph.prebuilt.create_react_agent has no middleware arg: use
+# create_agent. For a raw StateGraph, gate tools with langgraph.types.interrupt()
+# (see the Guide).`
+        },
+        'proxy-crewai': {
+            name: 'CrewAI',
+            description: 'Orchestrate teams of AI agents',
+            defaultProvider: 'openai',
+            runtimeKind: 'crewai',
+            sdkPackage: 'aegis-sdk-crewai',
+            sdkSnippet: `from crewai import Agent
+from aegis_sdk_crewai import secure_tools
+
+# Wrap your tools: observe logs every call; enforce raises before the
+# tool runs. All three controls + tamper-evident audit, runtime_kind=crewai.
+agent = Agent(
+    role="Researcher",
+    goal="Research topics safely",
+    tools=secure_tools(my_tools),
+)`
+        },
+        'proxy-hermes': {
+            name: 'Hermes',
+            description: 'NousResearch hermes-agent: CLI, gateway & ACP',
+            defaultProvider: 'openai',
+            runtimeKind: 'hermes',
+            sdkPackage: 'aegis-sdk-hermes',
+            sdkSnippet: `# Zero-config: the package registers a Hermes plugin
+# (hermes_agent.plugins entry point): auto-attached on startup in the
+# hermes CLI, gateway and ACP modes. Every tool call gets all three
+# controls + tamper-evident audit, runtime_kind=hermes. Just run hermes:
+hermes                                  # observe (log-only)
+AEGIS_SDK_MODE=enforce hermes    # block denied tools
+
+# Library embeddings (driving AIAgent from your own code):
+#   from aegis_sdk_hermes import install
+#   install(mode="enforce")`
+        },
+        'proxy-n8n': {
+            name: 'n8n',
+            description: 'Workflow automation platform',
+            isNodeBased: true,
+            nodeInstall: 'npm install @aegis/n8n-nodes-aegis',
+            nodeSetup: `1. Go to Settings → Community Nodes
+2. Install: @aegis/n8n-nodes-aegis
+3. Drag Aegis node into your workflow
+4. Configure endpoint: http://localhost:8741`,
+            apiCode: `// HTTP Request Node Configuration
+// Method: POST
+// URL: http://localhost:8741/analyze
+// Body (JSON):
+{
+  "text": "={{ $json.user_input }}",
+  "direction": "input"
+}
+
+// Use IF node to check response:
+// Condition: {{ $json.is_threat }} equals true
+// True branch: Block/Alert
+// False branch: Continue to LLM`
+        },
+        'proxy-ollama': {
+            name: 'Ollama',
+            description: 'Run LLMs locally',
+            defaultProvider: 'ollama',
+            proxyOnly: true,
+            exampleCode: `from openai import OpenAI
+from aegis import AegisClient
+
+# Initialize clients
+ollama = OpenAI(base_url="http://localhost:11434/v1", api_key="not-needed")
+sv = AegisClient()
+
+def chat_with_protection(user_input):
+    # Scan input for prompt injection
+    result = sv.analyze(user_input, direction="input")
+    if result.is_threat:
+        return f"Blocked: {result.threat_type}"
+
+    # Call Ollama
+    response = ollama.chat.completions.create(
+        model="llama3.2",
+        messages=[{"role": "user", "content": user_input}]
+    )
+    output = response.choices[0].message.content
+
+    # Scan output for data leakage
+    result = sv.analyze(output, direction="output")
+    if result.is_threat:
+        return f"Warning: {result.threat_type}"
+
+    return output`
+        },
+        'proxy-openclaw': {
+            name: 'OpenClaw/ClawdBot',
+            description: 'AI agent framework for Claude',
+            isOpenClaw: true,
+            defaultProvider: 'anthropic'
+        },
+        'proxy-claude-code': {
+            name: 'Claude Code',
+            description: 'Anthropic CLI host, real-time policy enforcement + tamper-evident audit for MCP tool calls',
+            isClaudeCode: true,
+            defaultProvider: 'anthropic'
+        },
+        'proxy-codex': {
+            name: 'Codex',
+            description: 'OpenAI Codex CLI host, real-time policy enforcement + tamper-evident audit for MCP tool calls',
+            isCodex: true,
+            defaultProvider: 'openai'
+        },
+        'proxy-copilot-cli': {
+            name: 'GitHub Copilot CLI',
+            description: 'GitHub Copilot CLI host, real-time policy enforcement + tamper-evident audit for tool calls',
+            isCopilotCli: true,
+            defaultProvider: 'openai'
+        },
+        'proxy-cursor': {
+            name: 'Cursor',
+            description: 'Cursor IDE agent, real-time policy enforcement + tamper-evident audit for shell, MCP, file edits, and prompts',
+            isCursor: true,
+            defaultProvider: 'openai'
+        }
+    },
+
+    async render(container, integrationId) {
+        const integration = this.integrations[integrationId];
+        if (!integration) {
+            container.textContent = 'Integration not found';
+            return;
+        }
+
+        // Track which integration page we're on (strip 'proxy-' prefix)
+        this.currentIntegration = integrationId.replace('proxy-', '');
+
+        container.textContent = '';
+
+        // Orientation: this is the DETAILED reference surface. Most users arrive
+        // from the Connect Agents quick-start (via its "Full setup →" links), so
+        // signpost that relationship and offer a way back.
+        const refNote = document.createElement('div');
+        refNote.style.cssText = 'display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); margin: 0 0 14px; padding: 8px 12px; border: 1px solid var(--border-default); border-radius: 8px; background: var(--bg-card);';
+        refNote.appendChild(document.createTextNode('Detailed reference for ' + (integration.name || 'this integration') + ': install, verify, self-host & troubleshooting.'));
+        const backLink = document.createElement('button');
+        backLink.type = 'button';
+        backLink.style.cssText = 'background: none; border: none; color: var(--accent-primary); font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 2px;';
+        backLink.textContent = '← Connect Agents (quick start)';
+        backLink.addEventListener('click', () => { if (window.Sidebar) Sidebar.navigate('guide-connect-agents'); });
+        refNote.appendChild(backLink);
+        container.appendChild(refNote);
+
+        // Runtime posture: the page adapts to HOW this app runs. Endpoint mode =
+        // this process is itself a self-hosted engine (container OR a configured
+        // public URL), so local-desktop install steps don't apply — we lead with
+        // the remote-endpoint guidance (expanded) and tuck the local steps into a
+        // collapsed section. The server computes `mode`; we fall back client-side.
+        let env = { in_container: false, public_url: null, mode: 'local' };
+        try { const r = await fetch('/api/system/environment'); if (r.ok) env = await r.json(); } catch (e) {}
+        const endpointMode = env.mode ? env.mode === 'endpoint' : !!(env.in_container || env.public_url);
+        const engineUrl = env.public_url || (endpointMode ? window.location.origin : null);
+
+        // Set true by a branch that already appended the remote-endpoint section
+        // at a custom position (SDK pages inline it as Option 2), so the global
+        // tail append below doesn't duplicate it.
+        let remoteAdded = false;
+
+        // Local/primary install cards render into localWrap. `container` is
+        // shadowed inside this block so the existing branch appends land in the
+        // wrapper untouched; we then place (or collapse) the wrapper by mode.
+        const localWrap = document.createElement('div');
+        {
+            const container = localWrap;
+            // Render based on integration type
+            if (integration.isNodeBased) {
+                // n8n: Node + API options
+                container.appendChild(this.createNodeCard(integration));
+                container.appendChild(this.createApiCard(integration));
+            } else if (integration.isClaudeCode) {
+                // Claude Code: Plugin card only (host-native plugin, no proxy/block-mode)
+                container.appendChild(this.createClaudeCodePluginCard());
+            } else if (integration.isCodex) {
+                // Codex: Plugin card only (host-native plugin, no proxy/block-mode)
+                container.appendChild(this.createCodexPluginCard());
+            } else if (integration.isCopilotCli) {
+                // GitHub Copilot CLI: Plugin card only (host-native plugin, no proxy/block-mode)
+                container.appendChild(this.createCopilotCliPluginCard());
+            } else if (integration.isCursor) {
+                // Cursor: Plugin card only (native .cursor-plugin install, no proxy/block-mode)
+                container.appendChild(this.createCursorPluginCard());
+            } else if (integration.isOpenClaw) {
+                // OpenClaw: Plugin card + separate block mode card
+                container.appendChild(this.createOpenClawPluginCard());
+                container.appendChild(this.createOpenClawBlockModeCard());
+                // Revert card: only show when block mode is on and proxy is running
+                const revertCard = this.createRevertCard();
+                revertCard.style.display = 'none';
+                container.appendChild(revertCard);
+                // Proxy status indicator (bottom of page)
+                const statusBar = document.createElement('div');
+                statusBar.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; padding: 6px 16px; font-size: 12px; font-weight: 600; text-align: center; z-index: 100; display: none;';
+                container.appendChild(statusBar);
+
+                (async () => {
+                    try {
+                        const [settings, proxyStatus] = await Promise.all([
+                            API.getSettings(),
+                            fetch('/api/proxy/status').then(r => r.json()),
+                        ]);
+                        if (settings.block_threats && proxyStatus.running) {
+                            revertCard.style.display = '';
+                        }
+                        // Show proxy status bar
+                        statusBar.style.display = '';
+                        if (proxyStatus.running) {
+                            statusBar.style.background = 'var(--success)';
+                            statusBar.style.color = '#fff';
+                            const port = proxyStatus.port || 8742;
+                            statusBar.textContent = `Proxy running on port ${port}`;
+                        } else {
+                            statusBar.style.background = 'var(--bg-tertiary)';
+                            statusBar.style.color = 'var(--text-secondary)';
+                            statusBar.textContent = 'Proxy not running: monitoring via plugin only';
+                        }
+                    } catch {}
+                })();
+            } else if (integration.proxyOnly) {
+                // Ollama: Multi-Provider (recommended) + Single Proxy + Example Code
+                container.appendChild(this.createMultiProviderCard());
+                container.appendChild(this.createProxyCard(integration, integrationId));
+                if (integration.exampleCode) {
+                    container.appendChild(this.createExampleCodeCard(integration));
+                }
+            } else {
+                // LangChain, LangGraph, CrewAI: the SDK is the primary path (it
+                // secures tool calls, not just LLM traffic). Option 1/Option 2
+                // (this device / your cloud) live inside the card, which itself
+                // adapts to endpoint mode. The legacy proxy stays collapsed below.
+                container.appendChild(this.createSdkPrimaryCard(integration, integrationId, endpointMode, engineUrl));
+                container.appendChild(this.createOptionalProxySection(integration, integrationId));
+                remoteAdded = true;
+            }
+        }
+
+        // The remote-endpoint (self-host) section — shared, and the STAR in
+        // endpoint mode (expanded). SDK pages already inline it (remoteAdded).
+        const remoteSection = remoteAdded ? null : this.createRemoteEndpointSection(integration, integrationId, endpointMode, engineUrl);
+
+        if (endpointMode) {
+            container.appendChild(this.createEndpointBanner(engineUrl, env, integration));
+        }
+        if (endpointMode && !remoteAdded) {
+            // Plugin / proxy pages: local install is its own card. Lead with the
+            // expanded remote guidance, collapse the local card behind a summary.
+            if (remoteSection) container.appendChild(remoteSection);
+            container.appendChild(this._collapseLocal(localWrap));
+        } else {
+            // Local mode (any page) OR SDK pages (Option 1/2 adapt inside the card).
+            // On plugin/proxy pages, label the local card as "Option 1 · This
+            // device" so it pairs visibly with the "Option 2 · Your cloud" remote
+            // section below (SDK pages already show both options inside the card).
+            if (!remoteAdded) container.appendChild(this._optionLabel('1', 'This device (local app)', null, '#5eadb8'));
+            container.appendChild(localWrap);
+            if (remoteSection) container.appendChild(remoteSection);
+        }
+    },
+
+    // Standalone "Option N · Title" header row — pairs the local install card with
+    // the remote-endpoint section so the two deployment choices read as options.
+    _optionLabel(num, title, tag, dot) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; gap: 9px; margin: 0 0 8px; flex-wrap: wrap;';
+        const pill = document.createElement('span');
+        pill.style.cssText = 'flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; color: var(--text-secondary); background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 20px; padding: 3px 10px;';
+        const d = document.createElement('span'); d.setAttribute('aria-hidden', 'true'); d.style.cssText = 'width: 7px; height: 7px; border-radius: 50%; background: ' + dot + '; box-shadow: 0 0 0 3px color-mix(in srgb, ' + dot + ' 22%, transparent);';
+        pill.appendChild(d); pill.appendChild(document.createTextNode('Option ' + num));
+        row.appendChild(pill);
+        const ttl = document.createElement('span'); ttl.style.cssText = 'font-size: 13.5px; font-weight: 700; color: var(--text-primary);'; ttl.textContent = title;
+        row.appendChild(ttl);
+        if (tag) { const tg = document.createElement('span'); tg.style.cssText = 'font-size: 11px; font-weight: 700; color: var(--accent-primary); border: 1px solid color-mix(in srgb, var(--accent-primary) 45%, transparent); border-radius: 20px; padding: 1px 8px;'; tg.textContent = tag; row.appendChild(tg); }
+        return row;
+    },
+
+    // Banner shown when THIS app runs as a self-hosted engine — makes the posture
+    // unmistakable and hands over the endpoint URL agents should target.
+    createEndpointBanner(engineUrl, env, integration) {
+        const RED = '#ef4444';
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'margin: 0 0 16px; padding: 14px 16px; background: color-mix(in srgb, ' + RED + ' 9%, var(--bg-card)); border: 1px solid color-mix(in srgb, ' + RED + ' 45%, var(--border-default)); border-left: 3px solid ' + RED + '; border-radius: 10px;';
+        const t = document.createElement('div');
+        t.style.cssText = 'font-size: 14px; font-weight: 800; margin-bottom: 4px;';
+        t.textContent = (env && env.in_container)
+            ? 'Self-hosted engine (container): point ' + (integration.name || 'this agent') + ' here'
+            : 'Self-hosted engine, point ' + (integration.name || 'this agent') + ' here';
+        wrap.appendChild(t);
+        const sub = document.createElement('div');
+        sub.style.cssText = 'font-size: 12.5px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5;';
+        sub.textContent = 'This Aegis is running as a network endpoint, so the local-app install is off by default. Use the endpoint steps below; the local steps are collapsed at the bottom.';
+        wrap.appendChild(sub);
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+        const code = document.createElement('code');
+        code.style.cssText = 'flex: 1; padding: 8px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 6px; font-family: monospace; font-size: 12px; user-select: all; overflow-x: auto; color: var(--text-primary);';
+        code.textContent = engineUrl || window.location.origin;
+        row.appendChild(code);
+        wrap.appendChild(row);
+        return wrap;
+    },
+
+    // Collapses the local-desktop install card in endpoint mode. Still reachable
+    // (a self-hoster might also run the desktop app), just not the headline.
+    _collapseLocal(localWrap) {
+        const details = document.createElement('details');
+        details.style.cssText = 'margin-bottom: 16px;';
+        const summary = document.createElement('summary');
+        summary.style.cssText = 'cursor: pointer; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); user-select: none;';
+        summary.textContent = 'Running the local desktop app instead? Show local install steps';
+        details.appendChild(summary);
+        const body = document.createElement('div');
+        body.style.cssText = 'padding-top: 12px;';
+        body.appendChild(localWrap);
+        details.appendChild(body);
+        return details;
+    },
+
+    createProxyCard(integration, integrationId) {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 2px solid var(--accent-primary); border-radius: 8px; margin-bottom: 16px; overflow: hidden; animation: pulse-border 2s ease-in-out 3;';
+
+        // Add pulse animation style
+        if (!document.getElementById('pulse-border-style')) {
+            const style = document.createElement('style');
+            style.id = 'pulse-border-style';
+            style.textContent = '@keyframes pulse-border { 0%, 100% { box-shadow: 0 0 0 0 rgba(0, 188, 212, 0.4); } 50% { box-shadow: 0 0 0 8px rgba(0, 188, 212, 0); } }';
+            document.head.appendChild(style);
+        }
+
+        // Header with badge
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default); display: flex; align-items: center; justify-content: space-between;';
+
+        const titleDiv = document.createElement('div');
+        const titleText = document.createElement('div');
+        titleText.style.cssText = 'font-weight: 600; font-size: 15px;';
+        titleText.textContent = 'Option 2: Single Provider Proxy';
+        titleDiv.appendChild(titleText);
+
+        const subtitleText = document.createElement('div');
+        subtitleText.style.cssText = 'font-size: 13px; color: var(--accent-primary); font-weight: 500;';
+        subtitleText.textContent = 'Use this if you only use one LLM provider';
+        titleDiv.appendChild(subtitleText);
+        header.appendChild(titleDiv);
+
+        card.appendChild(header);
+
+        // Content
+        const content = document.createElement('div');
+        content.style.cssText = 'padding: 16px;';
+
+        // Provider dropdown
+        const providerRow = document.createElement('div');
+        providerRow.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-default);';
+
+        const providerLabel = document.createElement('span');
+        providerLabel.style.cssText = 'font-weight: 500; font-size: 13px; color: var(--text-secondary);';
+        providerLabel.textContent = 'Select your LLM provider for your agent that you want to protect:';
+        providerRow.appendChild(providerLabel);
+
+        const providerSelect = document.createElement('select');
+        providerSelect.id = 'provider-select-' + integrationId;
+        providerSelect.style.cssText = 'padding: 8px 16px; border-radius: 6px; border: 2px solid var(--accent-primary); background: var(--bg-tertiary); color: var(--text-primary); font-size: 13px; cursor: pointer; font-weight: 600;';
+
+        Object.entries(this.providers).forEach(([key, config]) => {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = config.label;
+            if (key === integration.defaultProvider) opt.selected = true;
+            providerSelect.appendChild(opt);
+        });
+
+        providerSelect.addEventListener('change', () => this.updateProxySteps(integrationId));
+        providerRow.appendChild(providerSelect);
+        content.appendChild(providerRow);
+
+        // Steps container (will be updated by dropdown)
+        const stepsContainer = document.createElement('div');
+        stepsContainer.id = 'proxy-steps-' + integrationId;
+        content.appendChild(stepsContainer);
+
+        card.appendChild(content);
+
+        // Initial render of steps and check proxy status
+        setTimeout(() => {
+            this.updateProxySteps(integrationId);
+            this.updateProxyButtons();
+        }, 0);
+
+        return card;
+    },
+
+    createMultiProviderCard() {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 8px; margin-bottom: 16px; overflow: hidden;';
+
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default); display: flex; align-items: center; justify-content: space-between;';
+
+        const titleDiv = document.createElement('div');
+        const titleText = document.createElement('div');
+        titleText.style.cssText = 'font-weight: 600; font-size: 15px;';
+        titleText.textContent = 'Option 1: Multi-Provider Proxy';
+        titleDiv.appendChild(titleText);
+
+        const subtitleText = document.createElement('div');
+        subtitleText.style.cssText = 'font-size: 13px; color: var(--accent-primary); font-weight: 500;';
+        subtitleText.textContent = 'Works with all providers: no wrong proxy configuration';
+        titleDiv.appendChild(subtitleText);
+        header.appendChild(titleDiv);
+
+        const badge = document.createElement('span');
+        badge.style.cssText = 'background: var(--gradient-end, #2d6a74); color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; flex-shrink: 0; letter-spacing: 0.5px;';
+        badge.textContent = 'RECOMMENDED';
+        header.appendChild(badge);
+
+        // Add pulse animation if not already present
+        if (!document.getElementById('pulse-badge-style')) {
+            const style = document.createElement('style');
+            style.id = 'pulse-badge-style';
+            style.textContent = '@keyframes pulse-badge { 0%, 100% { opacity: 1; box-shadow: 0 0 10px rgba(249,115,22,0.6); } 50% { opacity: 0.7; box-shadow: 0 0 2px rgba(249,115,22,0.2); } }';
+            document.head.appendChild(style);
+        }
+
+        card.appendChild(header);
+
+        // Content
+        const content = document.createElement('div');
+        content.style.cssText = 'padding: 16px;';
+
+        // Description
+        const desc = document.createElement('div');
+        desc.style.cssText = 'font-size: 13px; color: var(--text-primary); margin-bottom: 16px; line-height: 1.5; font-weight: 600;';
+        desc.textContent = 'Use this if you work with multiple LLM providers. All 12 providers are available instantly: no configuration needed.';
+        content.appendChild(desc);
+
+        // Step 1
+        const step1Label = document.createElement('div');
+        step1Label.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        step1Label.textContent = 'Step 1: Start Multi-Provider Proxy';
+        content.appendChild(step1Label);
+
+        const step1Block = this.createCodeBlock('aegis-app --proxy --multi --web');
+        step1Block.style.marginBottom = '12px';
+        content.appendChild(step1Block);
+
+        // Start Proxy button row (inside Step 1)
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 16px;';
+
+        const startBtn = document.createElement('button');
+        startBtn.id = 'start-proxy-multi';
+        startBtn.style.cssText = 'background: var(--accent-primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;';
+        startBtn.textContent = 'Start Multi-Provider Proxy';
+        startBtn.onclick = async () => {
+            startBtn.disabled = true;
+            startBtn.textContent = 'Starting...';
+            const result = await IntegrationPage.startProxy('openai', true);
+            if (result.status === 'started') {
+                await IntegrationPage.updateProxyButtons();
+            } else {
+                alert(result.message);
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Proxy';
+            }
+        };
+        btnRow.appendChild(startBtn);
+
+        const stopBtn = document.createElement('button');
+        stopBtn.id = 'stop-proxy-multi';
+        stopBtn.style.cssText = 'background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; display: none;';
+        stopBtn.textContent = 'Stop Proxy';
+        stopBtn.onclick = async () => {
+            stopBtn.disabled = true;
+            stopBtn.textContent = 'Stopping...';
+            await IntegrationPage.stopProxy();
+            await IntegrationPage.updateProxyButtons();
+        };
+        btnRow.appendChild(stopBtn);
+
+        const statusText = document.createElement('span');
+        statusText.id = 'proxy-status-multi';
+        statusText.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        statusText.textContent = 'Not running';
+        btnRow.appendChild(statusText);
+
+        content.appendChild(btnRow);
+
+        // Step 2
+        const step2Label = document.createElement('div');
+        step2Label.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        step2Label.textContent = 'Step 2: Set environment variables';
+        content.appendChild(step2Label);
+
+        const envRow = document.createElement('div');
+        envRow.style.cssText = 'display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 8px;';
+
+        const linuxCard = document.createElement('div');
+        linuxCard.style.cssText = 'background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 8px; padding: 12px;';
+        const linuxTitle = document.createElement('div');
+        linuxTitle.style.cssText = 'font-weight: 600; font-size: 12px; color: var(--text-primary); margin-bottom: 8px;';
+        linuxTitle.textContent = 'Linux / macOS';
+        linuxCard.appendChild(linuxTitle);
+        linuxCard.appendChild(this.createCodeBlock('export OPENAI_BASE_URL=http://localhost:8742/openai/v1\nexport ANTHROPIC_BASE_URL=http://localhost:8742/anthropic'));
+        envRow.appendChild(linuxCard);
+
+        const winCard = document.createElement('div');
+        winCard.style.cssText = 'background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 8px; padding: 12px;';
+        const winTitle = document.createElement('div');
+        winTitle.style.cssText = 'font-weight: 600; font-size: 12px; color: var(--text-primary); margin-bottom: 8px;';
+        winTitle.textContent = 'Windows (PowerShell)';
+        winCard.appendChild(winTitle);
+        const winSessionNote = document.createElement('div');
+        winSessionNote.style.cssText = 'font-size: 10px; color: var(--text-secondary); margin-bottom: 6px;';
+        winSessionNote.textContent = 'Session-only (only affects this PowerShell window):';
+        winCard.appendChild(winSessionNote);
+        winCard.appendChild(this.createCodeBlock('$env:OPENAI_BASE_URL="http://127.0.0.1:8742/openai/v1"\n$env:ANTHROPIC_BASE_URL="http://127.0.0.1:8742/anthropic"'));
+        envRow.appendChild(winCard);
+
+        content.appendChild(envRow);
+
+        const step2Note = document.createElement('div');
+        step2Note.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-bottom: 16px;';
+        step2Note.textContent = 'Then run your application. All LLM traffic will route through Aegis.';
+        content.appendChild(step2Note);
+
+        // Available Endpoints
+        const pathsLabel = document.createElement('div');
+        pathsLabel.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        pathsLabel.textContent = 'Available Endpoints';
+        content.appendChild(pathsLabel);
+
+        content.appendChild(this.createCodeBlock('OpenAI:    http://localhost:8742/openai/v1\nAnthropic: http://localhost:8742/anthropic\nOllama:    http://localhost:8742/ollama/v1\nGoogle:    http://localhost:8742/gemini/v1beta\nGroq:      http://localhost:8742/groq/v1\nMistral:   http://localhost:8742/mistral/v1\nDeepSeek:  http://localhost:8742/deepseek/v1\nxAI:       http://localhost:8742/xai/v1\nTogether:  http://localhost:8742/together/v1\nCohere:    http://localhost:8742/cohere/v1\nCerebras:  http://localhost:8742/cerebras/v1\nMoonshot:  http://localhost:8742/moonshot/v1\nMiniMax:   http://localhost:8742/minimax/v1'));
+
+        card.appendChild(content);
+        return card;
+    },
+
+    createExampleCodeCard(integration) {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 8px; margin-bottom: 16px; overflow: hidden;';
+
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default);';
+
+        const titleText = document.createElement('div');
+        titleText.style.cssText = 'font-weight: 600; font-size: 15px;';
+        titleText.textContent = 'Option 3: Code Examples';
+        header.appendChild(titleText);
+
+        const subtitleText = document.createElement('div');
+        subtitleText.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        subtitleText.textContent = 'If you like to code it yourself';
+        header.appendChild(subtitleText);
+
+        card.appendChild(header);
+
+        // Code block
+        const codeWrapper = this.createCodeBlock(integration.exampleCode);
+        card.appendChild(codeWrapper);
+
+        return card;
+    },
+
+    updateProxySteps(integrationId) {
+        const select = document.getElementById('provider-select-' + integrationId);
+        const container = document.getElementById('proxy-steps-' + integrationId);
+        if (!select || !container) return;
+
+        const provider = select.value;
+        const config = this.providers[provider];
+
+        // Clear container
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+
+        // Step 1
+        const step1Label = document.createElement('div');
+        step1Label.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        step1Label.textContent = 'Step 1: Start Aegis Proxy';
+        container.appendChild(step1Label);
+
+        const step1Block = this.createCodeBlock('aegis-app --proxy --provider ' + provider + ' --web');
+        step1Block.style.marginBottom = '12px';
+        container.appendChild(step1Block);
+
+        // Start Proxy button row (inside Step 1)
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 16px;';
+
+        const startBtn = document.createElement('button');
+        startBtn.id = 'start-proxy-single';
+        startBtn.style.cssText = 'background: var(--accent-primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;';
+        startBtn.textContent = 'Start Proxy';
+        startBtn.onclick = async () => {
+            startBtn.disabled = true;
+            startBtn.textContent = 'Starting...';
+            const result = await IntegrationPage.startProxy(provider, false);
+            if (result.status === 'started') {
+                await IntegrationPage.updateProxyButtons();
+            } else {
+                alert(result.message);
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Proxy';
+            }
+        };
+        btnRow.appendChild(startBtn);
+
+        const stopBtn = document.createElement('button');
+        stopBtn.id = 'stop-proxy-single';
+        stopBtn.style.cssText = 'background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; display: none;';
+        stopBtn.textContent = 'Stop Proxy';
+        stopBtn.onclick = async () => {
+            stopBtn.disabled = true;
+            stopBtn.textContent = 'Stopping...';
+            await IntegrationPage.stopProxy();
+            await IntegrationPage.updateProxyButtons();
+        };
+        btnRow.appendChild(stopBtn);
+
+        const statusText = document.createElement('span');
+        statusText.id = 'proxy-status-single';
+        statusText.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        statusText.textContent = 'Not running';
+        btnRow.appendChild(statusText);
+
+        container.appendChild(btnRow);
+
+        // Step 2
+        const step2Label = document.createElement('div');
+        step2Label.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        step2Label.textContent = 'Step 2: Configure your client app';
+        container.appendChild(step2Label);
+
+        // Two-column layout: Linux/macOS | Windows
+        const singleEnvRow = document.createElement('div');
+        singleEnvRow.style.cssText = 'display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 8px;';
+
+        const sLinuxCard = document.createElement('div');
+        sLinuxCard.style.cssText = 'background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 8px; padding: 12px;';
+        const sLinuxTitle = document.createElement('div');
+        sLinuxTitle.style.cssText = 'font-weight: 600; font-size: 12px; color: var(--text-primary); margin-bottom: 8px;';
+        sLinuxTitle.textContent = 'Linux / macOS';
+        sLinuxCard.appendChild(sLinuxTitle);
+
+        const sWinCard = document.createElement('div');
+        sWinCard.style.cssText = 'background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 8px; padding: 12px;';
+        const sWinTitle = document.createElement('div');
+        sWinTitle.style.cssText = 'font-weight: 600; font-size: 12px; color: var(--text-primary); margin-bottom: 8px;';
+        sWinTitle.textContent = 'Windows (PowerShell)';
+        sWinCard.appendChild(sWinTitle);
+
+        // Special handling for Ollama - show both options for Open WebUI
+        if (provider === 'ollama') {
+            sLinuxCard.appendChild(this.createCodeBlock('# Option A: Ollama API\nexport OLLAMA_HOST=http://localhost:8742/ollama\n\n# Option B: OpenAI API\nexport OPENAI_BASE_URL=http://localhost:8742/ollama/v1'));
+            const sWinSessionNote = document.createElement('div');
+            sWinSessionNote.style.cssText = 'font-size: 10px; color: var(--text-secondary); margin-bottom: 6px;';
+            sWinSessionNote.textContent = 'Session-only:';
+            sWinCard.appendChild(sWinSessionNote);
+            sWinCard.appendChild(this.createCodeBlock('# Option A: Ollama API\n$env:OLLAMA_HOST="http://127.0.0.1:8742/ollama"\n\n# Option B: OpenAI API\n$env:OPENAI_BASE_URL="http://127.0.0.1:8742/ollama/v1"'));
+
+            singleEnvRow.appendChild(sLinuxCard);
+            singleEnvRow.appendChild(sWinCard);
+            container.appendChild(singleEnvRow);
+
+            // Open WebUI specific
+            const openwebuiLabel = document.createElement('div');
+            openwebuiLabel.style.cssText = 'font-weight: 600; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;';
+            openwebuiLabel.textContent = 'For Open WebUI:';
+            container.appendChild(openwebuiLabel);
+
+            const openwebuiBlock = this.createCodeBlock('Settings → Connections → Ollama URL: http://localhost:8742/ollama');
+            openwebuiBlock.style.marginBottom = '8px';
+            container.appendChild(openwebuiBlock);
+
+            const step2Note = document.createElement('div');
+            step2Note.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-bottom: 16px;';
+            step2Note.textContent = 'Traffic routes: Open WebUI → Aegis Proxy → Ollama';
+            container.appendChild(step2Note);
+        } else if (provider === 'gemini') {
+            // Special handling for Gemini - needs API key as env var
+            sLinuxCard.appendChild(this.createCodeBlock('export GEMINI_API_KEY="your-gemini-api-key"'));
+            const sWinSessionNote = document.createElement('div');
+            sWinSessionNote.style.cssText = 'font-size: 10px; color: var(--text-secondary); margin-bottom: 6px;';
+            sWinSessionNote.textContent = 'Session-only:';
+            sWinCard.appendChild(sWinSessionNote);
+            sWinCard.appendChild(this.createCodeBlock('$env:GEMINI_API_KEY="your-gemini-api-key"'));
+
+            singleEnvRow.appendChild(sLinuxCard);
+            singleEnvRow.appendChild(sWinCard);
+            container.appendChild(singleEnvRow);
+
+            const geminiNote = document.createElement('div');
+            geminiNote.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-bottom: 12px; padding: 10px 12px; background: rgba(0, 188, 212, 0.1); border-left: 3px solid var(--accent-primary); border-radius: 4px; line-height: 1.6;';
+            const geminiStrong = document.createElement('strong');
+            geminiStrong.style.color = 'var(--accent-primary)';
+            geminiStrong.textContent = 'Gemini Authentication: ';
+            geminiNote.appendChild(geminiStrong);
+            geminiNote.appendChild(document.createTextNode('Set the API key as an environment variable. The proxy will automatically append it as '));
+            const queryParam = document.createElement('code');
+            queryParam.style.cssText = 'background: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px; font-size: 11px;';
+            queryParam.textContent = '?key=...';
+            geminiNote.appendChild(queryParam);
+            geminiNote.appendChild(document.createTextNode(' when forwarding to Google.'));
+            container.appendChild(geminiNote);
+        } else {
+            sLinuxCard.appendChild(this.createCodeBlock('export ' + config.env + '=http://localhost:8742' + config.path));
+            const sWinSessionNote = document.createElement('div');
+            sWinSessionNote.style.cssText = 'font-size: 10px; color: var(--text-secondary); margin-bottom: 6px;';
+            sWinSessionNote.textContent = 'Session-only:';
+            sWinCard.appendChild(sWinSessionNote);
+            sWinCard.appendChild(this.createCodeBlock('$env:' + config.env + '="http://127.0.0.1:8742' + config.path + '"'));
+
+            singleEnvRow.appendChild(sLinuxCard);
+            singleEnvRow.appendChild(sWinCard);
+            container.appendChild(singleEnvRow);
+
+            const step2Note = document.createElement('div');
+            step2Note.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-bottom: 16px;';
+            step2Note.textContent = 'Set this in your client app. Traffic routes: Client → Aegis → ' + config.label + '.';
+            container.appendChild(step2Note);
+        }
+
+        // Update button states
+        IntegrationPage.updateProxyButtons();
+    },
+
+    // OpenClaw provider configs with env vars (pi-ai supported)
+    // configOnly: true means no env var override exists — needs openclaw.json custom provider config
+    openclawProviders: {
+        openai: { label: 'OpenAI', env: 'OPENAI_BASE_URL', path: '/openai/v1' },
+        anthropic: { label: 'Anthropic', env: 'ANTHROPIC_BASE_URL', path: '/anthropic' },
+        gemini: { label: 'Google Gemini', env: null, path: '/gemini/v1beta', configOnly: true },
+        groq: { label: 'Groq', env: 'OPENAI_BASE_URL', path: '/groq/v1' },
+        mistral: { label: 'Mistral', env: 'OPENAI_BASE_URL', path: '/mistral/v1' },
+        deepseek: { label: 'DeepSeek', env: 'OPENAI_BASE_URL', path: '/deepseek/v1' },
+        together: { label: 'Together AI', env: 'OPENAI_BASE_URL', path: '/together/v1' },
+        cohere: { label: 'Cohere', env: 'OPENAI_BASE_URL', path: '/cohere/v1' },
+        xai: { label: 'xAI (Grok)', env: 'OPENAI_BASE_URL', path: '/xai/v1' },
+        cerebras: { label: 'Cerebras', env: 'OPENAI_BASE_URL', path: '/cerebras/v1' },
+        moonshot: { label: 'Moonshot', env: 'OPENAI_BASE_URL', path: '/moonshot/v1' },
+        minimax: { label: 'MiniMax', env: 'OPENAI_BASE_URL', path: '/minimax/v1' },
+    },
+
+    createClaudeCodePluginCard() {
+        // Aegis Guard (aegis-guard) — install flow stages the
+        // plugin tree under ~/.aegis/staging/claude-code-plugin/ and
+        // surfaces two paste-in commands the user runs in their Claude Code
+        // session. The host owns the actual `/plugin install` step; we only
+        // stage. "Claude Code" is the host, not part of the plugin's name.
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 2px solid var(--accent-primary); border-radius: 8px; margin-bottom: 16px; overflow: hidden;';
+
+        // --- Header ---
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default);';
+        const title = document.createElement('div');
+        title.style.cssText = 'font-weight: 600; font-size: 15px;';
+        title.textContent = 'Aegis for Claude Code';
+        header.appendChild(title);
+        const subtitle = document.createElement('div');
+        subtitle.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-top: 4px;';
+        subtitle.textContent = 'Real-time policy enforcement and tamper-evident audit for MCP tool calls';
+        header.appendChild(subtitle);
+        card.appendChild(header);
+
+        // --- Content ---
+        const content = document.createElement('div');
+        content.style.cssText = 'padding: 16px;';
+
+        // Install / Uninstall buttons + status pill
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 14px;';
+
+        const installBtn = document.createElement('button');
+        installBtn.id = 'install-claude-code-plugin-btn';
+        installBtn.style.cssText = 'background: var(--accent-primary); color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;';
+        installBtn.textContent = 'Install Plugin';
+
+        const uninstallBtn = document.createElement('button');
+        uninstallBtn.id = 'uninstall-claude-code-plugin-btn';
+        uninstallBtn.style.cssText = 'background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-default); padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; display: none;';
+        uninstallBtn.textContent = 'Uninstall';
+
+        const statusPill = document.createElement('span');
+        statusPill.id = 'claude-code-plugin-status';
+        // Announce status transitions to screen readers — install /
+        // reinstall / uninstall mutate textContent and an SR with no
+        // live region attached would miss the change. role="status"
+        // (≡ aria-live="polite" + aria-atomic="true") is the right
+        // implicit-role mapping per WAI-ARIA 1.2.
+        statusPill.setAttribute('role', 'status');
+        statusPill.setAttribute('aria-live', 'polite');
+        statusPill.setAttribute('aria-atomic', 'true');
+        statusPill.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        statusPill.textContent = 'Checking...';
+
+        btnRow.appendChild(installBtn);
+        btnRow.appendChild(uninstallBtn);
+        btnRow.appendChild(statusPill);
+        content.appendChild(btnRow);
+
+        // Result block (error / success messages)
+        const resultArea = document.createElement('div');
+        resultArea.id = 'claude-code-plugin-result';
+        resultArea.style.cssText = 'display: none; padding: 12px 14px; border-radius: 6px; font-size: 12px; line-height: 1.6; margin-bottom: 14px;';
+        content.appendChild(resultArea);
+
+        // --- Optional status line (clean, prominent, copy-paste) ---------
+        // Surfaced right under the install button because it was previously
+        // buried in a dense troubleshooting paragraph and users couldn't
+        // tell how to turn it on. It is OPTIONAL and never wired
+        // automatically — the command lives in the user's global
+        // ~/.claude/settings.json `statusLine`, which we never overwrite.
+        // The command points at the version-STABLE staging copy so it does
+        // not break on version bumps (the cache path is versioned).
+        const STATUSLINE_SETTINGS = [
+            '"statusLine": {',
+            '  "type": "command",',
+            '  "command": "node ~/.aegis/staging/claude-code-plugin/hooks/statusline.js",',
+            '  "refreshInterval": 5',
+            '}',
+        ].join('\n');
+
+        const slBlock = document.createElement('div');
+        slBlock.style.cssText = 'margin-bottom: 16px; padding: 14px; border: 1px solid var(--border-default); border-left: 3px solid var(--accent-primary); border-radius: 6px; background: var(--bg-tertiary);';
+
+        // Collapsible: the status line is optional + display-only, so the
+        // block is collapsed by default and expands on click — keeps it
+        // discoverable without crowding the install flow.
+        const slHeading = document.createElement('button');
+        slHeading.type = 'button';
+        slHeading.setAttribute('aria-expanded', 'false');
+        slHeading.style.cssText = 'display: flex; align-items: center; gap: 8px; width: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; font-weight: 600; font-size: 13px; color: var(--text-primary); text-align: left;';
+        const slCaret = document.createElement('span');
+        slCaret.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+        slCaret.style.cssText = 'display: inline-flex; transition: transform .12s; color: var(--text-secondary);';
+        const slTitleText = document.createElement('span');
+        slTitleText.textContent = 'Add the status line (optional)';
+        slHeading.appendChild(slCaret);
+        slHeading.appendChild(slTitleText);
+        slBlock.appendChild(slHeading);
+
+        const slBody = document.createElement('div');
+        slBody.style.cssText = 'display: none; margin-top: 10px;';
+
+        slHeading.onclick = () => {
+            const open = slBody.style.display === 'none';
+            slBody.style.display = open ? 'block' : 'none';
+            slCaret.style.transform = open ? 'rotate(90deg)' : '';
+            slHeading.setAttribute('aria-expanded', open ? 'true' : 'false');
+        };
+
+        const slDesc = document.createElement('div');
+        slDesc.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.45;';
+        slDesc.textContent = 'Shows live threat counts and the allow/block tool-call balance in your Claude Code status bar. Add this block to the top level of ~/.claude/settings.json:';
+        slBody.appendChild(slDesc);
+
+        const slCodeRow = document.createElement('div');
+        slCodeRow.style.cssText = 'display: flex; align-items: flex-start; gap: 8px;';
+        const slPre = document.createElement('pre');
+        slPre.style.cssText = 'flex: 1; margin: 0; padding: 10px 12px; background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 6px; font-family: monospace; font-size: 12px; user-select: all; overflow-x: auto; white-space: pre; color: var(--text-primary);';
+        slPre.textContent = STATUSLINE_SETTINGS;
+        const slCopyBtn = document.createElement('button');
+        slCopyBtn.style.cssText = 'padding: 6px 12px; border-radius: 6px; background: var(--bg-card); border: 1px solid var(--border-default); color: var(--text-primary); cursor: pointer; font-size: 12px; white-space: nowrap;';
+        slCopyBtn.textContent = 'Copy';
+        slCopyBtn.onclick = async () => {
+            try { await navigator.clipboard.writeText(STATUSLINE_SETTINGS); slCopyBtn.textContent = 'Copied'; setTimeout(() => slCopyBtn.textContent = 'Copy', 1200); }
+            catch { slCopyBtn.textContent = 'Copy failed'; }
+        };
+        slCodeRow.appendChild(slPre);
+        slCodeRow.appendChild(slCopyBtn);
+        slBody.appendChild(slCodeRow);
+
+        const slFootnote = document.createElement('div');
+        slFootnote.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-top: 8px; line-height: 1.45;';
+        slFootnote.textContent = 'Already have a custom statusLine? Keep it: call statusline.js from your own script and append its output instead (see the Claude Code guide). Skipping this changes nothing about enforcement or audit; the status line is display-only.';
+        slBody.appendChild(slFootnote);
+
+        slBlock.appendChild(slBody);
+        content.appendChild(slBlock);
+
+        // Two paste-in command blocks (revealed after install). These are
+        // OPTIONAL — the manual fallback when auto-install can't reach
+        // Claude Code's config dir. If "Install Plugin" succeeded with
+        // auto_installed=true, this block stays hidden.
+        const commandsWrap = document.createElement('div');
+        commandsWrap.id = 'claude-code-plugin-commands';
+        commandsWrap.style.cssText = 'display: none; margin-bottom: 16px;';
+        const commandsHeading = document.createElement('div');
+        commandsHeading.style.cssText = 'font-weight: 600; font-size: 13px; margin-bottom: 4px;';
+        commandsHeading.textContent = 'Optional · troubleshooting fallback';
+        commandsWrap.appendChild(commandsHeading);
+        const commandsSubhead = document.createElement('div');
+        commandsSubhead.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.45;';
+        commandsSubhead.textContent = 'Only needed if auto-install couldn’t register the plugin with Claude Code (e.g., the host has never been launched on this machine, or your ~/.claude config dir is read-only). Otherwise click Install Plugin above and just run /reload-plugins in your Claude Code session.';
+        commandsWrap.appendChild(commandsSubhead);
+        content.appendChild(commandsWrap);
+
+        // Helper to build a code block with a copy button
+        const buildCommandBlock = (text) => {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 8px;';
+            const pre = document.createElement('code');
+            pre.style.cssText = 'flex: 1; padding: 10px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 6px; font-family: monospace; font-size: 12px; user-select: all; overflow-x: auto;';
+            pre.textContent = text;
+            const copyBtn = document.createElement('button');
+            copyBtn.style.cssText = 'padding: 6px 12px; border-radius: 6px; background: var(--bg-tertiary); border: 1px solid var(--border-default); color: var(--text-primary); cursor: pointer; font-size: 12px;';
+            copyBtn.textContent = 'Copy';
+            copyBtn.onclick = async () => {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    copyBtn.textContent = 'Copied';
+                    setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1200);
+                } catch {
+                    copyBtn.textContent = 'Copy failed';
+                }
+            };
+            wrap.appendChild(pre);
+            wrap.appendChild(copyBtn);
+            return wrap;
+        };
+
+        const renderCommands = (commands) => {
+            // Wipe and rebuild — install is idempotent, so the staging dir
+            // in command[0] may change between runs (rare but possible).
+            while (commandsWrap.childNodes.length > 2) commandsWrap.removeChild(commandsWrap.lastChild);
+            for (const cmd of commands || []) commandsWrap.appendChild(buildCommandBlock(cmd));
+            commandsWrap.style.display = (commands && commands.length) ? '' : 'none';
+        };
+
+        const setStatusPill = (state, opts = {}) => {
+            // state: 'not-staged' | 'staged' | 'installed' | 'installed-disabled' | 'error' | 'checking'
+            //
+            // - 'installed' — registered AND enabled in settings.json;
+            //   user only needs /reload-plugins. Single-line success.
+            // - 'installed-disabled' — registered but settings.json
+            //   couldn't be touched; user has to enable manually.
+            // - 'staged' — files on disk but Claude Code config dir
+            //   absent. Surface legacy two-command paste-in.
+            statusPill.textContent = '';
+            const span = document.createElement('strong');
+            // Unified vocabulary with sidebar banner:
+            //   Active                 — auto-installed AND enabled
+            //   Installed, not enabled — auto-installed but disabled in CC
+            //   Staged                 — files on disk, legacy paste-in path
+            if (state === 'installed') {
+                span.style.color = 'var(--success)';
+                span.textContent = 'Active · run /reload-plugins in Claude Code to load into your session';
+            } else if (state === 'installed-disabled') {
+                span.style.color = 'var(--warning)';
+                span.textContent = 'Installed, not enabled · enable in Claude Code then /reload-plugins';
+            } else if (state === 'staged') {
+                span.style.color = 'var(--warning)';
+                span.textContent = 'Staged · click Install Plugin to register';
+            } else if (state === 'not-staged') {
+                statusPill.style.color = 'var(--text-secondary)';
+                span.style.fontWeight = '400';
+                span.textContent = 'Not staged';
+            } else if (state === 'error') {
+                span.style.color = 'var(--error)';
+                span.textContent = opts.message || 'Status unknown';
+            } else {
+                span.style.fontWeight = '400';
+                span.textContent = 'Checking...';
+            }
+            statusPill.appendChild(span);
+        };
+
+        const showResult = (kind, message) => {
+            resultArea.style.display = 'block';
+            resultArea.textContent = '';
+            if (kind === 'success') {
+                resultArea.style.background = 'rgba(76, 175, 80, 0.1)';
+                resultArea.style.border = '1px solid var(--success)';
+            } else if (kind === 'warning') {
+                resultArea.style.background = 'rgba(255, 152, 0, 0.1)';
+                resultArea.style.border = '1px solid var(--warning)';
+            } else {
+                resultArea.style.background = 'rgba(244, 67, 54, 0.1)';
+                resultArea.style.border = '1px solid var(--error)';
+            }
+            resultArea.style.color = 'var(--text-primary)';
+            resultArea.textContent = message;
+        };
+
+        // --- Install click handler ---
+        installBtn.onclick = async () => {
+            installBtn.disabled = true;
+            const wasReinstall = installBtn.textContent === 'Reinstall Plugin';
+            installBtn.textContent = wasReinstall ? 'Reinstalling...' : 'Installing...';
+            try {
+                const res = await fetch('/api/hooks/claude-code/install', { method: 'POST' });
+                const result = await res.json();
+                if (result.ok) {
+                    if (result.auto_installed && result.enabled) {
+                        showResult('success', `Installed and enabled. ${result.next_step || ''}`.trim());
+                        renderCommands([]);
+                        setStatusPill('installed');
+                    } else if (result.auto_installed) {
+                        showResult('warning', result.next_step || 'Installed but not enabled.');
+                        renderCommands([]);
+                        setStatusPill('installed-disabled');
+                    } else {
+                        showResult('success', `Plugin staged at ${result.staging_dir} (${result.files.length} files).`);
+                        renderCommands(result.commands);
+                        setStatusPill('staged');
+                    }
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else {
+                    showResult('error', 'Install failed. Check the threat-monitor server logs.');
+                    installBtn.textContent = wasReinstall ? 'Reinstall Plugin' : 'Install Plugin';
+                }
+            } catch (e) {
+                showResult('error', 'Failed to reach the Aegis server.');
+                installBtn.textContent = wasReinstall ? 'Reinstall Plugin' : 'Install Plugin';
+            }
+            installBtn.disabled = false;
+        };
+
+        // --- Uninstall click handler ---
+        uninstallBtn.onclick = async () => {
+            uninstallBtn.disabled = true;
+            uninstallBtn.textContent = 'Uninstalling...';
+            try {
+                const res = await fetch('/api/hooks/claude-code/uninstall', { method: 'POST' });
+                const result = await res.json();
+                if (result.ok) {
+                    showResult('warning', 'Plugin removed. Run /reload-plugins in your Claude Code session to drop it from the active runtime.');
+                    renderCommands([]);
+                    setStatusPill('not-staged');
+                    installBtn.textContent = 'Install Plugin';
+                    uninstallBtn.style.display = 'none';
+                } else {
+                    showResult('error', 'Uninstall failed.');
+                }
+            } catch {
+                showResult('error', 'Failed to reach the Aegis server.');
+            }
+            uninstallBtn.disabled = false;
+            uninstallBtn.textContent = 'Uninstall';
+        };
+
+        // --- Initial status check ---
+        // The /status endpoint reports installation but does NOT echo the
+        // two paste-in commands (that lives on /install's response). When
+        // the user lands on this page with the plugin already staged, the
+        // badge says "run the two commands below" — so derive the same
+        // two commands here from status.staging_dir + the constant plugin
+        // name. Format mirrors hooks_claude_code.py:
+        //   /plugin marketplace add <staging_dir>
+        //   /plugin install aegis-guard
+        const commandsForStaging = (stagingDir) => [
+            `/plugin marketplace add ${stagingDir}`,
+            '/plugin install aegis-guard',
+        ];
+
+        setTimeout(async () => {
+            try {
+                const res = await fetch('/api/hooks/claude-code/status');
+                const status = await res.json();
+                if (status.installed && status.auto_installed && status.enabled) {
+                    setStatusPill('installed');
+                    renderCommands([]);
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else if (status.installed && status.auto_installed) {
+                    // Registered in installed_plugins.json but not flipped
+                    // on in settings.json — flag so the user can enable.
+                    setStatusPill('installed-disabled');
+                    renderCommands([]);
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else if (status.installed) {
+                    // Files staged but not auto-installed (e.g. ~/.claude
+                    // doesn't exist) — fall back to the legacy paste-in.
+                    setStatusPill('staged');
+                    renderCommands(commandsForStaging(status.staging_dir));
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else if (status.files_present && status.files_present.length > 0) {
+                    setStatusPill('staged', { message: 'Partially staged' });
+                    renderCommands(commandsForStaging(status.staging_dir));
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else {
+                    setStatusPill('not-staged');
+                }
+            } catch {
+                setStatusPill('error');
+            }
+        }, 0);
+
+        // --- Capabilities grid ---
+        const featuresLabel = document.createElement('div');
+        featuresLabel.style.cssText = 'font-weight: 600; font-size: 13px; margin-bottom: 10px;';
+        featuresLabel.textContent = 'Capabilities (v4.6)';
+        content.appendChild(featuresLabel);
+
+        const featuresGrid = document.createElement('div');
+        featuresGrid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;';
+        const features = [
+            { name: 'MCP Tool Permissions', desc: 'Allow / deny / ask, cloud-pushed rules' },
+            { name: 'Tamper-Evident Audit', desc: 'SHA-256 hash chain on every call' },
+            { name: 'Fail-Open', desc: 'Calls pass when Aegis is unreachable' },
+            { name: 'Built-in Tools', desc: 'Bash / Edit / Read / Write / Grep / Glob / Web*' },
+            // New capabilities introduced in this release. Threat scanning
+            // covers BOTH inbound (UserPromptSubmit — catches direct
+            // prompt-injection in chat) and outbound (PostToolUse —
+            // catches exfil shapes in Bash commands / Edit content / etc).
+            { name: 'Prompt-Injection Detection', desc: 'Scans every chat message for injection / jailbreak' },
+            { name: 'Outbound Threat Scan', desc: 'Per-tool content checked for exfil + secret leaks' },
+        ];
+        features.forEach(f => {
+            const item = document.createElement('div');
+            item.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-tertiary); border-radius: 6px;';
+            const check = document.createElement('span');
+            check.style.cssText = 'color: var(--success); font-size: 14px; flex-shrink: 0;';
+            check.textContent = '✓';
+            item.appendChild(check);
+            const textDiv = document.createElement('div');
+            const nameSpan = document.createElement('div');
+            nameSpan.style.cssText = 'font-weight: 600; font-size: 12px;';
+            nameSpan.textContent = f.name;
+            textDiv.appendChild(nameSpan);
+            const descSpan = document.createElement('div');
+            descSpan.style.cssText = 'font-size: 11px; color: var(--text-secondary);';
+            descSpan.textContent = f.desc;
+            textDiv.appendChild(descSpan);
+            item.appendChild(textDiv);
+            featuresGrid.appendChild(item);
+        });
+        content.appendChild(featuresGrid);
+
+        // --- Setup Guide disclosure ---
+        // In-product abbreviation of docs/CLAUDE_CODE.md so the user
+        // doesn't have to leave the app to learn install / verify /
+        // statusline wire-up / common troubleshooting steps. Native
+        // <details> for zero-JS toggle + screen-reader semantics.
+        const guide = document.createElement('details');
+        guide.style.cssText = 'margin-top: 18px; padding: 12px 14px; background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 6px;';
+
+        const guideSummary = document.createElement('summary');
+        guideSummary.style.cssText = 'cursor: pointer; font-weight: 600; font-size: 13px; color: var(--text-primary); list-style: revert;';
+        guideSummary.textContent = 'Setup Guide & Troubleshooting';
+        guide.appendChild(guideSummary);
+
+        const guideBody = document.createElement('div');
+        guideBody.style.cssText = 'margin-top: 12px; font-size: 12px; line-height: 1.6; color: var(--text-primary);';
+
+        const gSection = (title) => {
+            const h = document.createElement('div');
+            h.style.cssText = 'font-weight: 600; font-size: 12px; color: var(--text-primary); margin: 14px 0 6px 0; letter-spacing: 0.3px;';
+            h.textContent = title;
+            return h;
+        };
+        const gPara = (text) => {
+            const p = document.createElement('div');
+            p.style.cssText = 'color: var(--text-secondary); margin: 4px 0;';
+            p.textContent = text;
+            return p;
+        };
+        const gCode = (text) => {
+            const c = document.createElement('code');
+            c.style.cssText = 'display: block; padding: 8px 10px; margin: 4px 0; background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; font-family: monospace; font-size: 11px; user-select: all; overflow-x: auto;';
+            c.textContent = text;
+            return c;
+        };
+        const gItem = (label, text) => {
+            const i = document.createElement('div');
+            i.style.cssText = 'color: var(--text-secondary); margin: 6px 0; padding-left: 14px; text-indent: -14px;';
+            const strong = document.createElement('strong');
+            strong.style.cssText = 'color: var(--text-primary); font-weight: 600;';
+            strong.textContent = label + ' — ';
+            i.appendChild(strong);
+            i.appendChild(document.createTextNode(text));
+            return i;
+        };
+
+        guideBody.appendChild(gSection('Install'));
+        guideBody.appendChild(gPara('Click "Install Plugin" above. Then in your Claude Code session:'));
+        guideBody.appendChild(gCode('/reload-plugins'));
+        guideBody.appendChild(gPara('Run any Bash command and check Tool Activity in the sidebar: every call lands as an audit row tagged runtime_kind=claude-code.'));
+
+        guideBody.appendChild(gSection('Statusline (optional)'));
+        guideBody.appendChild(gPara('Wire hooks/statusline.js into ~/.claude/settings.json: it surfaces threats / tool-call balance / 7-day token totals in one line. Compose with an existing statusline by shelling out from your script and appending its stdout. Set NO_COLOR=1 to disable the cyan/red palette.'));
+
+        guideBody.appendChild(gSection('Uninstall'));
+        guideBody.appendChild(gPara('Click "Uninstall" above (recommended: strips the settings.json entries automatically). Then in Claude Code: /reload-plugins.'));
+
+        guideBody.appendChild(gSection('Troubleshooting'));
+        guideBody.appendChild(gItem("Hooks don't fire after install", 'run /reload-plugins, or restart Claude Code.'));
+        guideBody.appendChild(gItem('Every call shows action=allow even with a synced rule', 'open Settings → Cloud and confirm the device is paired; check /api/tool-permissions/synced-overrides returns non-empty.'));
+        guideBody.appendChild(gItem('No 7d tokens in the statusline', 'first render after install can take ≤ 5 s to populate the token cache; subsequent renders pick it up.'));
+        guideBody.appendChild(gItem('App unreachable', 'every hook fails-open silently: restart with aegis-app --web on 127.0.0.1:8741.'));
+
+        guideBody.appendChild(gSection('Full documentation'));
+        const inAppLink = document.createElement('a');
+        inAppLink.href = '#';
+        inAppLink.style.cssText = 'color: var(--accent-primary); text-decoration: underline; font-size: 12px;';
+        inAppLink.textContent = 'Open the full Claude Code Plugin guide in this app →';
+        inAppLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (typeof Sidebar !== 'undefined' && Sidebar.navigate) {
+                Sidebar.navigate('guide-claude-code');
+            }
+        });
+        guideBody.appendChild(inAppLink);
+
+        guide.appendChild(guideBody);
+        content.appendChild(guide);
+
+        card.appendChild(content);
+        return card;
+    },
+
+    createCopilotCliPluginCard() {
+        // Aegis Guard for GitHub Copilot CLI — host-native plugin.
+        // Install stages the plugin tree (plugin.json at root) under
+        // ~/.aegis/staging/copilot-cli-plugin/ and — when Copilot CLI is
+        // present — copies it into ~/.copilot/installed-plugins/_direct/ and
+        // registers it enabled in ~/.copilot/config.json (parity with CC/Codex
+        // auto-install; verified interchangeable with `copilot plugin install`).
+        // Falls back to the documented `copilot plugin install <dir>` command
+        // only when ~/.copilot is absent (CLI not installed).
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 2px solid var(--accent-primary); border-radius: 8px; margin-bottom: 16px; overflow: hidden;';
+
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default);';
+        const title = document.createElement('div');
+        title.style.cssText = 'font-weight: 600; font-size: 15px;';
+        title.textContent = 'Aegis Guard for GitHub Copilot CLI';
+        header.appendChild(title);
+        const subtitle = document.createElement('div');
+        subtitle.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-top: 4px;';
+        subtitle.textContent = 'Real-time policy enforcement and tamper-evident audit for tool calls';
+        header.appendChild(subtitle);
+        card.appendChild(header);
+
+        const content = document.createElement('div');
+        content.style.cssText = 'padding: 16px;';
+
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 14px;';
+
+        const installBtn = document.createElement('button');
+        installBtn.id = 'install-copilot-cli-plugin-btn';
+        installBtn.style.cssText = 'background: var(--accent-primary); color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;';
+        installBtn.textContent = 'Install Plugin';
+
+        const uninstallBtn = document.createElement('button');
+        uninstallBtn.id = 'uninstall-copilot-cli-plugin-btn';
+        uninstallBtn.style.cssText = 'background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-default); padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; display: none;';
+        uninstallBtn.textContent = 'Uninstall';
+
+        const statusPill = document.createElement('span');
+        statusPill.id = 'copilot-cli-plugin-status';
+        statusPill.setAttribute('role', 'status');
+        statusPill.setAttribute('aria-live', 'polite');
+        statusPill.setAttribute('aria-atomic', 'true');
+        statusPill.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        statusPill.textContent = 'Checking...';
+
+        btnRow.appendChild(installBtn);
+        btnRow.appendChild(uninstallBtn);
+        btnRow.appendChild(statusPill);
+        content.appendChild(btnRow);
+
+        const resultArea = document.createElement('div');
+        resultArea.id = 'copilot-cli-plugin-result';
+        resultArea.style.cssText = 'display: none; padding: 12px 14px; border-radius: 6px; font-size: 12px; line-height: 1.6; margin-bottom: 14px;';
+        content.appendChild(resultArea);
+
+        const commandsWrap = document.createElement('div');
+        commandsWrap.id = 'copilot-cli-plugin-commands';
+        commandsWrap.style.cssText = 'display: none; margin-bottom: 16px;';
+        const commandsHeading = document.createElement('div');
+        commandsHeading.style.cssText = 'font-weight: 600; font-size: 13px; margin-bottom: 4px;';
+        commandsHeading.textContent = 'Install command: run in your terminal';
+        commandsWrap.appendChild(commandsHeading);
+        const commandsSubhead = document.createElement('div');
+        commandsSubhead.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.45;';
+        commandsSubhead.textContent = 'Click Install Plugin to stage the files, then run this command to install the plugin into Copilot CLI and start a new session.';
+        commandsWrap.appendChild(commandsSubhead);
+        content.appendChild(commandsWrap);
+
+        const buildCommandBlock = (text) => {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 8px;';
+            const pre = document.createElement('code');
+            pre.style.cssText = 'flex: 1; padding: 10px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 6px; font-family: monospace; font-size: 12px; user-select: all; overflow-x: auto;';
+            pre.textContent = text;
+            const copyBtn = document.createElement('button');
+            copyBtn.style.cssText = 'padding: 6px 12px; border-radius: 6px; background: var(--bg-tertiary); border: 1px solid var(--border-default); color: var(--text-primary); cursor: pointer; font-size: 12px;';
+            copyBtn.textContent = 'Copy';
+            copyBtn.onclick = async () => {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    copyBtn.textContent = 'Copied';
+                    setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1200);
+                } catch {
+                    copyBtn.textContent = 'Copy failed';
+                }
+            };
+            wrap.appendChild(pre);
+            wrap.appendChild(copyBtn);
+            return wrap;
+        };
+
+        const renderCommands = (commands) => {
+            while (commandsWrap.childNodes.length > 2) commandsWrap.removeChild(commandsWrap.lastChild);
+            for (const cmd of commands || []) commandsWrap.appendChild(buildCommandBlock(cmd));
+            commandsWrap.style.display = (commands && commands.length) ? '' : 'none';
+        };
+
+        const setStatusPill = (state, opts = {}) => {
+            statusPill.textContent = '';
+            const span = document.createElement('strong');
+            if (state === 'installed') {
+                span.style.color = 'var(--success)';
+                span.textContent = 'Installed & enabled · start a new Copilot session';
+            } else if (state === 'staged') {
+                span.style.color = 'var(--success)';
+                span.textContent = 'Staged · run the install command below';
+            } else if (state === 'not-staged') {
+                statusPill.style.color = 'var(--text-secondary)';
+                span.style.fontWeight = '400';
+                span.textContent = 'Not staged';
+            } else if (state === 'error') {
+                span.style.color = 'var(--error)';
+                span.textContent = opts.message || 'Status unknown';
+            } else {
+                span.style.fontWeight = '400';
+                span.textContent = 'Checking...';
+            }
+            statusPill.appendChild(span);
+        };
+
+        const showResult = (kind, message) => {
+            resultArea.style.display = 'block';
+            resultArea.textContent = '';
+            if (kind === 'success') {
+                resultArea.style.background = 'rgba(76, 175, 80, 0.1)';
+                resultArea.style.border = '1px solid var(--success)';
+            } else if (kind === 'warning') {
+                resultArea.style.background = 'rgba(255, 152, 0, 0.1)';
+                resultArea.style.border = '1px solid var(--warning)';
+            } else {
+                resultArea.style.background = 'rgba(244, 67, 54, 0.1)';
+                resultArea.style.border = '1px solid var(--error)';
+            }
+            resultArea.style.color = 'var(--text-primary)';
+            resultArea.textContent = message;
+        };
+
+        const commandsFor = (stagingDir) => [`copilot plugin install ${stagingDir}`];
+
+        installBtn.onclick = async () => {
+            installBtn.disabled = true;
+            const wasReinstall = installBtn.textContent === 'Reinstall Plugin';
+            installBtn.textContent = wasReinstall ? 'Reinstalling...' : 'Installing...';
+            try {
+                const res = await fetch('/api/hooks/copilot-cli/install', { method: 'POST' });
+                const result = await res.json();
+                if (result.ok) {
+                    if (result.auto_installed) {
+                        // Wrote directly into Copilot's store + config.json — no command needed.
+                        showResult('success', `Installed and enabled in Copilot CLI (${result.files.length} files at ${result.install_path}). ${result.next_step || ''}`.trim());
+                        renderCommands([]);
+                        setStatusPill('installed');
+                    } else {
+                        // Copilot CLI not detected — staged only; surface the install command.
+                        showResult('warning', `Plugin staged at ${result.staging_dir} (${result.files.length} files). ${result.next_step || ''}`.trim());
+                        renderCommands(result.commands && result.commands.length ? result.commands : commandsFor(result.staging_dir));
+                        setStatusPill('staged');
+                    }
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else {
+                    showResult('error', 'Install failed. Check the threat-monitor server logs.');
+                    installBtn.textContent = wasReinstall ? 'Reinstall Plugin' : 'Install Plugin';
+                }
+            } catch (e) {
+                showResult('error', 'Failed to reach the Aegis server.');
+                installBtn.textContent = wasReinstall ? 'Reinstall Plugin' : 'Install Plugin';
+            }
+            installBtn.disabled = false;
+        };
+
+        uninstallBtn.onclick = async () => {
+            uninstallBtn.disabled = true;
+            uninstallBtn.textContent = 'Uninstalling...';
+            try {
+                const res = await fetch('/api/hooks/copilot-cli/uninstall', { method: 'POST' });
+                const result = await res.json();
+                if (result.ok) {
+                    showResult('warning', 'Plugin removed from Copilot CLI (deregistered from config.json and deleted from the store). Start a new Copilot session to drop the hooks.');
+                    renderCommands([]);
+                    setStatusPill('not-staged');
+                    installBtn.textContent = 'Install Plugin';
+                    uninstallBtn.style.display = 'none';
+                } else {
+                    showResult('error', 'Uninstall failed.');
+                }
+            } catch {
+                showResult('error', 'Failed to reach the Aegis server.');
+            }
+            uninstallBtn.disabled = false;
+            uninstallBtn.textContent = 'Uninstall';
+        };
+
+        // Initial status check. `auto_installed`+`enabled` mean we wrote into
+        // Copilot's store + config.json; `installed` (staged) without them is the
+        // CLI-absent fallback where the user must run the install command.
+        setTimeout(async () => {
+            try {
+                const res = await fetch('/api/hooks/copilot-cli/status');
+                const status = await res.json();
+                if (status.auto_installed) {
+                    setStatusPill('installed');
+                    renderCommands([]);
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else if (status.installed) {
+                    setStatusPill('staged');
+                    renderCommands(commandsFor(status.staging_dir));
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else if (status.files_present && status.files_present.length > 0) {
+                    setStatusPill('staged', { message: 'Partially staged' });
+                    renderCommands(commandsFor(status.staging_dir));
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else {
+                    setStatusPill('not-staged');
+                }
+            } catch {
+                setStatusPill('error');
+            }
+        }, 0);
+
+        const featuresLabel = document.createElement('div');
+        featuresLabel.style.cssText = 'font-weight: 600; font-size: 13px; margin-bottom: 10px;';
+        featuresLabel.textContent = 'Capabilities (v4.6)';
+        content.appendChild(featuresLabel);
+
+        const featuresGrid = document.createElement('div');
+        featuresGrid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;';
+        const features = [
+            { name: 'Tool Permissions', desc: 'Allow / deny / ask, cloud-pushed rules (preToolUse)' },
+            { name: 'Tamper-Evident Audit', desc: 'SHA-256 hash chain · runtime_kind=copilot-cli' },
+            { name: 'Prompt-Injection Scan', desc: 'userPromptSubmitted + task input → /analyze' },
+            { name: 'Fail-Open on App Down', desc: 'Explicit allow + exit 0 (Copilot hooks fail closed)' },
+        ];
+        for (const f of features) {
+            const item = document.createElement('div');
+            item.style.cssText = 'padding: 8px 10px; background: var(--bg-tertiary); border-radius: 6px;';
+            const fn = document.createElement('div');
+            fn.style.cssText = 'font-size: 12px; font-weight: 600;';
+            fn.textContent = f.name;
+            const fd = document.createElement('div');
+            fd.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-top: 2px;';
+            fd.textContent = f.desc;
+            item.appendChild(fn);
+            item.appendChild(fd);
+            featuresGrid.appendChild(item);
+        }
+        content.appendChild(featuresGrid);
+
+        card.appendChild(content);
+        return card;
+    },
+
+    createCursorPluginCard() {
+        // Aegis Guard for Cursor — a native Cursor PLUGIN
+        // (.cursor-plugin/plugin.json) that bundles its nine hooks. Install
+        // stages the tree under ~/.aegis/staging/cursor-plugin/, then
+        // copies it (real dir, not symlink) to
+        // ~/.cursor/plugins/local/aegis-guard/, the location Cursor
+        // scans for local plugins — so one click yields BOTH the Settings →
+        // Plugins entry and the active hooks (Settings → Hooks). Install also
+        // migrates off the old global-hooks.json model (strips our legacy
+        // entries + removes ~/.cursor/aegis-guard/) so hooks don't
+        // double-fire. Cursor reads plugins/hooks at startup, so activation =
+        // reload Cursor. If ~/.cursor is absent the user installs Cursor and
+        // clicks again.
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 2px solid var(--accent-primary); border-radius: 8px; margin-bottom: 16px; overflow: hidden;';
+
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default);';
+        const title = document.createElement('div');
+        title.style.cssText = 'font-weight: 600; font-size: 15px;';
+        title.textContent = 'Aegis Guard for Cursor';
+        header.appendChild(title);
+        const subtitle = document.createElement('div');
+        subtitle.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-top: 4px;';
+        subtitle.textContent = 'Real-time policy enforcement and tamper-evident audit for the Cursor agent';
+        header.appendChild(subtitle);
+        card.appendChild(header);
+
+        const content = document.createElement('div');
+        content.style.cssText = 'padding: 16px;';
+
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 14px;';
+
+        const installBtn = document.createElement('button');
+        installBtn.id = 'install-cursor-plugin-btn';
+        installBtn.style.cssText = 'background: var(--accent-primary); color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;';
+        installBtn.textContent = 'Install Plugin';
+
+        const uninstallBtn = document.createElement('button');
+        uninstallBtn.id = 'uninstall-cursor-plugin-btn';
+        uninstallBtn.style.cssText = 'background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-default); padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; display: none;';
+        uninstallBtn.textContent = 'Uninstall';
+
+        const statusPill = document.createElement('span');
+        statusPill.id = 'cursor-plugin-status';
+        statusPill.setAttribute('role', 'status');
+        statusPill.setAttribute('aria-live', 'polite');
+        statusPill.setAttribute('aria-atomic', 'true');
+        statusPill.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        statusPill.textContent = 'Checking...';
+
+        btnRow.appendChild(installBtn);
+        btnRow.appendChild(uninstallBtn);
+        btnRow.appendChild(statusPill);
+        content.appendChild(btnRow);
+
+        const resultArea = document.createElement('div');
+        resultArea.id = 'cursor-plugin-result';
+        resultArea.style.cssText = 'display: none; padding: 12px 14px; border-radius: 6px; font-size: 12px; line-height: 1.6; margin-bottom: 14px;';
+        content.appendChild(resultArea);
+
+        const setStatusPill = (state, opts = {}) => {
+            statusPill.textContent = '';
+            const span = document.createElement('strong');
+            if (state === 'installed') {
+                span.style.color = 'var(--success)';
+                span.textContent = 'Installed & enabled · reload Cursor to activate';
+            } else if (state === 'staged') {
+                span.style.color = 'var(--success)';
+                span.textContent = 'Staged · install Cursor, then click Reinstall';
+            } else if (state === 'not-staged') {
+                statusPill.style.color = 'var(--text-secondary)';
+                span.style.fontWeight = '400';
+                span.textContent = 'Not staged';
+            } else if (state === 'error') {
+                span.style.color = 'var(--error)';
+                span.textContent = opts.message || 'Status unknown';
+            } else {
+                span.style.fontWeight = '400';
+                span.textContent = 'Checking...';
+            }
+            statusPill.appendChild(span);
+        };
+
+        const showResult = (kind, message) => {
+            resultArea.style.display = 'block';
+            resultArea.textContent = '';
+            if (kind === 'success') {
+                resultArea.style.background = 'rgba(76, 175, 80, 0.1)';
+                resultArea.style.border = '1px solid var(--success)';
+            } else if (kind === 'warning') {
+                resultArea.style.background = 'rgba(255, 152, 0, 0.1)';
+                resultArea.style.border = '1px solid var(--warning)';
+            } else {
+                resultArea.style.background = 'rgba(244, 67, 54, 0.1)';
+                resultArea.style.border = '1px solid var(--error)';
+            }
+            resultArea.style.color = 'var(--text-primary)';
+            resultArea.textContent = message;
+        };
+
+        installBtn.onclick = async () => {
+            installBtn.disabled = true;
+            const wasReinstall = installBtn.textContent === 'Reinstall Plugin';
+            installBtn.textContent = wasReinstall ? 'Reinstalling...' : 'Installing...';
+            try {
+                const res = await fetch('/api/hooks/cursor/install', { method: 'POST' });
+                const result = await res.json();
+                if (result.ok) {
+                    if (result.auto_installed) {
+                        showResult('success', `Installed and enabled (${result.files.length} files at ${result.install_path}). ${result.next_step || ''}`.trim());
+                        setStatusPill('installed');
+                    } else {
+                        showResult('warning', `Plugin staged at ${result.staging_dir} (${result.files.length} files). ${result.next_step || ''}`.trim());
+                        setStatusPill('staged');
+                    }
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else {
+                    showResult('error', 'Install failed. Check the threat-monitor server logs.');
+                    installBtn.textContent = wasReinstall ? 'Reinstall Plugin' : 'Install Plugin';
+                }
+            } catch (e) {
+                showResult('error', 'Failed to reach the Aegis server.');
+                installBtn.textContent = wasReinstall ? 'Reinstall Plugin' : 'Install Plugin';
+            }
+            installBtn.disabled = false;
+        };
+
+        uninstallBtn.onclick = async () => {
+            uninstallBtn.disabled = true;
+            uninstallBtn.textContent = 'Uninstalling...';
+            try {
+                const res = await fetch('/api/hooks/cursor/uninstall', { method: 'POST' });
+                const result = await res.json();
+                if (result.ok) {
+                    showResult('warning', 'Plugin removed: deleted ~/.cursor/plugins/local/aegis-guard/ (and any legacy global-hooks.json entries; your other hooks untouched). Reload Cursor to drop the plugin and its hooks.');
+                    setStatusPill('not-staged');
+                    installBtn.textContent = 'Install Plugin';
+                    uninstallBtn.style.display = 'none';
+                } else {
+                    showResult('error', 'Uninstall failed.');
+                }
+            } catch {
+                showResult('error', 'Failed to reach the Aegis server.');
+            }
+            uninstallBtn.disabled = false;
+            uninstallBtn.textContent = 'Uninstall';
+        };
+
+        // Initial status check. `auto_installed`+`enabled` mean the plugin dir
+        // (with its .cursor-plugin/plugin.json manifest) exists under
+        // ~/.cursor/plugins/local/aegis-guard/.
+        setTimeout(async () => {
+            try {
+                const res = await fetch('/api/hooks/cursor/status');
+                const status = await res.json();
+                if (status.auto_installed) {
+                    setStatusPill('installed');
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else if (status.installed) {
+                    setStatusPill('staged');
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else if (status.files_present && status.files_present.length > 0) {
+                    setStatusPill('staged', { message: 'Partially staged' });
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else {
+                    setStatusPill('not-staged');
+                }
+            } catch {
+                setStatusPill('error');
+            }
+        }, 0);
+
+        const featuresLabel = document.createElement('div');
+        featuresLabel.style.cssText = 'font-weight: 600; font-size: 13px; margin-bottom: 10px;';
+        featuresLabel.textContent = 'Capabilities (v4.7)';
+        content.appendChild(featuresLabel);
+
+        const featuresGrid = document.createElement('div');
+        featuresGrid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;';
+        const features = [
+            { name: 'Tool Permissions', desc: 'Allow / deny / ask for shell + MCP (beforeShell/beforeMCP)' },
+            { name: 'Tamper-Evident Audit', desc: 'SHA-256 hash chain · runtime_kind=cursor' },
+            { name: 'Prompt & Content Scans', desc: 'Prompts, MCP results, file reads/edits → /analyze' },
+            { name: 'Fail-Open on App Down', desc: 'Explicit allow + exit 0 · never blocks your session' },
+        ];
+        for (const f of features) {
+            const item = document.createElement('div');
+            item.style.cssText = 'padding: 8px 10px; background: var(--bg-tertiary); border-radius: 6px;';
+            const fn = document.createElement('div');
+            fn.style.cssText = 'font-size: 12px; font-weight: 600;';
+            fn.textContent = f.name;
+            const fd = document.createElement('div');
+            fd.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-top: 2px;';
+            fd.textContent = f.desc;
+            item.appendChild(fn);
+            item.appendChild(fd);
+            featuresGrid.appendChild(item);
+        }
+        content.appendChild(featuresGrid);
+
+        card.appendChild(content);
+        return card;
+    },
+
+    createCodexPluginCard() {
+        // Aegis Guard for Codex — mirrors createClaudeCodePluginCard
+        // but adapted for Codex's TOML config + `~/.codex/` layout. Install
+        // flow stages the plugin tree under
+        // ~/.aegis/staging/codex-plugin/ and (if Codex is present)
+        // copies it into ~/.codex/plugins/cache/... and registers two
+        // TOML sections in ~/.codex/config.toml. Falls back to two
+        // paste-in commands (`codex plugin marketplace add` + `codex
+        // plugin add ...@aegis-local`) when ~/.codex is missing.
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 2px solid var(--accent-primary); border-radius: 8px; margin-bottom: 16px; overflow: hidden;';
+
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default);';
+        const title = document.createElement('div');
+        title.style.cssText = 'font-weight: 600; font-size: 15px;';
+        title.textContent = 'Aegis Guard for Codex';
+        header.appendChild(title);
+        const subtitle = document.createElement('div');
+        subtitle.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-top: 4px;';
+        subtitle.textContent = 'Real-time policy enforcement and tamper-evident audit for MCP tool calls';
+        header.appendChild(subtitle);
+        card.appendChild(header);
+
+        const content = document.createElement('div');
+        content.style.cssText = 'padding: 16px;';
+
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 14px;';
+
+        const installBtn = document.createElement('button');
+        installBtn.id = 'install-codex-plugin-btn';
+        installBtn.style.cssText = 'background: var(--accent-primary); color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;';
+        installBtn.textContent = 'Install Plugin';
+
+        const uninstallBtn = document.createElement('button');
+        uninstallBtn.id = 'uninstall-codex-plugin-btn';
+        uninstallBtn.style.cssText = 'background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-default); padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; display: none;';
+        uninstallBtn.textContent = 'Uninstall';
+
+        const statusPill = document.createElement('span');
+        statusPill.id = 'codex-plugin-status';
+        statusPill.setAttribute('role', 'status');
+        statusPill.setAttribute('aria-live', 'polite');
+        statusPill.setAttribute('aria-atomic', 'true');
+        statusPill.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        statusPill.textContent = 'Checking...';
+
+        btnRow.appendChild(installBtn);
+        btnRow.appendChild(uninstallBtn);
+        btnRow.appendChild(statusPill);
+        content.appendChild(btnRow);
+
+        const resultArea = document.createElement('div');
+        resultArea.id = 'codex-plugin-result';
+        resultArea.style.cssText = 'display: none; padding: 12px 14px; border-radius: 6px; font-size: 12px; line-height: 1.6; margin-bottom: 14px;';
+        content.appendChild(resultArea);
+
+        const commandsWrap = document.createElement('div');
+        commandsWrap.id = 'codex-plugin-commands';
+        commandsWrap.style.cssText = 'display: none; margin-bottom: 16px;';
+        const commandsHeading = document.createElement('div');
+        commandsHeading.style.cssText = 'font-weight: 600; font-size: 13px; margin-bottom: 4px;';
+        commandsHeading.textContent = 'Optional · troubleshooting fallback';
+        commandsWrap.appendChild(commandsHeading);
+        const commandsSubhead = document.createElement('div');
+        commandsSubhead.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.45;';
+        commandsSubhead.textContent = 'Only needed if auto-install couldn’t register the plugin with Codex (e.g., the host has never been launched on this machine, or ~/.codex is read-only). Otherwise click Install Plugin above and restart your Codex session.';
+        commandsWrap.appendChild(commandsSubhead);
+        content.appendChild(commandsWrap);
+
+        const buildCommandBlock = (text) => {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 8px;';
+            const pre = document.createElement('code');
+            pre.style.cssText = 'flex: 1; padding: 10px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 6px; font-family: monospace; font-size: 12px; user-select: all; overflow-x: auto;';
+            pre.textContent = text;
+            const copyBtn = document.createElement('button');
+            copyBtn.style.cssText = 'padding: 6px 12px; border-radius: 6px; background: var(--bg-tertiary); border: 1px solid var(--border-default); color: var(--text-primary); cursor: pointer; font-size: 12px;';
+            copyBtn.textContent = 'Copy';
+            copyBtn.onclick = async () => {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    copyBtn.textContent = 'Copied';
+                    setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1200);
+                } catch {
+                    copyBtn.textContent = 'Copy failed';
+                }
+            };
+            wrap.appendChild(pre);
+            wrap.appendChild(copyBtn);
+            return wrap;
+        };
+
+        const renderCommands = (commands) => {
+            while (commandsWrap.childNodes.length > 2) commandsWrap.removeChild(commandsWrap.lastChild);
+            for (const cmd of commands || []) commandsWrap.appendChild(buildCommandBlock(cmd));
+            commandsWrap.style.display = (commands && commands.length) ? '' : 'none';
+        };
+
+        const setStatusPill = (state, opts = {}) => {
+            // Unified vocabulary with sidebar banner:
+            //   Active                 — auto-installed AND enabled
+            //   Installed, not enabled — auto-installed but disabled in config.toml
+            //   Staged                 — files on disk, legacy paste-in path
+            statusPill.textContent = '';
+            const span = document.createElement('strong');
+            if (state === 'installed') {
+                span.style.color = 'var(--success)';
+                // Codex loads plugins at session start (no `/reload-plugins`
+                // equivalent). The first-install trust-prompt explanation
+                // lives in the green result toast (showResult) so it only
+                // surfaces once; the pill stays terse for the steady state.
+                span.textContent = 'Active · restart your Codex session';
+            } else if (state === 'installed-disabled') {
+                span.style.color = 'var(--warning)';
+                // Exact TOML snippet to flip moved into the Setup Guide
+                // disclosure so the pill stays scannable.
+                span.textContent = 'Installed, not enabled · enable in ~/.codex/config.toml';
+            } else if (state === 'staged') {
+                span.style.color = 'var(--warning)';
+                span.textContent = 'Staged · click Install Plugin to register';
+            } else if (state === 'not-staged') {
+                statusPill.style.color = 'var(--text-secondary)';
+                span.style.fontWeight = '400';
+                span.textContent = 'Not staged';
+            } else if (state === 'error') {
+                span.style.color = 'var(--error)';
+                span.textContent = opts.message || 'Status unknown';
+            } else {
+                span.style.fontWeight = '400';
+                span.textContent = 'Checking...';
+            }
+            statusPill.appendChild(span);
+        };
+
+        const showResult = (kind, message) => {
+            resultArea.style.display = 'block';
+            resultArea.textContent = '';
+            if (kind === 'success') {
+                resultArea.style.background = 'rgba(76, 175, 80, 0.1)';
+                resultArea.style.border = '1px solid var(--success)';
+            } else if (kind === 'warning') {
+                resultArea.style.background = 'rgba(255, 152, 0, 0.1)';
+                resultArea.style.border = '1px solid var(--warning)';
+            } else {
+                resultArea.style.background = 'rgba(244, 67, 54, 0.1)';
+                resultArea.style.border = '1px solid var(--error)';
+            }
+            resultArea.style.color = 'var(--text-primary)';
+            resultArea.textContent = message;
+        };
+
+        installBtn.onclick = async () => {
+            installBtn.disabled = true;
+            const wasReinstall = installBtn.textContent === 'Reinstall Plugin';
+            installBtn.textContent = wasReinstall ? 'Reinstalling...' : 'Installing...';
+            try {
+                const res = await fetch('/api/hooks/codex/install', { method: 'POST' });
+                const result = await res.json();
+                if (result.ok) {
+                    if (result.auto_installed && result.enabled) {
+                        showResult('success', `Installed and enabled. ${result.next_step || ''}`.trim());
+                        renderCommands([]);
+                        setStatusPill('installed');
+                    } else if (result.auto_installed) {
+                        showResult('warning', result.next_step || 'Installed but not enabled.');
+                        renderCommands([]);
+                        setStatusPill('installed-disabled');
+                    } else {
+                        showResult('success', `Plugin staged at ${result.staging_dir} (${result.files.length} files).`);
+                        renderCommands(result.commands);
+                        setStatusPill('staged');
+                    }
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else {
+                    showResult('error', 'Install failed. Check the threat-monitor server logs.');
+                    installBtn.textContent = wasReinstall ? 'Reinstall Plugin' : 'Install Plugin';
+                }
+            } catch (e) {
+                showResult('error', 'Failed to reach the Aegis server.');
+                installBtn.textContent = wasReinstall ? 'Reinstall Plugin' : 'Install Plugin';
+            }
+            installBtn.disabled = false;
+        };
+
+        uninstallBtn.onclick = async () => {
+            uninstallBtn.disabled = true;
+            uninstallBtn.textContent = 'Uninstalling...';
+            try {
+                const res = await fetch('/api/hooks/codex/uninstall', { method: 'POST' });
+                const result = await res.json();
+                if (result.ok) {
+                    showResult('warning', 'Plugin removed. Restart your Codex session to drop it from the active runtime.');
+                    renderCommands([]);
+                    setStatusPill('not-staged');
+                    installBtn.textContent = 'Install Plugin';
+                    uninstallBtn.style.display = 'none';
+                } else {
+                    showResult('error', 'Uninstall failed.');
+                }
+            } catch {
+                showResult('error', 'Failed to reach the Aegis server.');
+            }
+            uninstallBtn.disabled = false;
+            uninstallBtn.textContent = 'Uninstall';
+        };
+
+        // Initial status check. Codex /status uses `codex_install_path`
+        // and `codex_detected` field names (different from CC's
+        // `claude_install_path` / `claude_code_detected`).
+        const commandsForStaging = (stagingDir) => [
+            `codex plugin marketplace add ${stagingDir}`,
+            'codex plugin add aegis-guard@aegis-local',
+        ];
+
+        setTimeout(async () => {
+            try {
+                const res = await fetch('/api/hooks/codex/status');
+                const status = await res.json();
+                if (status.installed && status.auto_installed && status.enabled) {
+                    setStatusPill('installed');
+                    renderCommands([]);
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else if (status.installed && status.auto_installed) {
+                    setStatusPill('installed-disabled');
+                    renderCommands([]);
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else if (status.installed) {
+                    setStatusPill('staged');
+                    renderCommands(commandsForStaging(status.staging_dir));
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else if (status.files_present && status.files_present.length > 0) {
+                    setStatusPill('staged', { message: 'Partially staged' });
+                    renderCommands(commandsForStaging(status.staging_dir));
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                } else {
+                    setStatusPill('not-staged');
+                }
+            } catch {
+                setStatusPill('error');
+            }
+        }, 0);
+
+        const featuresLabel = document.createElement('div');
+        featuresLabel.style.cssText = 'font-weight: 600; font-size: 13px; margin-bottom: 10px;';
+        featuresLabel.textContent = 'Capabilities (v4.6)';
+        content.appendChild(featuresLabel);
+
+        const featuresGrid = document.createElement('div');
+        featuresGrid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;';
+        const features = [
+            { name: 'MCP Tool Permissions', desc: 'Allow / deny / ask, cloud-pushed rules' },
+            { name: 'Tamper-Evident Audit', desc: 'SHA-256 hash chain · runtime_kind=codex' },
+            { name: 'Fail-Open', desc: 'Calls pass when Aegis is unreachable' },
+            { name: 'MCP Tools', desc: 'mcp__server__tool naming, fully governed' },
+            { name: 'Prompt-Injection Detection', desc: 'Scans every prompt for injection / jailbreak' },
+            { name: 'Tool-Response Scanning', desc: 'Bash stdout / file reads / fetched content checked for leaks' },
+        ];
+        features.forEach(f => {
+            const item = document.createElement('div');
+            item.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-tertiary); border-radius: 6px;';
+            const check = document.createElement('span');
+            check.style.cssText = 'color: var(--success); font-size: 14px; flex-shrink: 0;';
+            check.textContent = '✓';
+            item.appendChild(check);
+            const textDiv = document.createElement('div');
+            const nameSpan = document.createElement('div');
+            nameSpan.style.cssText = 'font-weight: 600; font-size: 12px;';
+            nameSpan.textContent = f.name;
+            textDiv.appendChild(nameSpan);
+            const descSpan = document.createElement('div');
+            descSpan.style.cssText = 'font-size: 11px; color: var(--text-secondary);';
+            descSpan.textContent = f.desc;
+            textDiv.appendChild(descSpan);
+            item.appendChild(textDiv);
+            featuresGrid.appendChild(item);
+        });
+        content.appendChild(featuresGrid);
+
+        // Setup Guide disclosure — same shape as the CC card, adapted
+        // for Codex's install + trust + restart flow.
+        const guide = document.createElement('details');
+        guide.style.cssText = 'margin-top: 18px; padding: 12px 14px; background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 6px;';
+        const guideSummary = document.createElement('summary');
+        guideSummary.style.cssText = 'cursor: pointer; font-weight: 600; font-size: 13px; color: var(--text-primary); list-style: revert;';
+        guideSummary.textContent = 'Setup Guide & Troubleshooting';
+        guide.appendChild(guideSummary);
+
+        const guideBody = document.createElement('div');
+        guideBody.style.cssText = 'margin-top: 12px; font-size: 12px; line-height: 1.6; color: var(--text-primary);';
+
+        const gSection = (title) => {
+            const h = document.createElement('div');
+            h.style.cssText = 'font-weight: 600; font-size: 12px; color: var(--text-primary); margin: 14px 0 6px 0; letter-spacing: 0.3px;';
+            h.textContent = title;
+            return h;
+        };
+        const gPara = (text) => {
+            const p = document.createElement('div');
+            p.style.cssText = 'color: var(--text-secondary); margin: 4px 0;';
+            p.textContent = text;
+            return p;
+        };
+        const gCode = (text) => {
+            const c = document.createElement('code');
+            c.style.cssText = 'display: block; padding: 8px 10px; margin: 4px 0; background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 4px; font-family: monospace; font-size: 11px; user-select: all; overflow-x: auto;';
+            c.textContent = text;
+            return c;
+        };
+        const gItem = (label, text) => {
+            const i = document.createElement('div');
+            i.style.cssText = 'color: var(--text-secondary); margin: 6px 0; padding-left: 14px; text-indent: -14px;';
+            const strong = document.createElement('strong');
+            strong.style.cssText = 'color: var(--text-primary); font-weight: 600;';
+            strong.textContent = label + ' — ';
+            i.appendChild(strong);
+            i.appendChild(document.createTextNode(text));
+            return i;
+        };
+
+        guideBody.appendChild(gSection('Install'));
+        guideBody.appendChild(gPara('Click "Install Plugin" above. Then restart your Codex session: Codex will prompt you to trust Aegis Guard hooks the first time the plugin loads. Accept the trust prompt and the plugin starts auditing tool calls.'));
+        guideBody.appendChild(gPara('Run any MCP tool from Codex and check Tool Activity in the sidebar: every call lands as an audit row tagged runtime_kind=codex.'));
+
+        guideBody.appendChild(gSection('Verify'));
+        guideBody.appendChild(gCode('curl -fsS http://127.0.0.1:8741/health'));
+        guideBody.appendChild(gCode('codex plugin list'));
+        guideBody.appendChild(gPara('Should report aegis-guard@aegis-local · installed, enabled.'));
+
+        guideBody.appendChild(gSection('Uninstall'));
+        guideBody.appendChild(gPara('Click "Uninstall" above (recommended: strips the ~/.codex/config.toml sections automatically). Then restart your Codex session.'));
+
+        guideBody.appendChild(gSection('Troubleshooting'));
+        guideBody.appendChild(gItem("Hooks don't fire after install", 'restart your Codex session: Codex loads plugins at session start, not live.'));
+        guideBody.appendChild(gItem('First-run "Trust hooks?" prompt every session', 'confirm the trust dialog was accepted (Codex caches the trust hash in ~/.codex/config.toml: declined trust replays the prompt).'));
+        guideBody.appendChild(gItem('Status pill says "Installed, not enabled"', 'open ~/.codex/config.toml and confirm this block is present:'));
+        guideBody.appendChild(gCode('[plugins."aegis-guard@aegis-local"]\nenabled = true'));
+        guideBody.appendChild(gItem('Every call shows action=allow even with a synced rule', 'open Settings → Cloud and confirm the device is paired; check /api/tool-permissions/synced-overrides returns non-empty.'));
+        guideBody.appendChild(gItem('App unreachable', 'every hook fails-open silently: restart with aegis-app --web on 127.0.0.1:8741.'));
+
+        guide.appendChild(guideBody);
+        content.appendChild(guide);
+
+        card.appendChild(content);
+        return card;
+    },
+
+    createOpenClawPluginCard() {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 2px solid var(--accent-primary); border-radius: 8px; margin-bottom: 16px; overflow: hidden; animation: pulse-border 2s ease-in-out 3;';
+
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default);';
+
+        const pluginTitle = document.createElement('div');
+        pluginTitle.style.cssText = 'font-weight: 600; font-size: 15px;';
+        pluginTitle.textContent = 'Aegis for OpenClaw';
+        header.appendChild(pluginTitle);
+
+        const pluginSubtitle = document.createElement('div');
+        pluginSubtitle.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-top: 4px;';
+        pluginSubtitle.textContent = 'Threat monitoring, cost tracking, tool permissions, and optional threat blocking';
+        header.appendChild(pluginSubtitle);
+
+        card.appendChild(header);
+
+        // Content
+        const pluginContent = document.createElement('div');
+        pluginContent.style.cssText = 'padding: 16px;';
+
+        // --- Install section ---
+        const installSection = document.createElement('div');
+        installSection.style.cssText = 'margin-bottom: 20px;';
+
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 8px;';
+
+        const installBtn = document.createElement('button');
+        installBtn.id = 'install-plugin-btn';
+        installBtn.style.cssText = 'background: var(--accent-primary); color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;';
+        installBtn.textContent = 'Install Plugin';
+        installBtn.disabled = true;
+        installBtn.style.opacity = '0.6';
+        installBtn.style.cursor = 'not-allowed';
+
+        const uninstallBtn = document.createElement('button');
+        uninstallBtn.id = 'uninstall-plugin-btn';
+        uninstallBtn.style.cssText = 'background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-default); padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; display: none;';
+        uninstallBtn.textContent = 'Uninstall';
+
+        const statusText = document.createElement('span');
+        statusText.id = 'plugin-install-status';
+        statusText.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        statusText.textContent = 'Checking...';
+
+        btnRow.appendChild(installBtn);
+        btnRow.appendChild(uninstallBtn);
+        btnRow.appendChild(statusText);
+        installSection.appendChild(btnRow);
+
+        // Result area
+        const resultArea = document.createElement('div');
+        resultArea.id = 'plugin-install-result';
+        resultArea.style.cssText = 'display: none; padding: 12px 14px; border-radius: 6px; font-size: 12px; line-height: 1.6; margin-bottom: 8px;';
+        installSection.appendChild(resultArea);
+
+        pluginContent.appendChild(installSection);
+
+        // Install click handler
+        installBtn.onclick = async () => {
+            const isReinstall = installBtn.textContent === 'Reinstall Plugin';
+            installBtn.disabled = true;
+            installBtn.textContent = 'Installing...';
+            try {
+                const res = await fetch('/api/hooks/install', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ force: isReinstall })
+                });
+                const result = await res.json();
+                resultArea.style.display = 'block';
+                if (result.status === 'installed' || result.status === 'updated') {
+                    resultArea.style.background = 'rgba(76, 175, 80, 0.1)';
+                    resultArea.style.border = '1px solid var(--success)';
+                    resultArea.style.color = 'var(--text-primary)';
+                    resultArea.textContent = '';
+                    const successTitle = document.createElement('strong');
+                    successTitle.style.color = 'var(--success)';
+                    successTitle.textContent = 'Plugin ' + result.status + ' successfully!';
+                    resultArea.appendChild(successTitle);
+                    resultArea.appendChild(document.createElement('br'));
+                    const nameLabel = document.createElement('strong');
+                    nameLabel.textContent = 'Plugin: ';
+                    resultArea.appendChild(nameLabel);
+                    resultArea.appendChild(document.createTextNode(result.hook_name));
+                    resultArea.appendChild(document.createTextNode(' \u2192 '));
+                    resultArea.appendChild(document.createTextNode(result.path));
+                    resultArea.appendChild(document.createElement('br'));
+                    const filesLabel = document.createElement('strong');
+                    filesLabel.textContent = 'Files: ';
+                    resultArea.appendChild(filesLabel);
+                    resultArea.appendChild(document.createTextNode(result.files_written.join(', ')));
+                    resultArea.appendChild(document.createElement('br'));
+                    const restartNote = document.createElement('span');
+                    restartNote.style.color = 'var(--text-secondary)';
+                    restartNote.textContent = 'The OpenClaw gateway should pick this up automatically; restart it if monitoring doesn\u2019t start in a few seconds.';
+                    resultArea.appendChild(restartNote);
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                    statusText.textContent = '';
+                    const installedLabel = document.createElement('strong');
+                    installedLabel.style.color = 'var(--success)';
+                    installedLabel.textContent = result.registered ? 'Installed & Registered' : 'Installed';
+                    statusText.appendChild(installedLabel);
+                } else if (result.status === 'already_installed') {
+                    resultArea.style.background = 'rgba(255, 152, 0, 0.1)';
+                    resultArea.style.border = '1px solid var(--warning)';
+                    resultArea.style.color = 'var(--text-primary)';
+                    resultArea.textContent = '';
+                    const alreadyLabel = document.createElement('strong');
+                    alreadyLabel.style.color = 'var(--warning)';
+                    alreadyLabel.textContent = 'Already installed';
+                    resultArea.appendChild(alreadyLabel);
+                    resultArea.appendChild(document.createTextNode(': click "Reinstall Plugin" to update.'));
+                    installBtn.textContent = 'Reinstall Plugin';
+                } else {
+                    resultArea.style.background = 'rgba(244, 67, 54, 0.1)';
+                    resultArea.style.border = '1px solid var(--error)';
+                    resultArea.style.color = 'var(--text-primary)';
+                    resultArea.textContent = '';
+                    const errLabel = document.createElement('strong');
+                    errLabel.style.color = 'var(--error)';
+                    errLabel.textContent = 'Error: ';
+                    resultArea.appendChild(errLabel);
+                    resultArea.appendChild(document.createTextNode(result.message || 'Installation failed'));
+                    installBtn.textContent = isReinstall ? 'Reinstall Plugin' : 'Install Plugin';
+                }
+            } catch (e) {
+                resultArea.style.display = 'block';
+                resultArea.style.background = 'rgba(244, 67, 54, 0.1)';
+                resultArea.style.border = '1px solid var(--error)';
+                resultArea.style.color = 'var(--text-primary)';
+                resultArea.textContent = '';
+                const errLabel = document.createElement('strong');
+                errLabel.style.color = 'var(--error)';
+                errLabel.textContent = 'Error: ';
+                resultArea.appendChild(errLabel);
+                resultArea.appendChild(document.createTextNode('Failed to connect to Aegis server'));
+                installBtn.textContent = isReinstall ? 'Reinstall Plugin' : 'Install Plugin';
+            }
+            installBtn.disabled = false;
+        };
+
+        // Uninstall click handler
+        uninstallBtn.onclick = async () => {
+            uninstallBtn.disabled = true;
+            uninstallBtn.textContent = 'Uninstalling...';
+            try {
+                const res = await fetch('/api/hooks/uninstall', { method: 'POST' });
+                const result = await res.json();
+                resultArea.style.display = 'block';
+                if (result.status === 'removed') {
+                    resultArea.style.background = 'rgba(255, 152, 0, 0.1)';
+                    resultArea.style.border = '1px solid var(--warning)';
+                    resultArea.style.color = 'var(--text-primary)';
+                    resultArea.textContent = result.message;
+                    installBtn.textContent = 'Install Plugin';
+                    uninstallBtn.style.display = 'none';
+                    statusText.textContent = 'Not installed';
+                } else {
+                    resultArea.style.background = 'rgba(244, 67, 54, 0.1)';
+                    resultArea.style.border = '1px solid var(--error)';
+                    resultArea.style.color = 'var(--text-primary)';
+                    resultArea.textContent = result.message || 'Uninstall failed';
+                }
+            } catch {
+                resultArea.style.display = 'block';
+                resultArea.style.background = 'rgba(244, 67, 54, 0.1)';
+                resultArea.style.border = '1px solid var(--error)';
+                resultArea.textContent = 'Failed to connect to Aegis server';
+            }
+            uninstallBtn.disabled = false;
+            uninstallBtn.textContent = 'Uninstall';
+        };
+
+        // --- Feature status grid ---
+        const featuresLabel = document.createElement('div');
+        featuresLabel.style.cssText = 'font-weight: 600; font-size: 13px; margin-bottom: 10px;';
+        featuresLabel.textContent = 'Capabilities';
+        pluginContent.appendChild(featuresLabel);
+
+        const featuresGrid = document.createElement('div');
+        featuresGrid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px;';
+
+        const features = [
+            { name: 'Threat Monitoring', desc: 'Scans prompts & responses', always: true },
+            { name: 'Cost & Tokens', desc: 'Token usage & spend', always: true },
+            { name: 'Tool Permissions', desc: 'Block dangerous tools', always: true },
+            { name: 'Security Injection', desc: 'Prompt-level protection', always: true },
+        ];
+
+        features.forEach(f => {
+            const featureItem = document.createElement('div');
+            featureItem.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-tertiary); border-radius: 6px; font-size: 12px;';
+            const check = document.createElement('span');
+            check.style.cssText = 'color: var(--success); font-size: 14px; flex-shrink: 0;';
+            check.textContent = '\u2713';
+            featureItem.appendChild(check);
+            const textDiv = document.createElement('div');
+            const nameSpan = document.createElement('div');
+            nameSpan.style.cssText = 'font-weight: 600; font-size: 12px;';
+            nameSpan.textContent = f.name;
+            textDiv.appendChild(nameSpan);
+            const descSpan = document.createElement('div');
+            descSpan.style.cssText = 'font-size: 11px; color: var(--text-secondary);';
+            descSpan.textContent = f.desc;
+            textDiv.appendChild(descSpan);
+            featureItem.appendChild(textDiv);
+            featuresGrid.appendChild(featureItem);
+        });
+
+        pluginContent.appendChild(featuresGrid);
+
+        // --- Check initial status on load ---
+        setTimeout(async () => {
+            try {
+                const res = await fetch('/api/hooks/status');
+                const status = await res.json();
+                if (status.installed) {
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                    statusText.textContent = '';
+                    const label = document.createElement('strong');
+                    label.style.color = 'var(--success)';
+                    label.textContent = 'Installed & Registered';
+                    statusText.appendChild(label);
+                } else if (status.files && (status.files.plugin_json || status.files.index_ts) && !status.registered) {
+                    installBtn.textContent = 'Reinstall Plugin';
+                    uninstallBtn.style.display = '';
+                    statusText.textContent = '';
+                    const label = document.createElement('strong');
+                    label.style.color = 'var(--warning)';
+                    label.textContent = 'Files present but not registered in openclaw.json';
+                    statusText.appendChild(label);
+                } else {
+                    statusText.textContent = 'Not installed';
+                }
+            } catch {
+                statusText.textContent = 'Status unknown';
+            }
+            installBtn.disabled = false;
+            installBtn.style.opacity = '1';
+            installBtn.style.cursor = 'pointer';
+        }, 0);
+
+        // --- Restart note ---
+        const restartNote = document.createElement('div');
+        restartNote.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;';
+        restartNote.textContent = 'After installing the plugin, restart your OpenClaw gateway for it to take effect.';
+        pluginContent.appendChild(restartNote);
+
+        // --- Manual install (collapsible) ---
+        const manualToggle = document.createElement('div');
+        manualToggle.style.cssText = 'font-size: 12px; color: var(--accent-primary); cursor: pointer; margin-bottom: 8px; user-select: none;';
+        manualToggle.textContent = '\u25B6 Manual Install';
+        const manualDiv = document.createElement('div');
+        manualDiv.style.cssText = 'display: none; margin-bottom: 16px;';
+
+        manualToggle.onclick = () => {
+            const isOpen = manualDiv.style.display !== 'none';
+            manualDiv.style.display = isOpen ? 'none' : 'block';
+            manualToggle.textContent = (isOpen ? '\u25B6' : '\u25BC') + ' Manual Install';
+        };
+        pluginContent.appendChild(manualToggle);
+
+        const manualDesc = document.createElement('div');
+        manualDesc.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5;';
+        manualDesc.textContent = 'If the Install button doesn\'t work, copy the plugin files manually:';
+        manualDiv.appendChild(manualDesc);
+
+        const filesNote = document.createElement('div');
+        filesNote.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; line-height: 1.5;';
+        filesNote.textContent = 'The plugin files are bundled with Aegis at: <site-packages>/aegis/plugins/openclaw/. Copy openclaw.plugin.json and index.ts to the OpenClaw plugins directory:';
+        manualDiv.appendChild(filesNote);
+
+        manualDiv.appendChild(this.createCodeBlock(
+            '# Linux / macOS\n' +
+            'mkdir -p ~/.openclaw/plugins/aegis-guard\n' +
+            'cp <path-to-aegis>/plugins/openclaw/openclaw.plugin.json \\\n' +
+            '   <path-to-aegis>/plugins/openclaw/index.ts \\\n' +
+            '   ~/.openclaw/plugins/aegis-guard/\n' +
+            'openclaw plugins install --link ~/.openclaw/plugins/aegis-guard'
+        ));
+
+        manualDiv.appendChild(this.createCodeBlock(
+            '# Windows (PowerShell)\n' +
+            'mkdir -Force "$HOME\\.openclaw\\plugins\\aegis-guard"\n' +
+            'copy <path-to-aegis>\\plugins\\openclaw\\openclaw.plugin.json,\n' +
+            '     <path-to-aegis>\\plugins\\openclaw\\index.ts `\n' +
+            '     "$HOME\\.openclaw\\plugins\\aegis-guard\\"\n' +
+            'openclaw plugins install --link "$HOME\\.openclaw\\plugins\\aegis-guard"'
+        ));
+
+        const verifyDesc = document.createElement('div');
+        verifyDesc.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin: 8px 0 4px;';
+        verifyDesc.textContent = 'Verify:';
+        manualDiv.appendChild(verifyDesc);
+        manualDiv.appendChild(this.createCodeBlock('openclaw plugins list'));
+
+        pluginContent.appendChild(manualDiv);
+
+        card.appendChild(pluginContent);
+        return card;
+    },
+
+    createOpenClawBlockModeCard() {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 8px; margin-bottom: 16px; overflow: hidden;';
+
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default); display: flex; align-items: center; justify-content: space-between;';
+
+        const headerLeft = document.createElement('div');
+        const title = document.createElement('div');
+        title.style.cssText = 'font-weight: 600; font-size: 15px;';
+        title.textContent = 'Threat Blocking (Optional)';
+        headerLeft.appendChild(title);
+
+        const subtitle = document.createElement('div');
+        subtitle.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-top: 4px;';
+        subtitle.textContent = 'Intercept and block threats before they reach the LLM via multi-provider proxy';
+        headerLeft.appendChild(subtitle);
+        header.appendChild(headerLeft);
+
+        // Toggle switch
+        const toggleLabel = document.createElement('label');
+        toggleLabel.style.cssText = 'position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; cursor: pointer;';
+        const toggleInput = document.createElement('input');
+        toggleInput.type = 'checkbox';
+        toggleInput.id = 'blocking-toggle';
+        toggleInput.style.cssText = 'opacity: 0; width: 0; height: 0;';
+        const toggleSlider = document.createElement('span');
+        toggleSlider.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--border-default); border-radius: 24px; transition: 0.3s;';
+        const toggleKnob = document.createElement('span');
+        toggleKnob.style.cssText = 'position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s;';
+        toggleSlider.appendChild(toggleKnob);
+        toggleLabel.appendChild(toggleInput);
+        toggleLabel.appendChild(toggleSlider);
+        header.appendChild(toggleLabel);
+
+        card.appendChild(header);
+
+        // Content area (shown/hidden based on toggle)
+        const content = document.createElement('div');
+        content.style.cssText = 'padding: 16px; display: none;';
+
+        // Status text
+        const blockingStatus = document.createElement('div');
+        blockingStatus.id = 'blocking-status';
+        blockingStatus.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5;';
+        content.appendChild(blockingStatus);
+
+        // --- Step 1: Proxy controls ---
+        const step1Label = document.createElement('div');
+        step1Label.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        step1Label.textContent = 'Step 1: Multi-Provider Proxy';
+        content.appendChild(step1Label);
+
+        const proxyDesc = document.createElement('div');
+        proxyDesc.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.5;';
+        proxyDesc.textContent = 'Routes all LLM traffic through Aegis for threat interception. All 13 providers available instantly.';
+        content.appendChild(proxyDesc);
+
+        const proxyBtnRow = document.createElement('div');
+        proxyBtnRow.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 14px;';
+
+        const startProxyBtn = document.createElement('button');
+        startProxyBtn.style.cssText = 'background: var(--accent-primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;';
+        startProxyBtn.textContent = 'Start Multi-Provider Proxy';
+        proxyBtnRow.appendChild(startProxyBtn);
+
+        const stopProxyBtn = document.createElement('button');
+        stopProxyBtn.style.cssText = 'background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; display: none;';
+        stopProxyBtn.textContent = 'Stop Proxy';
+        proxyBtnRow.appendChild(stopProxyBtn);
+
+        const proxyStatusLabel = document.createElement('span');
+        proxyStatusLabel.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        proxyBtnRow.appendChild(proxyStatusLabel);
+
+        content.appendChild(proxyBtnRow);
+
+        // --- Step 2: Configure OpenClaw provider ---
+        const step2Label = document.createElement('div');
+        step2Label.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        step2Label.textContent = 'Step 2: Route OpenClaw through the proxy';
+        content.appendChild(step2Label);
+
+        const step2Desc = document.createElement('div');
+        step2Desc.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;';
+        step2Desc.textContent = 'Add a custom provider to ~/.openclaw/openclaw.json under "models.providers":';
+        content.appendChild(step2Desc);
+
+        const s2Providers = [
+            { name: 'OpenAI', id: 'openai-sv', api: 'openai-responses', baseUrl: 'http://127.0.0.1:8742/openai/v1', model: 'gpt-4o-mini' },
+            { name: 'Anthropic', id: 'anthropic-sv', api: 'anthropic-messages', baseUrl: 'http://127.0.0.1:8742/anthropic', model: 'claude-sonnet-4-6' },
+            { name: 'Gemini', id: 'gemini-sv', api: 'google-generative-ai', baseUrl: 'http://127.0.0.1:8742/gemini/v1beta', model: 'gemini-2.0-flash' },
+            { name: 'Ollama', id: 'ollama-sv', api: 'openai-completions', baseUrl: 'http://127.0.0.1:8742/ollama/v1', model: 'llama3' },
+        ];
+
+        const s2TabBar = document.createElement('div');
+        s2TabBar.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px;';
+        const s2Code = document.createElement('div');
+        s2Code.style.cssText = 'background: var(--bg-tertiary); border-radius: 6px; padding: 12px; font-family: monospace; font-size: 11px; margin-bottom: 8px; line-height: 1.5; white-space: pre; overflow-x: auto;';
+        const s2Model = document.createElement('div');
+        s2Model.style.cssText = 'background: var(--bg-tertiary); border-radius: 6px; padding: 10px 12px; font-family: monospace; font-size: 11px; margin-bottom: 12px; line-height: 1.5; white-space: pre;';
+
+        function s2Show(idx) {
+            const p = s2Providers[idx];
+            const ex = {}; ex[p.id] = { baseUrl: p.baseUrl, api: p.api, models: [{ id: p.model, name: p.model + ' (via Aegis)', reasoning: false, input: ['text'], contextWindow: 128000, maxTokens: 16384 }] };
+            s2Code.textContent = JSON.stringify(ex, null, 2);
+            s2Model.textContent = 'Set primary model:\n"agents": { "defaults": { "model": { "primary": "' + p.id + '/' + p.model + '" } } }';
+            s2TabBar.querySelectorAll('button').forEach((btn, i) => { btn.style.background = i === idx ? 'var(--accent-primary)' : 'var(--bg-tertiary)'; btn.style.color = i === idx ? '#fff' : 'var(--text-primary)'; });
+        }
+        s2Providers.forEach((p, i) => { const t = document.createElement('button'); t.style.cssText = 'border: none; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;'; t.textContent = p.name; t.onclick = () => s2Show(i); s2TabBar.appendChild(t); });
+
+        content.appendChild(s2TabBar);
+        content.appendChild(s2Code);
+        content.appendChild(s2Model);
+        s2Show(0);
+
+        // Alternative: env vars
+        const envLabel = document.createElement('div');
+        envLabel.style.cssText = 'font-weight: 600; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;';
+        envLabel.textContent = 'Alternative: environment variables';
+        content.appendChild(envLabel);
+        content.appendChild(this.createCodeBlock('# Linux / macOS\nexport OPENAI_BASE_URL=http://127.0.0.1:8742/openai/v1\nexport ANTHROPIC_BASE_URL=http://127.0.0.1:8742/anthropic\n\n# Windows (PowerShell)\n$env:OPENAI_BASE_URL="http://127.0.0.1:8742/openai/v1"\n$env:ANTHROPIC_BASE_URL="http://127.0.0.1:8742/anthropic"'));
+
+        const step2Note = document.createElement('div');
+        step2Note.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-bottom: 16px;';
+        step2Note.textContent = 'You can add multiple providers. Restart OpenClaw after making changes.';
+        content.appendChild(step2Note);
+
+        // --- Available Endpoints ---
+        const pathsLabel = document.createElement('div');
+        pathsLabel.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        pathsLabel.textContent = 'Available Endpoints';
+        content.appendChild(pathsLabel);
+
+        content.appendChild(this.createCodeBlock('OpenAI:    http://localhost:8742/openai/v1\nAnthropic: http://localhost:8742/anthropic\nOllama:    http://localhost:8742/ollama/v1\nGoogle:    http://localhost:8742/gemini/v1beta\nGroq:      http://localhost:8742/groq/v1\nMistral:   http://localhost:8742/mistral/v1\nDeepSeek:  http://localhost:8742/deepseek/v1\nxAI:       http://localhost:8742/xai/v1\nTogether:  http://localhost:8742/together/v1\nCohere:    http://localhost:8742/cohere/v1\nCerebras:  http://localhost:8742/cerebras/v1\nMoonshot:  http://localhost:8742/moonshot/v1\nMiniMax:   http://localhost:8742/minimax/v1'));
+
+        card.appendChild(content);
+
+        // --- Helpers ---
+        const updateToggleVisual = (active) => {
+            toggleSlider.style.background = active ? 'var(--success)' : 'var(--border-default)';
+            toggleKnob.style.transform = active ? 'translateX(20px)' : 'translateX(0)';
+            card.style.border = active ? '2px solid var(--success)' : '1px solid var(--border-default)';
+        };
+
+        const refreshProxyStatus = async () => {
+            try {
+                const res = await fetch('/api/proxy/status');
+                const status = await res.json();
+                if (status.running) {
+                    proxyStatusLabel.textContent = '';
+                    const runLabel = document.createElement('strong');
+                    runLabel.style.color = 'var(--success)';
+                    runLabel.textContent = 'Running on port ' + (status.port || '8742');
+                    proxyStatusLabel.appendChild(runLabel);
+                    startProxyBtn.style.display = 'none';
+                    stopProxyBtn.style.display = '';
+                    stopProxyBtn.disabled = false;
+                } else {
+                    proxyStatusLabel.textContent = 'Not running';
+                    startProxyBtn.style.display = '';
+                    startProxyBtn.disabled = false;
+                    stopProxyBtn.style.display = 'none';
+                }
+            } catch {
+                proxyStatusLabel.textContent = 'Status unknown';
+            }
+        };
+
+        const startProxy = async () => {
+            startProxyBtn.disabled = true;
+            startProxyBtn.textContent = 'Starting...';
+            proxyStatusLabel.textContent = '';
+            try {
+                const res = await fetch('/api/proxy/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider: 'openai', multi: true, integration: 'openclaw' })
+                });
+                const data = await res.json();
+                if (data.status === 'started' || data.status === 'already_running') {
+                    blockingStatus.style.color = 'var(--success)';
+                    blockingStatus.textContent = 'Block mode active: multi-provider proxy is intercepting and scanning all LLM traffic.';
+                    await refreshProxyStatus();
+                } else {
+                    proxyStatusLabel.textContent = '';
+                    const errLabel = document.createElement('span');
+                    errLabel.style.color = 'var(--error)';
+                    errLabel.textContent = 'Failed: ' + (data.message || 'unknown error');
+                    proxyStatusLabel.appendChild(errLabel);
+                    startProxyBtn.disabled = false;
+                    startProxyBtn.textContent = 'Start Multi-Provider Proxy';
+                }
+            } catch {
+                proxyStatusLabel.textContent = 'Connection error';
+                startProxyBtn.disabled = false;
+            }
+            startProxyBtn.textContent = 'Start Multi-Provider Proxy';
+        };
+
+        // --- Toggle handler: enable/disable block mode ---
+        toggleInput.onchange = async () => {
+            const enable = toggleInput.checked;
+            toggleInput.disabled = true;
+            updateToggleVisual(enable);
+            blockingStatus.style.color = 'var(--text-secondary)';
+            blockingStatus.textContent = enable ? 'Enabling...' : 'Disabling...';
+
+            try {
+                await API.updateSettings({ block_threats: enable });
+
+                if (enable) {
+                    content.style.display = 'block';
+                    blockingStatus.style.color = 'var(--text-secondary)';
+                    blockingStatus.textContent = 'Starting multi-provider proxy...';
+                    // Auto-start proxy when block mode is enabled
+                    await startProxy();
+
+                    // Show config instructions modal
+                    const modalContent = document.createElement('div');
+
+                    const mDesc = document.createElement('p');
+                    mDesc.style.cssText = 'font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;';
+                    mDesc.textContent = 'Set your AI provider base URL to the proxy address, then restart your agent.';
+                    modalContent.appendChild(mDesc);
+
+                    // Two horizontal boxes
+                    const mGrid = document.createElement('div');
+                    mGrid.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;';
+
+                    // --- Box 1: OpenClaw ---
+                    const mBoxOC = document.createElement('div');
+                    mBoxOC.style.cssText = 'background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 8px; padding: 14px;';
+                    const mBoxOCTitle = document.createElement('div');
+                    mBoxOCTitle.style.cssText = 'font-weight: 600; font-size: 13px; margin-bottom: 6px;';
+                    mBoxOCTitle.textContent = 'OpenClaw / ClawdBot';
+                    mBoxOC.appendChild(mBoxOCTitle);
+                    const mBoxOCDesc = document.createElement('div');
+                    mBoxOCDesc.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;';
+                    mBoxOCDesc.textContent = 'Set baseUrl in openclaw.json provider config:';
+                    mBoxOC.appendChild(mBoxOCDesc);
+                    const mOCCode = document.createElement('div');
+                    mOCCode.style.cssText = 'background: var(--bg-tertiary); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; line-height: 1.6; word-break: break-all;';
+                    mOCCode.textContent = '"baseUrl": "http://127.0.0.1:8742/openai/v1"';
+                    mBoxOC.appendChild(mOCCode);
+                    mGrid.appendChild(mBoxOC);
+
+                    // --- Box 2: Environment Variables ---
+                    const mBoxEnv = document.createElement('div');
+                    mBoxEnv.style.cssText = 'background: var(--bg-secondary); border: 1px solid var(--border-default); border-radius: 8px; padding: 14px;';
+                    const mBoxEnvTitle = document.createElement('div');
+                    mBoxEnvTitle.style.cssText = 'font-weight: 600; font-size: 13px; margin-bottom: 6px;';
+                    mBoxEnvTitle.textContent = 'Other Agents / Frameworks';
+                    mBoxEnv.appendChild(mBoxEnvTitle);
+                    const mBoxEnvDesc = document.createElement('div');
+                    mBoxEnvDesc.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;';
+                    mBoxEnvDesc.textContent = 'Set the base URL environment variable:';
+                    mBoxEnv.appendChild(mBoxEnvDesc);
+                    const mEnvCode = document.createElement('div');
+                    mEnvCode.style.cssText = 'background: var(--bg-tertiary); border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; line-height: 1.6; word-break: break-all;';
+                    mEnvCode.textContent = 'export OPENAI_BASE_URL=http://127.0.0.1:8742/openai/v1';
+                    mBoxEnv.appendChild(mEnvCode);
+                    mGrid.appendChild(mBoxEnv);
+
+                    modalContent.appendChild(mGrid);
+
+                    const mNote = document.createElement('p');
+                    mNote.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+                    mNote.textContent = 'Supports OpenAI, Anthropic, Gemini, and Ollama. See docs for provider-specific URLs.';
+                    modalContent.appendChild(mNote);
+
+                    Modal.show({
+                        title: 'Route Traffic Through Proxy',
+                        content: modalContent,
+                        size: 'medium',
+                        actions: [
+                            { label: 'Got it', primary: true }
+                        ]
+                    });
+                } else {
+                    // Stop proxy and show unset instructions
+                    try {
+                        await fetch('/api/proxy/stop', { method: 'POST' });
+                    } catch { /* proxy may not be running or in-process */ }
+                    content.style.display = 'none';
+
+                    const vars = ['OPENAI_BASE_URL', 'ANTHROPIC_BASE_URL', 'GEMINI_BASE_URL', 'GROQ_BASE_URL', 'MISTRAL_BASE_URL', 'XAI_BASE_URL'];
+                    const modalContent = document.createElement('div');
+                    modalContent.innerHTML = `
+                        <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                            <strong style="color: #92400e;">Important:</strong>
+                            <span style="color: #92400e; font-size: 13px;">Restart OpenClaw after unsetting these variables. The Aegis plugin will continue monitoring without the proxy.</span>
+                        </div>
+                        <p style="margin-bottom: 12px;">To avoid connection errors, unset the proxy environment variables:</p>
+                        <div style="background: var(--bg-tertiary); border-radius: 6px; padding: 12px; font-family: monospace; font-size: 13px; margin-bottom: 12px; line-height: 1.8;">
+                            <div style="color: var(--text-secondary); margin-bottom: 8px;"># Linux / macOS</div>
+                            ${vars.map(v => `<div>unset ${v}</div>`).join('')}
+                            <div style="color: var(--text-secondary); margin-top: 12px; margin-bottom: 8px;"># Windows (PowerShell)</div>
+                            ${vars.map(v => `<div>Remove-Item Env:\\${v} -ErrorAction SilentlyContinue</div>`).join('')}
+                        </div>
+                    `;
+                    Modal.show({
+                        title: 'Block Mode Disabled: Restart OpenClaw',
+                        content: modalContent,
+                        size: 'medium',
+                        actions: [{ label: 'Got it', primary: true }]
+                    });
+                }
+            } catch {
+                blockingStatus.style.color = 'var(--error)';
+                blockingStatus.textContent = 'Failed to update setting';
+                toggleInput.checked = !enable;
+                updateToggleVisual(!enable);
+            }
+            toggleInput.disabled = false;
+        };
+
+        // --- Start/Stop button handlers ---
+        startProxyBtn.onclick = startProxy;
+
+        stopProxyBtn.onclick = async () => {
+            stopProxyBtn.disabled = true;
+            stopProxyBtn.textContent = 'Stopping...';
+            try {
+                await fetch('/api/proxy/stop', { method: 'POST' });
+                blockingStatus.style.color = 'var(--text-secondary)';
+                blockingStatus.textContent = 'Proxy stopped. Start it again to resume threat blocking.';
+                await refreshProxyStatus();
+            } catch {
+                proxyStatusLabel.textContent = 'Connection error';
+            }
+            stopProxyBtn.textContent = 'Stop Proxy';
+        };
+
+        // --- Check initial state ---
+        toggleInput.disabled = true;
+        blockingStatus.textContent = 'Loading...';
+        blockingStatus.style.color = 'var(--text-secondary)';
+        (async () => {
+            try {
+                const settings = await API.getSettings();
+                const blockEnabled = !!settings.block_threats;
+                toggleInput.checked = blockEnabled;
+                updateToggleVisual(blockEnabled);
+                if (blockEnabled) {
+                    content.style.display = 'block';
+                    blockingStatus.style.color = 'var(--success)';
+                    blockingStatus.textContent = 'Block mode active: multi-provider proxy is intercepting and scanning all LLM traffic.';
+                    await refreshProxyStatus();
+                } else {
+                    blockingStatus.textContent = '';
+                }
+            } catch {
+                updateToggleVisual(false);
+                blockingStatus.textContent = '';
+            }
+            toggleInput.disabled = false;
+        })();
+
+        return card;
+    },
+
+    createOpenClawCard() {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 2px solid var(--accent-primary); border-radius: 8px; margin-bottom: 16px; overflow: hidden; animation: pulse-border 2s ease-in-out 3;';
+
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default); display: flex; align-items: center; justify-content: space-between;';
+
+        const titleDiv = document.createElement('div');
+        const titleText = document.createElement('div');
+        titleText.style.cssText = 'font-weight: 600; font-size: 15px;';
+        titleText.textContent = 'Option 2: Proxy (Full Protection)';
+        titleDiv.appendChild(titleText);
+
+        const subtitleText = document.createElement('div');
+        subtitleText.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        subtitleText.textContent = 'Full threat blocking with proxy interception: auto-patches pi-ai';
+        titleDiv.appendChild(subtitleText);
+        header.appendChild(titleDiv);
+
+        card.appendChild(header);
+
+        // Content
+        const content = document.createElement('div');
+        content.style.cssText = 'padding: 16px;';
+
+        // Steps container
+        const stepsContainer = document.createElement('div');
+        stepsContainer.id = 'openclaw-steps';
+        content.appendChild(stepsContainer);
+
+        card.appendChild(content);
+
+        // Initial render of steps and check proxy status
+        setTimeout(() => {
+            this.updateOpenClawSteps();
+            this.updateOpenClawProxyButton();
+        }, 0);
+
+        return card;
+    },
+
+    createRevertCard() {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 1px solid var(--warning); border-radius: 8px; margin-bottom: 16px; overflow: hidden;';
+
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default); background: rgba(255, 152, 0, 0.1);';
+
+        const titleText = document.createElement('div');
+        titleText.style.cssText = 'font-weight: 600; font-size: 15px; color: var(--warning);';
+        titleText.textContent = 'Revert Aegis Proxy';
+        header.appendChild(titleText);
+
+        const subtitleText = document.createElement('div');
+        subtitleText.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        subtitleText.textContent = 'If you no longer need the proxy, restore original pi-ai files';
+        header.appendChild(subtitleText);
+
+        card.appendChild(header);
+
+        // Content
+        const content = document.createElement('div');
+        content.style.cssText = 'padding: 16px;';
+
+        const desc = document.createElement('div');
+        desc.style.cssText = 'font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;';
+        desc.textContent = 'Run this command to restore the original pi-ai provider files and remove Aegis proxy routing. Note: Manual cleanup of custom provider configs may be required (see below):';
+        content.appendChild(desc);
+
+        const revertBlock = this.createCodeBlock('aegis-app --revert-proxy');
+        revertBlock.style.marginBottom = '12px';
+        content.appendChild(revertBlock);
+
+        // Gemini revert note
+        const geminiNote = document.createElement('div');
+        geminiNote.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 16px; padding: 10px 14px; background: var(--bg-tertiary); border-radius: 6px; line-height: 1.6;';
+        const geminiStrong = document.createElement('strong');
+        geminiStrong.textContent = 'Google Gemini: ';
+        geminiNote.appendChild(geminiStrong);
+        geminiNote.appendChild(document.createTextNode('If you added a custom provider (gemini-sv) in ~/.openclaw/openclaw.json, also remove it from models.providers and switch back to the built-in google/gemini-2.0-flash model.'));
+        content.appendChild(geminiNote);
+
+        // Revert button
+        const revertBtn = document.createElement('button');
+        revertBtn.style.cssText = 'background: var(--warning); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;';
+        revertBtn.textContent = 'Revert pi-ai Files';
+        revertBtn.onclick = async () => {
+            if (confirm('This will restore original pi-ai files and remove proxy routing. Continue?')) {
+                revertBtn.disabled = true;
+                revertBtn.textContent = 'Reverting...';
+                try {
+                    const res = await fetch('/api/proxy/revert', { method: 'POST' });
+                    const result = await res.json();
+                    alert(result.message || 'Reverted successfully');
+                } catch (e) {
+                    alert('Failed to revert. Run: aegis-app --revert-proxy');
+                }
+                revertBtn.disabled = false;
+                revertBtn.textContent = 'Revert pi-ai Files';
+            }
+        };
+        content.appendChild(revertBtn);
+
+        card.appendChild(content);
+        return card;
+    },
+
+    updateOpenClawSteps() {
+        const container = document.getElementById('openclaw-steps');
+        if (!container) return;
+
+        // Clear container
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+
+        // Step 1
+        const step1Label = document.createElement('div');
+        step1Label.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        step1Label.textContent = 'Step 1: Start Aegis with OpenClaw flag';
+        container.appendChild(step1Label);
+
+        const step1Block = this.createCodeBlock('aegis-app --proxy --multi --web --openclaw');
+        step1Block.style.marginBottom = '8px';
+        container.appendChild(step1Block);
+
+        const step1Note = document.createElement('div');
+        step1Note.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;';
+        step1Note.textContent = 'The --openclaw flag auto-patches pi-ai provider files. The --multi flag enables all providers at once.';
+        container.appendChild(step1Note);
+
+        // Start Proxy button row
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;';
+
+        const startBtn = document.createElement('button');
+        startBtn.id = 'start-proxy-openclaw';
+        startBtn.style.cssText = 'background: var(--accent-primary); color: white; border: none; padding: 10px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px;';
+        startBtn.textContent = 'Start Multi-Provider Proxy';
+        startBtn.onclick = async () => {
+            startBtn.disabled = true;
+            startBtn.textContent = 'Starting...';
+            const result = await IntegrationPage.startProxy('openai', true);
+            if (result.status === 'started') {
+                await IntegrationPage.updateOpenClawProxyButton();
+            } else {
+                alert(result.message);
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Multi-Provider Proxy';
+            }
+        };
+        btnRow.appendChild(startBtn);
+
+        const stopBtn = document.createElement('button');
+        stopBtn.id = 'stop-proxy-openclaw';
+        stopBtn.style.cssText = 'background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; display: none;';
+        stopBtn.textContent = 'Stop Proxy';
+        stopBtn.onclick = async () => {
+            stopBtn.disabled = true;
+            stopBtn.textContent = 'Stopping...';
+            await IntegrationPage.stopProxy();
+            await IntegrationPage.updateOpenClawProxyButton();
+        };
+        btnRow.appendChild(stopBtn);
+
+        const statusText = document.createElement('span');
+        statusText.id = 'proxy-status-openclaw';
+        statusText.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        statusText.textContent = 'Not running';
+        btnRow.appendChild(statusText);
+
+        container.appendChild(btnRow);
+
+        // Step 2: Set environment variables
+        const step2Label = document.createElement('div');
+        step2Label.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        step2Label.textContent = 'Step 2: Set environment variables (in another terminal)';
+        container.appendChild(step2Label);
+
+        // Two-column layout: Linux/macOS | Windows
+        const envRow = document.createElement('div');
+        envRow.style.cssText = 'display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 8px;';
+
+        // Linux/macOS card
+        const linuxCard = document.createElement('div');
+        linuxCard.style.cssText = 'background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 8px; padding: 12px;';
+        const linuxTitle = document.createElement('div');
+        linuxTitle.style.cssText = 'font-weight: 600; font-size: 12px; color: var(--text-primary); margin-bottom: 8px;';
+        linuxTitle.textContent = 'Linux / macOS';
+        linuxCard.appendChild(linuxTitle);
+        const linuxCode = this.createCodeBlock('export OPENAI_BASE_URL=http://localhost:8742/openai/v1\nexport ANTHROPIC_BASE_URL=http://localhost:8742/anthropic\nexport GEMINI_API_KEY="your-gemini-api-key"\nexport GOOGLE_GENAI_BASE_URL=http://localhost:8742/gemini/v1beta');
+        linuxCard.appendChild(linuxCode);
+        envRow.appendChild(linuxCard);
+
+        // Windows card
+        const winCard = document.createElement('div');
+        winCard.style.cssText = 'background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 8px; padding: 12px;';
+        const winTitle = document.createElement('div');
+        winTitle.style.cssText = 'font-weight: 600; font-size: 12px; color: var(--text-primary); margin-bottom: 8px;';
+        winTitle.textContent = 'Windows (PowerShell)';
+        winCard.appendChild(winTitle);
+        const winCodeSessionNote = document.createElement('div');
+        winCodeSessionNote.style.cssText = 'font-size: 10px; color: var(--text-secondary); margin-bottom: 6px;';
+        winCodeSessionNote.textContent = 'Session-only (only affects this PowerShell window):';
+        winCard.appendChild(winCodeSessionNote);
+        const winCode = this.createCodeBlock('$env:OPENAI_BASE_URL="http://127.0.0.1:8742/openai/v1"\n$env:ANTHROPIC_BASE_URL="http://127.0.0.1:8742/anthropic"\n$env:GEMINI_API_KEY="your-gemini-api-key"\n$env:GOOGLE_GENAI_BASE_URL="http://127.0.0.1:8742/gemini/v1beta"');
+        winCard.appendChild(winCode);
+        envRow.appendChild(winCard);
+
+        container.appendChild(envRow);
+
+        const step2Note = document.createElement('div');
+        step2Note.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;';
+        step2Note.textContent = 'Your API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.) should already be set in your environment. These can be set in a different terminal session.';
+        container.appendChild(step2Note);
+
+        // Gemini-specific warning
+        const geminiWarning = document.createElement('div');
+        geminiWarning.style.cssText = 'font-size: 12px; color: var(--text-primary); margin-bottom: 12px; padding: 12px 14px; background: rgba(255, 152, 0, 0.15); border-left: 4px solid var(--warning); border-radius: 6px; line-height: 1.6;';
+        const warningIcon = document.createElement('strong');
+        warningIcon.style.color = 'var(--warning)';
+        warningIcon.textContent = '⚠️ GEMINI USERS ONLY: ';
+        geminiWarning.appendChild(warningIcon);
+        geminiWarning.appendChild(document.createTextNode('If using Google Gemini, set '));
+        const geminiKeyCode = document.createElement('code');
+        geminiKeyCode.style.cssText = 'background: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px; font-size: 11px;';
+        geminiKeyCode.textContent = 'GEMINI_API_KEY';
+        geminiWarning.appendChild(geminiKeyCode);
+        geminiWarning.appendChild(document.createTextNode(' and '));
+        const geminiUrlCode = document.createElement('code');
+        geminiUrlCode.style.cssText = 'background: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px; font-size: 11px;';
+        geminiUrlCode.textContent = 'GOOGLE_GENAI_BASE_URL';
+        geminiWarning.appendChild(geminiUrlCode);
+        geminiWarning.appendChild(document.createTextNode(' in the '));
+        const sameSessionStrong = document.createElement('strong');
+        sameSessionStrong.textContent = 'SAME session';
+        geminiWarning.appendChild(sameSessionStrong);
+        geminiWarning.appendChild(document.createTextNode(' BEFORE starting '));
+        const codeEl = document.createElement('code');
+        codeEl.style.cssText = 'background: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px; font-size: 11px;';
+        codeEl.textContent = 'aegis-app --web';
+        geminiWarning.appendChild(codeEl);
+        geminiWarning.appendChild(document.createTextNode('. The proxy needs to read these to inject your API key.'));
+        container.appendChild(geminiWarning);
+
+        // How to set Gemini env vars before starting
+        const geminiHowTo = document.createElement('div');
+        geminiHowTo.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-bottom: 12px; padding: 10px 12px; background: rgba(0, 188, 212, 0.1); border-left: 3px solid var(--accent-primary); border-radius: 4px; line-height: 1.6;';
+        const geminiStrong = document.createElement('strong');
+        geminiStrong.style.color = 'var(--accent-primary)';
+        geminiStrong.textContent = 'How to set Gemini env vars: ';
+        geminiHowTo.appendChild(geminiStrong);
+        geminiHowTo.appendChild(document.createTextNode('In the same terminal, run the export/set commands from Step 2 above, then immediately run '));
+        const startCmd = document.createElement('code');
+        startCmd.style.cssText = 'background: var(--bg-tertiary); padding: 2px 6px; border-radius: 3px; font-size: 11px;';
+        startCmd.textContent = 'aegis-app --proxy --multi --web --openclaw';
+        geminiHowTo.appendChild(startCmd);
+        geminiHowTo.appendChild(document.createTextNode(' in that same session.'));
+        container.appendChild(geminiHowTo);
+
+        const otherNote = document.createElement('div');
+        otherNote.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-bottom: 16px; padding: 10px 14px; background: var(--bg-tertiary); border-radius: 6px; line-height: 1.6;';
+        const otherStrong = document.createElement('strong');
+        otherStrong.textContent = 'Other providers (Groq, Mistral, DeepSeek, xAI, etc.): ';
+        otherNote.appendChild(otherStrong);
+        otherNote.appendChild(document.createTextNode('These all share OPENAI_BASE_URL, so only one can be set via env vars at a time. The --openclaw flag in Step 1 patches each pi-ai provider file individually, routing all of them through the proxy automatically.'));
+        container.appendChild(otherNote);
+
+        // Step 3: Gemini config (Gemini needs openclaw.json custom provider — must be configured before starting OpenClaw)
+        const geminiConfig = this.openclawProviders.gemini;
+        const step3Label = document.createElement('div');
+        step3Label.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        step3Label.textContent = 'Step 3: Configure Gemini (optional)';
+        container.appendChild(step3Label);
+
+        const geminiSection = document.createElement('div');
+        geminiSection.style.cssText = 'padding: 14px; background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 8px; margin-bottom: 16px;';
+
+        const geminiDesc = document.createElement('div');
+        geminiDesc.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; line-height: 1.5;';
+        geminiDesc.textContent = 'To use Gemini through the proxy, add a custom provider to ~/.openclaw/openclaw.json under "models.providers":';
+        geminiSection.appendChild(geminiDesc);
+
+        const geminiJson = '"gemini-sv": {\n  "baseUrl": "http://localhost:' + (window.__SV_PROXY_PORT || 8742) + geminiConfig.path + '",\n  "apiKey": "YOUR_GEMINI_API_KEY",\n  "api": "google-generative-ai",\n  "models": [\n    {\n      "id": "gemini-2.0-flash",\n      "name": "Gemini 2.0 Flash",\n      "contextWindow": 200000,\n      "maxTokens": 8192\n    }\n  ]\n}';
+        const geminiBlock = this.createCodeBlock(geminiJson);
+        geminiBlock.style.marginBottom = '8px';
+        geminiSection.appendChild(geminiBlock);
+
+        const geminiUsage = document.createElement('div');
+        geminiUsage.style.cssText = 'font-size: 11px; color: var(--text-secondary); line-height: 1.5;';
+        geminiUsage.textContent = 'Then use gemini-sv/gemini-2.0-flash as your model in OpenClaw.';
+        geminiSection.appendChild(geminiUsage);
+
+        container.appendChild(geminiSection);
+
+        // Step 4: Start OpenClaw
+        const step4Label = document.createElement('div');
+        step4Label.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        step4Label.textContent = 'Step 4: Start OpenClaw (in a different terminal)';
+        container.appendChild(step4Label);
+
+        const step4Block = this.createCodeBlock('openclaw gateway');
+        step4Block.style.marginBottom = '8px';
+        container.appendChild(step4Block);
+
+        const step4Note = document.createElement('div');
+        step4Note.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; line-height: 1.5;';
+        step4Note.textContent = 'All LLM traffic from OpenClaw now routes through Aegis for threat detection.';
+        container.appendChild(step4Note);
+
+        const step4GeminiNote = document.createElement('div');
+        step4GeminiNote.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-bottom: 16px; padding: 8px 10px; background: var(--bg-tertiary); border-radius: 4px; line-height: 1.5;';
+        const step4Strong = document.createElement('strong');
+        step4Strong.textContent = 'For apps using Gemini: ';
+        step4GeminiNote.appendChild(step4Strong);
+        step4GeminiNote.appendChild(document.createTextNode('The app (OpenClaw) can run in any terminal session. Only the Aegis proxy needs the Gemini env vars set in its session (from Step 1).'));
+        container.appendChild(step4GeminiNote);
+
+        // Not proxyable note
+        const notProxyableNote = document.createElement('div');
+        notProxyableNote.style.cssText = 'font-size: 11px; color: var(--text-secondary); margin-top: 12px; padding: 10px 14px; background: var(--bg-tertiary); border-radius: 6px; line-height: 1.5;';
+        const noteStrong = document.createElement('strong');
+        noteStrong.textContent = 'Note: ';
+        notProxyableNote.appendChild(noteStrong);
+        notProxyableNote.appendChild(document.createTextNode('Google Vertex AI and Amazon Bedrock use cloud SDK auth (GCP IAM / AWS SigV4) and are not proxyable. OpenAI Codex uses OAuth, not standard API keys.'));
+        container.appendChild(notProxyableNote);
+
+        // Update button states
+        IntegrationPage.updateOpenClawProxyButton();
+    },
+
+    createSdkCard(integration) {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 8px; margin-bottom: 16px; overflow: hidden;';
+
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default);';
+
+        const titleText = document.createElement('div');
+        titleText.style.cssText = 'font-weight: 600; font-size: 15px;';
+        titleText.textContent = 'Option 3: SDK Integration';
+        header.appendChild(titleText);
+
+        const subtitleText = document.createElement('div');
+        subtitleText.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        subtitleText.textContent = 'If you like to code it yourself';
+        header.appendChild(subtitleText);
+
+        card.appendChild(header);
+
+        // Code block (sdkSnippet is the current field; sdkCode kept for back-compat)
+        card.appendChild(this.createCodeBlock(integration.sdkSnippet || integration.sdkCode));
+
+        return card;
+    },
+
+    // SDK-primary card for LangChain / LangGraph / CrewAI. Two-state, auto-
+    // detecting: renders the real install + wiring, then flips from "waiting"
+    // to "Active" with live counters the moment the app sees this runtime_kind.
+    createSdkPrimaryCard(integration, integrationId, endpointMode, engineUrl) {
+        const rk = integration.runtimeKind;
+        if (!rk) {
+            console.error('createSdkPrimaryCard called without runtimeKind', integration);
+            return document.createElement('div');
+        }
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 2px solid var(--accent-primary); border-radius: 8px; margin-bottom: 16px; overflow: hidden;';
+
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default); display: flex; align-items: center; justify-content: space-between; gap: 12px;';
+        const titleDiv = document.createElement('div');
+        const titleText = document.createElement('div');
+        titleText.style.cssText = 'font-weight: 600; font-size: 15px;';
+        titleText.textContent = 'Aegis SDK';
+        const subtitleText = document.createElement('div');
+        subtitleText.style.cssText = 'font-size: 13px; color: var(--accent-primary); font-weight: 500;';
+        subtitleText.textContent = 'Recommended: secures tool calls, not just LLM traffic';
+        titleDiv.appendChild(titleText);
+        titleDiv.appendChild(subtitleText);
+        const badge = document.createElement('span');
+        badge.style.cssText = 'font-size: 11px; font-weight: 700; color: var(--accent-primary); border: 1px solid var(--accent-primary); border-radius: 999px; padding: 2px 10px; white-space: nowrap;';
+        badge.textContent = 'TOOL-CALL LAYER';
+        header.appendChild(titleDiv);
+        header.appendChild(badge);
+        card.appendChild(header);
+
+        const content = document.createElement('div');
+        content.style.cssText = 'padding: 16px;';
+
+        // Wire it into your agent (same code for both deployments)
+        const s1 = document.createElement('div');
+        s1.style.cssText = 'font-weight: 600; font-size: 13px; margin-bottom: 6px;';
+        s1.textContent = 'Add it to your agent';
+        content.appendChild(s1);
+        content.appendChild(this.createCodeBlock(integration.sdkSnippet));
+
+        // Then install — the SAME two options as the Connect Agents page, so the
+        // pages line up: Option 1 = This device (local app), Option 2 = Your cloud.
+        // Rendered as two clearly-distinct, bordered panels (they were plain text
+        // lines before and easy to miss). In endpoint mode Option 2 leads and is
+        // the recommended one; the local option is de-emphasised.
+        const s2 = document.createElement('div');
+        s2.style.cssText = 'font-weight: 700; font-size: 13px; margin: 18px 0 10px;';
+        s2.textContent = 'Then install: where does the engine run?';
+        content.appendChild(s2);
+
+        // A self-contained option panel: numbered pill + title + tag, note, code.
+        // `recommended` gives an accent-tinted border + "RECOMMENDED" chip.
+        const CYAN = '#5eadb8', RED = '#ef4444';
+        const optionPanel = (num, dot, title, tag, note, codeText, recommended) => {
+            const p = document.createElement('div');
+            p.style.cssText = 'border: 1.5px solid ' + (recommended ? 'color-mix(in srgb, var(--accent-primary) 55%, var(--border-default))' : 'var(--border-default)') + '; border-radius: 10px; padding: 13px 14px; margin: 0 0 12px; background: ' + (recommended ? 'color-mix(in srgb, var(--accent-primary) 5%, var(--bg-card))' : 'var(--bg-card)') + ';';
+            const head = document.createElement('div');
+            head.style.cssText = 'display: flex; align-items: center; gap: 9px; margin-bottom: 8px; flex-wrap: wrap;';
+            const pill = document.createElement('span');
+            pill.style.cssText = 'flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; color: var(--text-secondary); background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 20px; padding: 3px 10px;';
+            const dotEl = document.createElement('span'); dotEl.setAttribute('aria-hidden', 'true'); dotEl.style.cssText = 'width: 7px; height: 7px; border-radius: 50%; background: ' + dot + '; box-shadow: 0 0 0 3px color-mix(in srgb, ' + dot + ' 22%, transparent);';
+            pill.appendChild(dotEl); pill.appendChild(document.createTextNode('Option ' + num));
+            head.appendChild(pill);
+            const ttl = document.createElement('span'); ttl.style.cssText = 'font-size: 13.5px; font-weight: 700; color: var(--text-primary);'; ttl.textContent = title;
+            head.appendChild(ttl);
+            if (tag) { const tg = document.createElement('span'); tg.style.cssText = 'font-size: 11px; font-weight: 700; color: var(--accent-primary); border: 1px solid color-mix(in srgb, var(--accent-primary) 45%, transparent); border-radius: 20px; padding: 1px 8px;'; tg.textContent = tag; head.appendChild(tg); }
+            p.appendChild(head);
+            const nt = document.createElement('div'); nt.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin: 0 0 8px; line-height: 1.5;'; nt.textContent = note;
+            p.appendChild(nt);
+            p.appendChild(this.createCodeBlock(codeText));
+            return p;
+        };
+
+        const localPanel = optionPanel(1, CYAN, 'This device (local app)', null,
+            'The app is already running (it’s serving this page), so install the adapter only: it points at the local engine by default:',
+            'pip install ' + integration.sdkPackage + ' --no-deps', !endpointMode);
+        const cloudPanel = optionPanel(2, RED, 'Your cloud (self-hosted endpoint)', endpointMode ? 'Recommended here' : null,
+            'Deploy the engine to your cloud with the Aegis Terraform modules, then point the SDK at its endpoint:',
+            'pip install ' + integration.sdkPackage + ' --no-deps\nexport AEGIS_ENGINE_ENDPOINT=' + (engineUrl || 'https://<your-engine-endpoint>'), !!endpointMode);
+
+        // In endpoint mode the cloud option is the one that applies → lead with it.
+        if (endpointMode) { content.appendChild(cloudPanel); content.appendChild(localPanel); }
+        else { content.appendChild(localPanel); content.appendChild(cloudPanel); }
+
+        const status = document.createElement('div');
+        status.id = 'sdk-status-' + rk;
+        // Status flips Waiting -> Active asynchronously; announce it to AT.
+        status.setAttribute('aria-live', 'polite');
+        status.setAttribute('aria-atomic', 'true');
+        status.style.cssText = 'margin-top: 16px; padding: 14px; border-radius: 6px; border: 1px dashed var(--border-default); background: var(--bg-tertiary); font-size: 13px; color: var(--text-secondary);';
+        status.textContent = '⏳ Waiting for the first ' + integration.name + ' tool call…';
+        content.appendChild(status);
+
+        card.appendChild(content);
+        setTimeout(() => this.refreshSdkStatus(integration), 0);
+        return card;
+    },
+
+    async refreshSdkStatus(integration) {
+        const rk = integration.runtimeKind;
+        const el = document.getElementById('sdk-status-' + rk);
+        if (!el) return;
+        let node = null;
+        try {
+            const g = await fetch('/api/graph/agent-tool?window_days=30').then(r => r.json());
+            node = (g.nodes || []).find(n => n.kind === 'agent' &&
+                (n.id === 'agent:' + rk || n.runtime_kind === rk));
+        } catch {}
+
+        el.textContent = '';
+        if (!node) {
+            el.style.borderStyle = 'dashed';
+            el.style.borderColor = 'var(--border-default)';
+            el.style.color = 'var(--text-secondary)';
+            el.textContent = '⏳ Waiting for the first ' + integration.name +
+                ' tool call: run your agent with the SDK installed and this turns live automatically (no manual pairing).';
+            return;
+        }
+
+        el.style.border = '1px solid var(--success)';
+        el.style.color = 'var(--text-primary)';
+        const title = document.createElement('div');
+        title.style.cssText = 'font-weight: 700; color: var(--success); margin-bottom: 10px;';
+        title.textContent = '✅ Active · runtime_kind=' + rk;
+        el.appendChild(title);
+
+        const stats = document.createElement('div');
+        stats.style.cssText = 'display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 12px;';
+        const mk = (n, label) => {
+            const d = document.createElement('div');
+            const num = document.createElement('div');
+            num.style.cssText = 'font-size: 20px; font-weight: 700;';
+            num.textContent = String(n);
+            const lab = document.createElement('div');
+            lab.style.cssText = 'font-size: 11px; color: var(--text-secondary);';
+            lab.textContent = label;
+            d.appendChild(num);
+            d.appendChild(lab);
+            return d;
+        };
+        stats.appendChild(mk(node.calls || 0, 'actions audited (30d)'));
+        stats.appendChild(mk(node.blocked || 0, 'blocked'));
+        el.appendChild(stats);
+
+        const compliance = document.createElement('div');
+        compliance.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;';
+        compliance.textContent = 'Tool-call-level, attributed, tamper-evident audit: supports your EU AI Act Art. 12 / 15 record-keeping.';
+        el.appendChild(compliance);
+
+        const actions = document.createElement('div');
+        actions.style.cssText = 'display: flex; gap: 10px; flex-wrap: wrap;';
+        const csvBtn = document.createElement('button');
+        csvBtn.style.cssText = 'padding: 6px 12px; border-radius: 6px; border: 1px solid var(--accent-primary); background: transparent; color: var(--accent-primary); font-size: 12px; font-weight: 600; cursor: pointer;';
+        csvBtn.textContent = 'Generate evidence (CSV)';
+        csvBtn.addEventListener('click', () => this.exportRuntimeEvidence(rk, integration.name));
+        actions.appendChild(csvBtn);
+        el.appendChild(actions);
+    },
+
+    async exportRuntimeEvidence(rk, name) {
+        let rows = [];
+        try {
+            const d = await fetch('/api/tool-permissions/call-audit?limit=1000').then(r => r.json());
+            const all = Array.isArray(d) ? d : (d.entries || d.rows || []);
+            rows = all.filter(r => (r.runtime_kind || '').toLowerCase() === rk);
+        } catch {}
+        const cols = ['called_at', 'runtime_kind', 'tool_id', 'function_name', 'action', 'risk', 'reason', 'session_id', 'request_id'];
+        const esc = v => {
+            let s = String(v == null ? '' : v);
+            // Neutralize spreadsheet formula injection (=, +, -, @, tab, CR leads).
+            if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+            return '"' + s.replace(/"/g, '""') + '"';
+        };
+        const csv = [cols.join(',')]
+            .concat(rows.map(r => cols.map(c => esc(r[c])).join(',')))
+            .join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'aegis-evidence-' + rk + '.csv';
+        a.click();
+        // Revoke after the download has had time to start (click() is async for downloads).
+        setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    },
+
+    // The legacy base-URL LLM proxy, demoted to a collapsed "optional" section.
+    // It captures LLM traffic only — the SDK above is what secures tool calls.
+    createRemoteEndpointSection(integration, integrationId, defaultOpen, engineUrl) {
+        const slug = (integrationId || '').replace('proxy-', '');
+        const ep = engineUrl || 'https://<your-engine-endpoint>';
+        const isSdk = !!integration.sdkPackage;
+        const isPlugin = integration.isClaudeCode || integration.isCodex || integration.isCopilotCli || integration.isCursor || integration.isOpenClaw;
+
+        const details = document.createElement('details');
+        details.style.cssText = 'margin-bottom: 16px;';
+        // Expanded by default when THIS app is a self-hosted endpoint — that's the
+        // path that actually applies, so it leads instead of hiding behind a click.
+        if (defaultOpen) details.open = true;
+        const summary = document.createElement('summary');
+        const accentBorder = defaultOpen ? 'color-mix(in srgb, var(--accent-primary) 45%, var(--border-default))' : 'var(--border-default)';
+        summary.style.cssText = 'cursor: pointer; padding: 12px 16px; background: var(--bg-card); border: 1px solid ' + accentBorder + '; border-radius: 8px; font-size: 13px; font-weight: 600; color: ' + (defaultOpen ? 'var(--text-primary)' : 'var(--text-secondary)') + '; user-select: none;';
+        summary.textContent = defaultOpen
+            ? 'Point ' + (integration.name || 'this agent') + ' at your remote engine endpoint'
+            : 'Option 2 · Your cloud (self-hosted endpoint): point at your remote engine';
+        details.appendChild(summary);
+
+        const body = document.createElement('div');
+        body.style.cssText = 'padding: 12px 4px 0;';
+        const note = (text) => { const d = document.createElement('div'); d.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin: 10px 0 8px; line-height: 1.55;'; d.textContent = text; return d; };
+
+        body.appendChild(note('Everything above assumes the engine is the local app on 127.0.0.1. If you deployed the engine to your own cloud with the Aegis Terraform modules, keep this exact integration: just point it at your deployment’s endpoint (the URL from `terraform output`) instead of localhost.'));
+
+        if (isSdk) {
+            body.appendChild(note('Your environment already has the framework and the engine lives elsewhere, so install the adapter only (--no-deps) and set the endpoint:'));
+            body.appendChild(this.createCodeBlock('pip install ' + integration.sdkPackage + ' --no-deps\nexport AEGIS_ENGINE_ENDPOINT=' + ep));
+        } else if (isPlugin) {
+            body.appendChild(note('The plugin runs on the machine where your coding-agent harness runs, and talks to the remote engine over HTTP. Install the CLI there to add the plugin hooks, point it at your deployment, then install: this installs the CLI + plugin hooks only; your engine stays remote:'));
+            body.appendChild(this.createCodeBlock("pip install 'ai-aegis[app]'\nexport AEGIS_ENGINE_ENDPOINT=" + ep + "\naegis-app --install-plugin " + slug));
+        } else {
+            body.appendChild(note('Replace the localhost endpoint URL shown above with your deployment’s URL: e.g. https://<your-engine-endpoint>/analyze. Nothing else changes.'));
+        }
+
+        const calloutBox = document.createElement('div');
+        calloutBox.style.cssText = 'margin: 10px 0; padding: 12px 14px; border: 1px solid var(--border-default); border-left: 3px solid var(--accent-primary); border-radius: 6px; background: var(--bg-tertiary); font-size: 12px; color: var(--text-primary); line-height: 1.55;';
+        const cStrong = document.createElement('strong'); cStrong.textContent = 'Engine, not cloud. ';
+        calloutBox.appendChild(cStrong);
+        calloutBox.appendChild(document.createTextNode('AEGIS_ENGINE_ENDPOINT is where calls go for analysis: your local app OR your Terraform/self-host engine. It is NOT the Aegis cloud (scan.aegis.example). The legacy AEGIS_SDK_APP_URL still works as a fallback.'));
+        body.appendChild(calloutBox);
+
+        body.appendChild(note('Auth is optional. A private (in-VPC) endpoint needs no credential: the default, and the least friction. Only if you expose the endpoint publicly and gate it (Terraform ingress_token: enforced by a v4.9.0+ engine; older images set but ignore it) do you set a key: a free Aegis account key or an SVET token; it gates inbound access only and forwards no data:'));
+        body.appendChild(this.createCodeBlock('export AEGIS_API_KEY=<Aegis account key or SVET token>   # optional: public gated endpoint only'));
+
+        details.appendChild(body);
+        return details;
+    },
+
+    createOptionalProxySection(integration, integrationId) {
+        const details = document.createElement('details');
+        details.style.cssText = 'margin-bottom: 16px;';
+        const summary = document.createElement('summary');
+        summary.style.cssText = 'cursor: pointer; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); user-select: none;';
+        summary.textContent = 'Optional: legacy LLM proxy (advanced)';
+        details.appendChild(summary);
+        const body = document.createElement('div');
+        body.style.cssText = 'padding-top: 12px;';
+        const note = document.createElement('div');
+        note.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;';
+        note.textContent = 'The proxy intercepts LLM traffic only (not tool calls). Prefer the SDK above for tool-call permissions, secret/threat scanning, and tamper-evident audit. Keep the proxy only if you specifically need base-URL LLM interception.';
+        body.appendChild(note);
+        body.appendChild(this.createMultiProviderCard());
+        body.appendChild(this.createProxyCard(integration, integrationId));
+        details.appendChild(body);
+        return details;
+    },
+
+    createNodeCard(integration) {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 2px solid var(--accent-primary); border-radius: 8px; margin-bottom: 16px; overflow: hidden; animation: pulse-border 2s ease-in-out 3;';
+
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default); display: flex; align-items: center; justify-content: space-between;';
+
+        const titleDiv = document.createElement('div');
+        const titleText = document.createElement('div');
+        titleText.style.cssText = 'font-weight: 600; font-size: 15px;';
+        titleText.textContent = 'Option 1: Community Node';
+        titleDiv.appendChild(titleText);
+
+        const subtitleText = document.createElement('div');
+        subtitleText.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        subtitleText.textContent = 'Install and drag into your workflow';
+        titleDiv.appendChild(subtitleText);
+        header.appendChild(titleDiv);
+
+        const badge = document.createElement('span');
+        badge.style.cssText = 'background: var(--accent-primary); color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;';
+        badge.textContent = 'RECOMMENDED';
+        header.appendChild(badge);
+
+        card.appendChild(header);
+
+        // Content
+        const content = document.createElement('div');
+        content.style.cssText = 'padding: 16px;';
+
+        // Install command
+        const installLabel = document.createElement('div');
+        installLabel.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        installLabel.textContent = 'Install';
+        content.appendChild(installLabel);
+
+        const installBlock = this.createCodeBlock(integration.nodeInstall);
+        installBlock.style.marginBottom = '16px';
+        content.appendChild(installBlock);
+
+        // Setup steps
+        const setupLabel = document.createElement('div');
+        setupLabel.style.cssText = 'font-weight: 600; font-size: 13px; color: var(--accent-primary); margin-bottom: 8px;';
+        setupLabel.textContent = 'Setup';
+        content.appendChild(setupLabel);
+
+        content.appendChild(this.createCodeBlock(integration.nodeSetup));
+
+        card.appendChild(content);
+        return card;
+    },
+
+    createCodeBlock(code) {
+        // Substitute actual running ports and host so display and Copy both show the right values
+        const _pp = window.__SV_PROXY_PORT; const _wp = window.__SV_WEB_PORT;
+        const _host = window.__SV_HOST;
+        if (_pp && _pp !== 8742) code = code.replaceAll(':8742', ':' + _pp);
+        if (_wp && _wp !== 8741) code = code.replaceAll(':8741', ':' + _wp);
+        if (_host && _host !== 'localhost' && _host !== '127.0.0.1') {
+            code = code.replaceAll('://localhost:', '://' + _host + ':').replaceAll('://127.0.0.1:', '://' + _host + ':');
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position: relative;';
+
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'background: var(--bg-tertiary); padding: 12px 14px; padding-right: 60px; border-radius: 6px; overflow-x: auto; font-size: 12px; line-height: 1.5; margin: 0; border: 1px solid var(--border-color); white-space: pre;';
+
+        const codeEl = document.createElement('code');
+        codeEl.style.cssText = 'color: var(--text-primary); font-family: monospace;';
+        codeEl.textContent = code;
+        pre.appendChild(codeEl);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.style.cssText = 'position: absolute; top: 6px; right: 6px; padding: 2px 8px; font-size: 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 3px; color: var(--text-secondary); cursor: pointer;';
+        copyBtn.textContent = 'Copy';
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(code).then(() => {
+                copyBtn.textContent = 'Copied!';
+                copyBtn.style.color = 'var(--success, #10b981)';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy';
+                    copyBtn.style.color = 'var(--text-secondary)';
+                }, 2000);
+            });
+        });
+
+        wrapper.appendChild(pre);
+        wrapper.appendChild(copyBtn);
+        return wrapper;
+    },
+
+    createApiCard(integration) {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 8px; margin-bottom: 16px; overflow: hidden;';
+
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = 'padding: 16px; border-bottom: 1px solid var(--border-default);';
+
+        const titleText = document.createElement('div');
+        titleText.style.cssText = 'font-weight: 600; font-size: 15px;';
+        titleText.textContent = 'Option 2: HTTP Request Node';
+        header.appendChild(titleText);
+
+        const subtitleText = document.createElement('div');
+        subtitleText.style.cssText = 'font-size: 12px; color: var(--text-secondary);';
+        subtitleText.textContent = 'Alternative: Use built-in HTTP node';
+        header.appendChild(subtitleText);
+
+        card.appendChild(header);
+
+        // Code block
+        card.appendChild(this.createCodeBlock(integration.apiCode));
+
+        return card;
+    }
+};
+
+window.IntegrationPage = IntegrationPage;

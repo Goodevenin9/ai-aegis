@@ -1,0 +1,13 @@
+{
+  "exact": {
+    "View": "查看",
+    "threat detected": "检测到威胁",
+    "Threats blocked": "已拦截威胁",
+    "Critical": "严重"
+  },
+  "patterns": [
+    { "re": "^(\\d+)\\s+threat(?:s)? detected$", "zh": "检测到 $1 个威胁" },
+    { "re": "^(\\d+)\\s+detected$", "zh": "检测到 $1 个" },
+    { "re": "^You have (\\d+) of (\\d+) local custom rules\\. Upgrade to Cloud for unlimited rules with ML-powered detection\\.$", "zh": "您已使用 $1 / $2 条本地自定义规则。升级到云端即可获得无限规则和 ML 驱动的检测。" }
+  ]
+}

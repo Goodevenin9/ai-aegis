@@ -1,0 +1,623 @@
+"""
+SQLAlchemy table definitions for the Aegis desktop application.
+
+Tables:
+- schema_version: Database schema version tracking
+- threat_intel_records: Historical analysis results
+- custom_rules: User-created detection rules
+- rule_overrides: Modifications to community rules
+- app_settings: Application preferences (singleton)
+"""
+
+from datetime import datetime
+from typing import Optional
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    Integer,
+    String,
+    Text,
+    CheckConstraint,
+    MetaData,
+    Table,
+)
+from sqlalchemy.dialects.sqlite import JSON
+
+# Use naming convention for constraints
+convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+
+metadata = MetaData(naming_convention=convention)
+
+# Schema version table for migrations
+schema_version = Table(
+    "schema_version",
+    metadata,
+    Column("version", Integer, primary_key=True),
+    Column(
+        "applied_at",
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    ),
+    Column("description", Text, nullable=False),
+)
+
+# Threat intel records table
+threat_intel_records = Table(
+    "threat_intel_records",
+    metadata,
+    Column("id", String(36), primary_key=True),  # UUID
+    Column("request_id", String(64), nullable=True, index=True),
+    Column("text_content", Text, nullable=True),  # Optional for privacy
+    Column("text_hash", String(64), nullable=False, index=True),
+    Column("text_length", Integer, nullable=False),
+    Column("is_threat", Boolean, nullable=False, index=True),
+    Column("threat_type", String(50), nullable=True, index=True),
+    Column("risk_score", Integer, nullable=False),
+    Column("confidence", Float, nullable=False),
+    Column("matched_rules", JSON, nullable=False),  # Array of matched rules
+    Column("source_identifier", String(255), nullable=True, index=True),
+    Column("session_id", String(64), nullable=True, index=True),
+    Column("processing_time_ms", Integer, nullable=False),
+    Column(
+        "created_at",
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        index=True,
+    ),
+    Column("metadata", JSON, nullable=True),
+    # Constraints
+    CheckConstraint("risk_score >= 0 AND risk_score <= 100", name="risk_score_range"),
+    CheckConstraint("confidence >= 0 AND confidence <= 1", name="confidence_range"),
+)
+
+# Custom rules table
+custom_rules = Table(
+    "custom_rules",
+    metadata,
+    Column("id", String(100), primary_key=True),
+    Column("name", String(255), nullable=False),
+    Column("category", String(50), nullable=False, index=True),
+    Column("description", Text, nullable=False),
+    Column("severity", String(20), nullable=False),
+    Column("patterns", JSON, nullable=False),  # Array of regex patterns
+    Column("enabled", Boolean, nullable=False, default=True),
+    Column("metadata", JSON, nullable=True),
+    Column(
+        "created_at",
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    ),
+    Column(
+        "updated_at",
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    ),
+    # Constraints
+    CheckConstraint(
+        "severity IN ('low', 'medium', 'high', 'critical')",
+        name="severity_values",
+    ),
+)
+
+# Rule overrides table for community rules
+rule_overrides = Table(
+    "rule_overrides",
+    metadata,
+    Column("id", String(36), primary_key=True),  # UUID
+    Column("original_rule_id", String(100), nullable=False, unique=True),
+    Column("enabled", Boolean, nullable=True),
+    Column("severity", String(20), nullable=True),
+    Column("patterns", JSON, nullable=True),  # Override patterns
+    Column(
+        "created_at",
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    ),
+    Column(
+        "updated_at",
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    ),
+    # Constraints
+    CheckConstraint(
+        "severity IS NULL OR severity IN ('low', 'medium', 'high', 'critical')",
+        name="override_severity_values",
+    ),
+)
+
+# App settings table (singleton - always id=1)
+app_settings = Table(
+    "app_settings",
+    metadata,
+    Column("id", Integer, primary_key=True, default=1),
+    Column("theme", String(20), nullable=False, default="system"),
+    Column("server_port", Integer, nullable=False, default=8741),
+    Column("server_host", String(255), nullable=False, default="127.0.0.1"),
+    Column("retention_days", Integer, nullable=False, default=30),
+    Column("store_text_content", Boolean, nullable=False, default=True),
+    Column("notifications_enabled", Boolean, nullable=False, default=True),
+    Column("launch_on_startup", Boolean, nullable=False, default=False),
+    Column("minimize_to_tray", Boolean, nullable=False, default=True),
+    Column("window_width", Integer, nullable=True),
+    Column("window_height", Integer, nullable=True),
+    Column("window_x", Integer, nullable=True),
+    Column("window_y", Integer, nullable=True),
+    # Cloud mode fields (added in schema v3)
+    Column("cloud_mode_enabled", Boolean, nullable=False, default=False),
+    Column("cloud_user_email", String(255), nullable=True),
+    Column("cloud_connected_at", DateTime, nullable=True),
+    # EU residency / local-only analysis (schema v41): when True, /analyze and
+    # /analyze/output never call the cloud, so prompt text never leaves the
+    # device. The rest of Cloud Connect (rule sync, policy sync, fleet metadata
+    # forwarding, governance) keeps working. Default True — prompts stay local
+    # unless the operator explicitly opts into cloud analysis.
+    Column("local_only_analysis", Boolean, nullable=False, default=True),
+    # Data-residency hard-lock (schema v42): when True, local_only_analysis is
+    # forced ON and the user CANNOT turn it off (EU/regulated orgs). Set by an
+    # env/config override (SV_DATA_RESIDENCY=eu / SV_RESIDENCY_LOCKED) today, or
+    # pushed by the cloud enrollment response (see llm-security-engine #189).
+    Column("residency_locked", Boolean, nullable=False, default=False),
+    Column(
+        "updated_at",
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    ),
+    # Constraints
+    CheckConstraint("id = 1", name="singleton"),
+    CheckConstraint(
+        "theme IN ('system', 'light', 'dark')",
+        name="theme_values",
+    ),
+    CheckConstraint(
+        "server_port >= 1024 AND server_port <= 65535",
+        name="port_range",
+    ),
+    CheckConstraint(
+        "retention_days >= 1 AND retention_days <= 365",
+        name="retention_range",
+    ),
+)
+
+
+# SQL for creating tables (SQLite-specific)
+SCHEMA_SQL = """
+-- Schema Version 1
+
+CREATE TABLE IF NOT EXISTS schema_version (
+    version INTEGER PRIMARY KEY,
+    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    description TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS threat_intel_records (
+    id TEXT PRIMARY KEY,
+    request_id TEXT,
+    text_content TEXT,
+    text_hash TEXT NOT NULL,
+    text_length INTEGER NOT NULL,
+    is_threat INTEGER NOT NULL,
+    threat_type TEXT,
+    risk_score INTEGER NOT NULL CHECK (risk_score >= 0 AND risk_score <= 100),
+    confidence REAL NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
+    matched_rules TEXT NOT NULL,
+    source_identifier TEXT,
+    session_id TEXT,
+    processing_time_ms INTEGER NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    metadata TEXT,
+    -- LLM Review fields
+    llm_reviewed INTEGER DEFAULT 0,
+    llm_agrees INTEGER DEFAULT 1,
+    llm_confidence REAL DEFAULT 0,
+    llm_explanation TEXT DEFAULT NULL,
+    llm_recommendation TEXT DEFAULT NULL,
+    llm_risk_adjustment INTEGER DEFAULT 0,
+    llm_model_used TEXT DEFAULT NULL,
+    llm_tokens_used INTEGER DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_threat_intel_created_at ON threat_intel_records(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_threat_intel_is_threat ON threat_intel_records(is_threat);
+CREATE INDEX IF NOT EXISTS idx_threat_intel_threat_type ON threat_intel_records(threat_type);
+CREATE INDEX IF NOT EXISTS idx_threat_intel_source ON threat_intel_records(source_identifier);
+CREATE INDEX IF NOT EXISTS idx_threat_intel_hash ON threat_intel_records(text_hash);
+CREATE INDEX IF NOT EXISTS idx_threat_intel_request_id ON threat_intel_records(request_id);
+
+CREATE TABLE IF NOT EXISTS custom_rules (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    description TEXT NOT NULL,
+    severity TEXT NOT NULL CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+    patterns TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    metadata TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_custom_rules_category ON custom_rules(category);
+
+CREATE TABLE IF NOT EXISTS rule_overrides (
+    id TEXT PRIMARY KEY,
+    original_rule_id TEXT NOT NULL UNIQUE,
+    enabled INTEGER,
+    severity TEXT CHECK (severity IS NULL OR severity IN ('low', 'medium', 'high', 'critical')),
+    patterns TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    theme TEXT NOT NULL DEFAULT 'system' CHECK (theme IN ('system', 'light', 'dark')),
+    server_port INTEGER NOT NULL DEFAULT 8741 CHECK (server_port >= 1024 AND server_port <= 65535),
+    server_host TEXT NOT NULL DEFAULT '127.0.0.1',
+    retention_days INTEGER NOT NULL DEFAULT 30 CHECK (retention_days >= 1 AND retention_days <= 365),
+    store_text_content INTEGER NOT NULL DEFAULT 1,
+    notifications_enabled INTEGER NOT NULL DEFAULT 1,
+    launch_on_startup INTEGER NOT NULL DEFAULT 0,
+    minimize_to_tray INTEGER NOT NULL DEFAULT 1,
+    window_width INTEGER,
+    window_height INTEGER,
+    window_x INTEGER,
+    window_y INTEGER,
+    cloud_mode_enabled INTEGER NOT NULL DEFAULT 0,
+    cloud_user_email TEXT,
+    cloud_connected_at TIMESTAMP,
+    local_only_analysis INTEGER NOT NULL DEFAULT 1,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Initialize singleton settings row if not exists
+INSERT OR IGNORE INTO app_settings (id) VALUES (1);
+"""
+
+# Current schema version
+CURRENT_SCHEMA_VERSION = 44
+SCHEMA_DESCRIPTION = (
+    "v20: hash-chain tool_call_audit for tamper-evidence; "
+    "v21: device_id on scans + audit rows; "
+    "v22: external_forwarders — per-destination SIEM config (Splunk/Datadog/webhook/OTLP); "
+    "v23: external_forward_outbox — fan-out queue, at-least-once per destination; "
+    "v24: siem_forwarding_enabled — global kill-switch in app_settings; "
+    "v25: SIEM forwarder redaction_level allows 'full' tier (raw_data + llm_output); "
+    "v26: SIEM forwarder min_severity + rate_limit_per_minute (SOC signal/noise tuning); "
+    "v27: drop kind CHECK on external_forwarders — allow new kinds (e.g. 'file') via app-layer validation; "
+    "v28: lifetime events_sent counter on external_forwarders (per-destination health); "
+    "v29: synced_tool_rules — cloud-pushed policy bundle rules layered over local Tool Permissions; "
+    "v32: runtime_kind on tool_call_audit — identifies which Guard plugin runtime wrote the row; "
+    "v34: redaction_events — audit log of every redact_secrets() match (hash-only, never raw); "
+    "v35: runtime_kind on redaction_events — identifies which Guard plugin caught the secret; "
+    "v36: agent-run trace keys on tool_call_audit (trace_id/session_id/turn_index/parent_span_id) "
+    "— groups the flat audit log into runs/turns for the Agent Run Trace + Agent Map views; "
+    "v37: per-runtime scope (runtime_kind) on tool_essential_overrides — a local Block/Allow "
+    "can target one agent runtime instead of governing all of them; "
+    "v38: guardian_ml_enabled — Guardian ML detection kill-switch in app_settings (default ON); "
+    "v39: request_id on tool_call_audit — per-call span/threat correlation for the "
+    "Rule / ML / Rule+ML detection-source labels on Agent Runs + Agent Map; "
+    "v40: provenance `source` column on external_forwarders — 'user' (default, hand-added) vs "
+    "'enrollment' (admin-supplied destination registered at enrollment time; the UI badges these "
+    "as managed). Generic managed-device pattern — destination URL is never hardcoded, it always "
+    "comes from the cloud enrollment response at runtime; "
+    "v43: JIT tool access — jit_access_requests + jit_access_grants lifecycle tables and a "
+    "`requestable` flag on synced_tool_rules (policy-marked soft denies an agent may request "
+    "time-boxed access to; hard denies stay non-requestable and instant-fail)"
+)
+
+# Migration SQL for v34 — redaction_events table.
+# Audit log of every redaction performed by ``redact_secrets()``. One row per
+# match, surfaced in the local-app Redactions page (sibling to Threats /
+# Tool Activity / Bill of Tools under the Agent Activity umbrella).
+#
+# Security posture (matches the legal-review intent that drove the PEM
+# redaction itself):
+#   - ``redaction_hash`` is SHA-256 of the matched substring — the raw
+#     secret value is NEVER persisted on this table.
+#   - No FK to threat_intel_records. Audit events outlive threat rows so
+#     retention purges leave the redaction trail intact for compliance.
+#   - ``direction`` is stamped so auditors can prove which patterns fire
+#     on which scan modes (e.g. PEM redactions ONLY on direction='incoming'
+#     per the gating in redact_secrets()).
+MIGRATION_V34_SQL = """
+CREATE TABLE IF NOT EXISTS redaction_events (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    pattern_id      TEXT NOT NULL,
+    secret_type     TEXT NOT NULL,
+    direction       TEXT NOT NULL CHECK (direction IN ('outgoing','incoming','llm_response')),
+    source_tool     TEXT,
+    source_tool_id  TEXT,
+    request_id      TEXT,
+    redaction_hash  TEXT NOT NULL,
+    redacted_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_redaction_events_time
+    ON redaction_events (redacted_at);
+
+CREATE INDEX IF NOT EXISTS idx_redaction_events_direction
+    ON redaction_events (direction, redacted_at);
+
+CREATE INDEX IF NOT EXISTS idx_redaction_events_pattern
+    ON redaction_events (pattern_id, redacted_at);
+
+INSERT OR IGNORE INTO schema_version (version, applied_at, description)
+VALUES (34, CURRENT_TIMESTAMP, 'redaction_events — audit log of redact_secrets matches (hash-only)');
+"""
+
+# Migration SQL for v35 — runtime_kind on redaction_events.
+# Lets the Secret Detections page disambiguate which Guard plugin (claude-code,
+# openclaw, langchain, …) caught each secret. Sourced from the analyze
+# request's metadata.runtime_kind, which both plugins already populate.
+MIGRATION_V35_SQL = """
+ALTER TABLE redaction_events ADD COLUMN runtime_kind TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_redaction_events_runtime
+    ON redaction_events (runtime_kind, redacted_at);
+
+INSERT OR IGNORE INTO schema_version (version, applied_at, description)
+VALUES (35, CURRENT_TIMESTAMP, 'redaction_events.runtime_kind — per-row plugin attribution');
+"""
+
+# Migration SQL for v29 — synced_tool_rules layer (active-mcp-and-policy-sync)
+# Cloud-side policy bundles deserialised here; effective_action is computed
+# at read time as: synced rule (cloud) > local user rule > default.
+MIGRATION_V29_SQL = """
+CREATE TABLE IF NOT EXISTS synced_tool_rules (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    bundle_id           TEXT NOT NULL,
+    policy_id           TEXT NOT NULL,
+    policy_version      INTEGER NOT NULL,
+    org_id              TEXT NOT NULL,
+    org_name            TEXT,
+    tool_id             TEXT NOT NULL,
+    effect              TEXT NOT NULL CHECK (effect IN ('allow', 'deny', 'prompt')),
+    priority            INTEGER NOT NULL DEFAULT 0,
+    reason              TEXT,
+    applied_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(policy_id, tool_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_synced_tool_rules_tool_id
+    ON synced_tool_rules (tool_id);
+
+CREATE INDEX IF NOT EXISTS idx_synced_tool_rules_policy
+    ON synced_tool_rules (policy_id, policy_version);
+
+CREATE INDEX IF NOT EXISTS idx_synced_tool_rules_bundle
+    ON synced_tool_rules (bundle_id);
+
+INSERT INTO schema_version (version, applied_at, description)
+VALUES (29, CURRENT_TIMESTAMP, 'synced_tool_rules — cloud policy bundle layer');
+"""
+
+# Migration SQL for v30 — surface human-readable policy_name on synced bundles.
+# Without this, the local MCP Policies page can only show pol_<hex> instead of
+# the friendly name authored in the cloud admin ("E2E Test — Filesystem MCP guardrail").
+# Default NULL keeps existing v29 rows valid; cloud_sync writes the new column on
+# every bundle apply so old rows are replaced naturally on the next /policy/sync.
+MIGRATION_V30_SQL = """
+ALTER TABLE synced_tool_rules ADD COLUMN policy_name TEXT;
+
+INSERT INTO schema_version (version, applied_at, description)
+VALUES (30, CURRENT_TIMESTAMP, 'synced_tool_rules — add policy_name for local MCP Policies page');
+"""
+
+# Migration SQL for v31 — synced_bundle_envelope table.
+#
+# The signed bundle envelope (the raw JSON the cloud pushed PLUS the
+# HS256 signature) lives alongside `synced_tool_rules` so the verifier
+# can re-check the signature on every poll and on app startup. If the
+# verify fails — typically because someone hand-edited
+# `synced_tool_rules` rows with a sqlite3 shell — the verifier blanks
+# `synced_tool_rules`, sets `tampered_at`, and the MCP Policies page
+# flips to a red tamper banner.
+#
+# One row per active enrollment. bundle_id is the PK so a fresh apply
+# overwrites the previous envelope in a single UPSERT.
+MIGRATION_V31_SQL = """
+CREATE TABLE IF NOT EXISTS synced_bundle_envelope (
+    bundle_id                 TEXT PRIMARY KEY,
+    bundle_json               TEXT NOT NULL,
+    signature                 TEXT NOT NULL,
+    signing_key_fingerprint   TEXT,
+    applied_at                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    verified_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    tampered_at               TIMESTAMP,
+    tamper_reason             TEXT
+);
+
+INSERT INTO schema_version (version, applied_at, description)
+VALUES (31, CURRENT_TIMESTAMP, 'synced_bundle_envelope — store signed envelope for tamper-detect re-verify');
+"""
+
+# Migration SQL for v19
+MIGRATION_V19_SQL = """
+-- Schema Version 19: Skill Scanner Policy Engine
+
+CREATE TABLE IF NOT EXISTS skill_permissions (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    category        TEXT NOT NULL CHECK (category IN ('network', 'env_var', 'file_path', 'shell_command')),
+    pattern         TEXT NOT NULL,
+    classification  TEXT NOT NULL CHECK (classification IN ('safe', 'review', 'dangerous')),
+    label           TEXT NOT NULL DEFAULT '',
+    is_default      INTEGER NOT NULL DEFAULT 1,
+    enabled         INTEGER NOT NULL DEFAULT 1,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(category, pattern)
+);
+
+CREATE INDEX IF NOT EXISTS idx_skill_permissions_category
+    ON skill_permissions (category, classification);
+
+CREATE INDEX IF NOT EXISTS idx_skill_permissions_enabled
+    ON skill_permissions (enabled);
+
+CREATE TABLE IF NOT EXISTS skill_trusted_publishers (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    publisher_name  TEXT NOT NULL UNIQUE,
+    trust_level     TEXT NOT NULL DEFAULT 'trusted' CHECK (trust_level IN ('trusted', 'untrusted')),
+    is_default      INTEGER NOT NULL DEFAULT 1,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS skill_policy_config (
+    id                      INTEGER PRIMARY KEY CHECK (id = 1),
+    policy_enabled          INTEGER NOT NULL DEFAULT 1,
+    risk_weight_network     INTEGER NOT NULL DEFAULT 2,
+    risk_weight_env_var     INTEGER NOT NULL DEFAULT 1,
+    risk_weight_shell_exec  INTEGER NOT NULL DEFAULT 5,
+    risk_weight_code_exec   INTEGER NOT NULL DEFAULT 5,
+    risk_weight_dynamic_import INTEGER NOT NULL DEFAULT 4,
+    risk_weight_file_write  INTEGER NOT NULL DEFAULT 3,
+    risk_weight_base64      INTEGER NOT NULL DEFAULT 0,
+    risk_weight_compiled    INTEGER NOT NULL DEFAULT 3,
+    risk_weight_rule_match  INTEGER NOT NULL DEFAULT 3,
+    risk_weight_missing_manifest INTEGER NOT NULL DEFAULT 0,
+    risk_weight_symlink     INTEGER NOT NULL DEFAULT 3,
+    threshold_allow         INTEGER NOT NULL DEFAULT 8,
+    threshold_warn          INTEGER NOT NULL DEFAULT 15,
+    updated_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT OR IGNORE INTO skill_policy_config (id) VALUES (1);
+"""
+
+# Migration SQL for v18
+MIGRATION_V18_SQL = """
+-- Schema Version 18: Add skill scan records for OpenClaw Skill Scanner
+
+CREATE TABLE IF NOT EXISTS skill_scan_records (
+    id                TEXT PRIMARY KEY,
+    scanned_path      TEXT NOT NULL,
+    skill_name        TEXT NOT NULL,
+    scan_timestamp    TEXT NOT NULL,
+    invocation_source TEXT NOT NULL DEFAULT 'cli' CHECK (invocation_source IN ('cli', 'ui')),
+    risk_level        TEXT NOT NULL CHECK (risk_level IN ('HIGH', 'MEDIUM', 'LOW')),
+    findings_count    INTEGER NOT NULL DEFAULT 0,
+    findings_json     TEXT NOT NULL DEFAULT '[]',
+    manifest_present  INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_skill_scan_records_timestamp
+    ON skill_scan_records (scan_timestamp DESC);
+
+CREATE INDEX IF NOT EXISTS idx_skill_scan_records_risk_level
+    ON skill_scan_records (risk_level);
+"""
+
+# Migration SQL for v12
+MIGRATION_V12_SQL = """
+-- Schema Version 12: Add LLM cost tracking
+
+CREATE TABLE IF NOT EXISTS llm_cost_records (
+    id              TEXT PRIMARY KEY,
+    agent_id        TEXT NOT NULL,
+    provider        TEXT NOT NULL,
+    model_id        TEXT NOT NULL,
+    request_id      TEXT,
+    input_tokens    INTEGER NOT NULL DEFAULT 0,
+    output_tokens   INTEGER NOT NULL DEFAULT 0,
+    input_cost_usd  REAL NOT NULL DEFAULT 0.0,
+    output_cost_usd REAL NOT NULL DEFAULT 0.0,
+    total_cost_usd  REAL NOT NULL DEFAULT 0.0,
+    rate_input      REAL,
+    rate_output     REAL,
+    pricing_known   INTEGER NOT NULL DEFAULT 1,
+    recorded_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_cost_records_agent ON llm_cost_records(agent_id, recorded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cost_records_provider ON llm_cost_records(provider, recorded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_cost_records_model ON llm_cost_records(model_id);
+CREATE INDEX IF NOT EXISTS idx_cost_records_recorded_at ON llm_cost_records(recorded_at DESC);
+
+CREATE TABLE IF NOT EXISTS model_pricing (
+    id                  TEXT PRIMARY KEY,
+    provider            TEXT NOT NULL,
+    model_id            TEXT NOT NULL,
+    display_name        TEXT NOT NULL,
+    input_per_million   REAL NOT NULL DEFAULT 0.0,
+    output_per_million  REAL NOT NULL DEFAULT 0.0,
+    effective_date      TEXT,
+    verified_at         TEXT,
+    source_url          TEXT,
+    updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(provider, model_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_model_pricing_provider ON model_pricing(provider);
+"""
+
+# Migration SQL for v13 — Budget limits
+MIGRATION_V13_SQL = """
+CREATE TABLE IF NOT EXISTS agent_budgets (
+    agent_id        TEXT PRIMARY KEY,
+    daily_budget_usd REAL NOT NULL,
+    budget_action   TEXT NOT NULL DEFAULT 'warn' CHECK (budget_action IN ('warn', 'block')),
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+"""
+
+# Migration SQL for v14 — Cached token breakdown
+MIGRATION_V14_SQL = """
+ALTER TABLE llm_cost_records ADD COLUMN input_cached_tokens INTEGER NOT NULL DEFAULT 0;
+"""
+
+# Migration SQL for v2
+MIGRATION_V2_SQL = """
+-- Schema Version 2: Add community rules cache
+
+CREATE TABLE IF NOT EXISTS community_rules (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    description TEXT NOT NULL,
+    severity TEXT NOT NULL CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+    patterns TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    source_file TEXT,
+    metadata TEXT,
+    loaded_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_community_rules_category ON community_rules(category);
+CREATE INDEX IF NOT EXISTS idx_community_rules_enabled ON community_rules(enabled);
+
+-- Record migration
+INSERT INTO schema_version (version, applied_at, description)
+VALUES (2, CURRENT_TIMESTAMP, 'Add community rules cache table');
+"""
+
+# Migration SQL for v3
+MIGRATION_V3_SQL = """
+-- Schema Version 3: Add cloud mode fields to app_settings
+
+ALTER TABLE app_settings ADD COLUMN cloud_mode_enabled INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE app_settings ADD COLUMN cloud_user_email TEXT DEFAULT NULL;
+ALTER TABLE app_settings ADD COLUMN cloud_connected_at TIMESTAMP DEFAULT NULL;
+
+-- Record migration
+INSERT INTO schema_version (version, applied_at, description)
+VALUES (3, CURRENT_TIMESTAMP, 'Add cloud mode fields to app_settings');
+"""

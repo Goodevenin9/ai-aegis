@@ -1,0 +1,624 @@
+#!/usr/bin/env python3
+"""
+Aegis OpenClaw Proxy
+
+A local WebSocket proxy that scans all messages between users and OpenClaw
+for prompt injection, jailbreaks, and other security threats.
+
+Usage:
+    python -m aegis.integrations.openclaw_proxy
+
+    # Or with custom ports:
+    python -m aegis.integrations.openclaw_proxy --port 8080 --openclaw-port 18789
+
+Then connect your client to ws://localhost:8080 instead of OpenClaw directly.
+"""
+
+import argparse
+import asyncio
+import json
+import re
+import sys
+from typing import Optional
+
+try:
+    import websockets
+    import httpx
+except ImportError as _e:
+    _missing = str(_e)
+    # Only exit when run as a script/CLI — not when imported (e.g. during tests)
+    if __name__ == "__main__":
+        print("Missing dependencies. Install with:")
+        print("  pip install websockets httpx")
+        sys.exit(1)
+    else:
+        raise ImportError(
+            f"openclaw_proxy requires optional dependencies ({_missing}). "
+            "Install with: pip install websockets httpx"
+        ) from _e
+
+
+# Compiled regex patterns for sensitive tokens that may be echoed back by LLMs.
+# Matches the same token types as the output leakage rules to prevent false positives
+# when the LLM echoes conversation context containing API keys, passwords, etc.
+_SENSITIVE_TOKEN_PATTERNS = re.compile(
+    r'|'.join([
+        r'sk-[a-zA-Z0-9]{20,}',
+        r'sk_(?:test|live)_[a-zA-Z0-9]{20,}',
+        r'pk_(?:test|live)_[a-zA-Z0-9]{20,}',
+        r'rk_(?:test|live)_[a-zA-Z0-9]{20,}',
+        r'ghp_[a-zA-Z0-9]{36}',
+        r'gho_[a-zA-Z0-9]{36}',
+        r'github_pat_[a-zA-Z0-9_]{22,}',
+        r'xox[baprs]-[a-zA-Z0-9\-]{10,}',
+        r'AKIA[A-Z0-9]{16}',
+        r'AIza[a-zA-Z0-9_\-]{35}',
+        r'eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}',
+        r'(?:api[_-]?key|api[_-]?secret|access[_-]?token|auth[_-]?token)[:\s]*[\'"]?[a-zA-Z0-9_\-]{20,}',
+        r'(?:password|passwd|pwd)\s*(?:[:=]|\bis\b)[:\s]*[\'"]?[^\s\'"]{8,64}[\'"]?',
+        r'bearer\s+[a-zA-Z0-9_\-\.]{20,}',
+    ]),
+    re.IGNORECASE,
+)
+
+
+def strip_echoed_sensitive_tokens(output_text: str, input_context: str) -> str:
+    """Remove sensitive tokens from output that already exist in the input context.
+
+    When an LLM echoes back conversation context (common with Claude/Anthropic),
+    API keys, passwords, and other sensitive tokens from the user's input appear
+    in the output, triggering false positive output leakage alerts.
+
+    This function finds all sensitive tokens in the input context and replaces
+    them with [CONTEXT] in the output before scanning, so only genuinely NEW
+    sensitive data in the output triggers alerts.
+    """
+    if not input_context or not output_text:
+        return output_text
+
+    # Find all sensitive tokens present in the input
+    input_tokens = set()
+    for match in _SENSITIVE_TOKEN_PATTERNS.finditer(input_context):
+        token = match.group()
+        if len(token) >= 8:  # Only track meaningful tokens
+            input_tokens.add(token)
+
+    if not input_tokens:
+        return output_text
+
+    # Replace echoed tokens in output with [CONTEXT]
+    result = output_text
+    for token in input_tokens:
+        result = result.replace(token, "[CONTEXT]")
+
+    return result
+
+
+class AegisProxy:
+    MAX_CONNECTION_FAILURES = 10
+    MAX_MESSAGE_SIZE = 1024 * 1024  # 1MB max message size
+
+    def __init__(
+        self,
+        proxy_port: int = 18789,
+        openclaw_host: str = "127.0.0.1",
+        openclaw_port: int = 18790,
+        aegis_host: str = "127.0.0.1",
+        aegis_port: int = 8741,
+        scan_outgoing: bool = True,
+        block_threats: bool = False,
+        verbose: bool = False,
+    ):
+        self.proxy_port = proxy_port
+        self.openclaw_host = openclaw_host
+        self.openclaw_port = openclaw_port
+        self.openclaw_url = f"ws://{openclaw_host}:{openclaw_port}"
+        self.aegis_url = f"http://{aegis_host}:{aegis_port}/analyze"
+        self.scan_outgoing = scan_outgoing
+        self.block_threats = block_threats
+        self.verbose = verbose
+        self.stats = {"scanned": 0, "blocked": 0, "passed": 0}
+        self._http_client: Optional[httpx.AsyncClient] = None
+        self._connection_failures = 0
+        self._should_exit = False
+        self._output_scan_enabled: Optional[bool] = None
+        self._output_scan_checked_at: float = 0
+        self._recent_user_inputs: list = []  # Track recent user inputs for context-aware output scanning
+
+    def _truncate(self, text: str, max_len: int = 200) -> str:
+        """Truncate text for logging."""
+        if len(text) <= max_len:
+            return text
+        return text[:max_len] + f"... ({len(text)} chars)"
+
+    async def get_http_client(self) -> httpx.AsyncClient:
+        """Get or create shared HTTP client."""
+        if self._http_client is None or self._http_client.is_closed:
+            self._http_client = httpx.AsyncClient(
+                timeout=15.0,  # Increased for LLM review
+                headers={"User-Agent": "Aegis-Proxy/1.0 (OpenClaw)"}
+            )
+        return self._http_client
+
+    async def check_settings(self) -> dict:
+        """Check Aegis settings (cached for 10s)."""
+        import time
+        now = time.time()
+        # Cache for 10 seconds to avoid excessive API calls
+        if self._output_scan_enabled is not None and (now - self._output_scan_checked_at) < 10:
+            return {
+                "scan_llm_responses": self._output_scan_enabled,
+                "block_threats": getattr(self, '_block_threats_enabled', self.block_threats),
+            }
+
+        try:
+            client = await self.get_http_client()
+            settings_url = self.aegis_url.replace("/analyze", "/api/settings")
+            response = await client.get(settings_url)
+            if response.status_code == 200:
+                settings = response.json()
+                self._output_scan_enabled = settings.get("scan_llm_responses", True)
+                self._block_threats_enabled = settings.get("block_threats", False)
+                self._output_scan_checked_at = now
+                return {
+                    "scan_llm_responses": self._output_scan_enabled,
+                    "block_threats": self._block_threats_enabled,
+                }
+            return {"scan_llm_responses": True, "block_threats": self.block_threats}
+        except Exception as e:
+            if self.verbose:
+                print(f"[proxy] Could not check settings: {e}")
+            return {"scan_llm_responses": True, "block_threats": self.block_threats}
+
+    async def check_output_scan_enabled(self) -> bool:
+        """Check if output scanning is enabled in Aegis settings."""
+        settings = await self.check_settings()
+        return settings.get("scan_llm_responses", True)
+
+    async def check_block_mode_enabled(self) -> bool:
+        """Check if block mode is enabled in Aegis settings."""
+        settings = await self.check_settings()
+        return settings.get("block_threats", False)
+
+    async def _scan_output(self, text: str) -> bool:
+        """Scan output for threats and store for logging.
+
+        Note: Redaction is handled at the storage layer (analyze.py), not here.
+        This method only detects threats and logs them - messages are always
+        forwarded to the client unchanged (preserving streaming UX).
+
+        Uses context-aware scanning: sensitive tokens (API keys, passwords, etc.)
+        that appear in recent user inputs are stripped before scanning to prevent
+        false positives when LLMs echo back conversation context.
+
+        Returns:
+            True if threat was detected, False otherwise
+        """
+        if not text or len(text) < 20:
+            return False
+
+        # Check if output scanning is enabled
+        output_scan_enabled = await self.check_output_scan_enabled()
+        if not output_scan_enabled:
+            return False
+
+        # Context-aware scanning: strip echoed sensitive tokens from user input
+        input_context = " ".join(self._recent_user_inputs[-10:])  # Last 10 messages as context
+        scan_text = strip_echoed_sensitive_tokens(text, input_context)
+
+        print(f"[proxy] 🔍 Scanning complete output ({len(text)} chars): {self._truncate(scan_text, 80)}")
+
+        # Scan and store - redaction happens at storage layer (analyze.py)
+        result = await self.scan_message(scan_text, is_llm_response=True, store=True, scan_type="output")
+
+        if result.get("is_threat"):
+            threat_type = result.get("threat_type", "unknown")
+            risk_score = result.get("risk_score", 0)
+            print(f"[proxy] ⚠️  OUTPUT LEAKAGE DETECTED: {threat_type} (risk: {risk_score}%)")
+            print(f"[proxy] 🔒 Secrets will be redacted in storage (analyze.py)")
+            return True
+        else:
+            print(f"[proxy] ✓ Output scanned - no threat")
+            return False
+
+    async def scan_message(self, text: str, is_llm_response: bool = False, store: bool = True, scan_type: str = "input", action_taken: str = "logged") -> dict:
+        """Scan a message with Aegis API.
+
+        Args:
+            text: The text content to analyze
+            is_llm_response: True when scanning LLM output (checks for leaks, PII)
+            store: Whether to store the result (False for quick scans that don't need logging)
+            scan_type: "input" or "output" to mark the scan direction
+            action_taken: "blocked" or "logged" to track what action was taken
+        """
+        try:
+            client = await self.get_http_client()
+            response = await client.post(
+                self.aegis_url,
+                json={
+                    "text": text,
+                    "llm_response": is_llm_response,
+                    "metadata": {"source": "openclaw-proxy", "store": store, "scan_type": scan_type, "action_taken": action_taken}
+                }
+            )
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"[proxy] Aegis returned {response.status_code}")
+                return {"is_threat": False}
+        except Exception as e:
+            print(f"[proxy] Aegis error: {e}")
+            return {"is_threat": False}
+
+    async def handle_client(self, client_ws):
+        """Handle a client connection by proxying to OpenClaw."""
+        client_addr = client_ws.remote_address
+        print(f"[proxy] Client connected: {client_addr}")
+
+        openclaw_ws = None
+        tasks = []
+
+        try:
+            # Connect to OpenClaw with timeout
+            try:
+                openclaw_ws = await asyncio.wait_for(
+                    websockets.connect(self.openclaw_url),
+                    timeout=10.0
+                )
+                # Reset failure counter on successful connection
+                self._connection_failures = 0
+                print(f"[proxy] Connected to OpenClaw: {self.openclaw_url}")
+            except asyncio.TimeoutError:
+                self._connection_failures += 1
+                print(f"[proxy] Timeout connecting to OpenClaw at {self.openclaw_url} (attempt {self._connection_failures}/{self.MAX_CONNECTION_FAILURES})")
+                await client_ws.close(1011, "OpenClaw connection timeout")
+                self._check_exit_condition()
+                return
+            except Exception as e:
+                self._connection_failures += 1
+                print(f"[proxy] Failed to connect to OpenClaw: {e} (attempt {self._connection_failures}/{self.MAX_CONNECTION_FAILURES})")
+                await client_ws.close(1011, f"OpenClaw connection failed: {e}")
+                self._check_exit_condition()
+                return
+
+            async def client_to_openclaw():
+                """Forward messages from client to OpenClaw after scanning."""
+                try:
+                    async for message in client_ws:
+                        # Validate message size to prevent DoS
+                        if len(message) > self.MAX_MESSAGE_SIZE:
+                            print(f"[proxy] ⚠️ Message too large ({len(message)} bytes), skipping")
+                            continue
+
+                        # Log incoming message
+                        if self.verbose:
+                            print(f"[proxy] → USER->OPENCLAW: {self._truncate(message)}")
+
+                        # Parse message to check if it's a chat/prompt message
+                        text_to_scan = None
+                        try:
+                            data = json.loads(message)
+                            msg_type = data.get("type", "")
+                            method = data.get("method", "")
+                            params = data.get("params", {})
+
+                            # Extract message content from chat/message methods
+                            # Covers: chat.send, agent.chat, sessions.send (agent-to-agent), etc.
+                            scan_methods = (
+                                "chat.send", "chat.message",
+                                "agent.chat", "agent.run", "agent.send", "agent.message",
+                                "agent.delegate", "agent.handoff", "agent.invoke",
+                                "message.send", "message.create",
+                                "sessions.send", "sessions_send", "session.send",  # Agent-to-agent
+                                "task.run", "task.execute",
+                            )
+                            if method in scan_methods or "chat" in method or "message" in method or "send" in method or "sessions" in method:
+                                text_to_scan = (
+                                    params.get("message") or
+                                    params.get("prompt") or
+                                    params.get("content") or
+                                    params.get("text") or
+                                    params.get("input") or
+                                    params.get("query") or
+                                    params.get("task")
+                                )
+                            # Direct text fields (other protocols)
+                            elif msg_type in ("message", "chat", "prompt"):
+                                text_to_scan = (
+                                    data.get("text") or
+                                    data.get("message") or
+                                    data.get("content") or
+                                    data.get("prompt")
+                                )
+
+                            if self.verbose and text_to_scan:
+                                print(f"[proxy] 🔍 Found prompt to scan: {self._truncate(text_to_scan, 50)}")
+
+                        except (json.JSONDecodeError, TypeError):
+                            # Non-JSON message, scan the whole thing if it looks like text
+                            if len(message) > 10 and not message.startswith('{'):
+                                text_to_scan = message
+
+                        # Scan if we found scannable content
+                        if text_to_scan and isinstance(text_to_scan, str) and len(text_to_scan) > 3:
+                            # Track for context-aware output scanning
+                            self._recent_user_inputs.append(text_to_scan)
+                            if len(self._recent_user_inputs) > 20:
+                                self._recent_user_inputs = self._recent_user_inputs[-10:]
+                            self.stats["scanned"] += 1
+                            # Check block mode first to determine action
+                            block_enabled = await self.check_block_mode_enabled()
+                            action = "blocked" if block_enabled else "logged"
+                            result = await self.scan_message(text_to_scan, is_llm_response=False, action_taken=action)
+
+                            if result.get("is_threat"):
+                                threat_type = result.get("threat_type", "unknown")
+                                risk_score = result.get("risk_score", 0)
+                                print(f"[proxy] ⚠️  THREAT DETECTED: {threat_type} (risk: {risk_score})")
+
+                                # Block if enabled
+                                if block_enabled:
+                                    self.stats["blocked"] += 1
+                                    # Try to get original request ID for proper response
+                                    req_id = None
+                                    try:
+                                        req_id = data.get("id")
+                                    except:
+                                        pass
+
+                                    # Send error response in OpenClaw format
+                                    error_response = json.dumps({
+                                        "type": "res",
+                                        "id": req_id,
+                                        "ok": False,
+                                        "error": {
+                                            "code": "BLOCKED_BY_AEGIS",
+                                            "message": f"⚠️ Security Alert: Request blocked by Aegis\n\nThreat Type: {threat_type}\nRisk Score: {risk_score}%\n\nThis message was flagged as potentially malicious and was not sent to the AI."
+                                        }
+                                    })
+                                    await client_ws.send(error_response)
+                                    print(f"[proxy] 🛑 INPUT BLOCKED: {threat_type}")
+                                    continue
+                                else:
+                                    # Threat detected but block mode OFF - log and forward
+                                    self.stats["passed"] += 1
+                                    print(f"[proxy] ⚠️  Threat logged (block mode OFF) - forwarding message")
+                            else:
+                                self.stats["passed"] += 1
+                                print(f"[proxy] ✓ Prompt scanned (total: {self.stats['scanned']})")
+
+                        # Forward to OpenClaw
+                        await openclaw_ws.send(message)
+                except websockets.exceptions.ConnectionClosed:
+                    pass
+
+            async def openclaw_to_client():
+                """Forward messages from OpenClaw to client.
+
+                Output scanning is for LOGGING only (no blocking).
+                Block mode only affects INPUT.
+                Messages are forwarded immediately, scanned at end for threat logging.
+                """
+                accumulated_text = ""
+
+                try:
+                    async for message in openclaw_ws:
+                        if self.verbose:
+                            print(f"[proxy] ← OPENCLAW->USER: {self._truncate(message)}")
+
+                        # Always forward immediately (no output blocking)
+                        await client_ws.send(message)
+
+                        # Extract and accumulate text for logging
+                        if self.scan_outgoing:
+                            try:
+                                data = json.loads(message)
+                                msg_type = data.get("type", "")
+                                event = data.get("event", "")
+
+                                # Extract text from agent events
+                                if msg_type == "event" and event == "agent":
+                                    payload = data.get("payload", {})
+                                    if payload.get("stream") == "assistant":
+                                        payload_data = payload.get("data", {})
+                                        if isinstance(payload_data, dict):
+                                            chunk = payload_data.get("text", "")
+                                            if chunk:
+                                                accumulated_text = chunk
+
+                                # Extract text from chat events
+                                elif msg_type == "event" and event == "chat":
+                                    payload = data.get("payload", {})
+                                    state = payload.get("state", "")
+                                    msg = payload.get("message", {})
+
+                                    if isinstance(msg, dict):
+                                        content = msg.get("content")
+                                        if isinstance(content, str):
+                                            accumulated_text = content
+                                        elif isinstance(content, list):
+                                            for item in content:
+                                                if isinstance(item, dict) and item.get("type") == "text":
+                                                    accumulated_text = item.get("text", "")
+                                                    break
+
+                                    # Scan when response is complete (logging only)
+                                    if state == "final" and accumulated_text and len(accumulated_text) > 20:
+                                        print(f"[proxy] 📤 Scanning output: {len(accumulated_text)} chars")
+                                        asyncio.create_task(self._scan_output(accumulated_text))
+                                        accumulated_text = ""
+
+                            except (json.JSONDecodeError, TypeError) as e:
+                                if self.verbose:
+                                    print(f"[proxy] JSON parse error: {e}")
+
+                except websockets.exceptions.ConnectionClosed:
+                    pass
+                finally:
+                    # Scan any remaining text if connection closes mid-response
+                    if self.scan_outgoing and accumulated_text and len(accumulated_text) > 20:
+                        print(f"[proxy] 📤 Connection closed, scanning remaining {len(accumulated_text)} chars...")
+                        await self._scan_output(accumulated_text)
+
+            # Run both directions concurrently
+            tasks = [
+                asyncio.create_task(client_to_openclaw()),
+                asyncio.create_task(openclaw_to_client())
+            ]
+
+            # Wait for either to complete (one closes = both should stop)
+            _done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+
+            # Cancel pending tasks
+            for task in pending:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+        except websockets.exceptions.ConnectionClosed as e:
+            print(f"[proxy] Connection closed: {e}")
+        except Exception as e:
+            print(f"[proxy] Error: {e}")
+        finally:
+            # Clean up
+            if openclaw_ws:
+                try:
+                    await openclaw_ws.close()
+                except:
+                    pass
+
+            # Cancel any remaining tasks
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+
+            print(f"[proxy] Client disconnected: {client_addr}")
+            print(f"[proxy] Stats - Scanned: {self.stats['scanned']}, Blocked: {self.stats['blocked']}, Passed: {self.stats['passed']}")
+
+    def _check_exit_condition(self):
+        """Check if we should exit due to repeated connection failures."""
+        if self._connection_failures >= self.MAX_CONNECTION_FAILURES:
+            print(f"\n[proxy] ❌ FATAL: Failed to connect to OpenClaw {self.MAX_CONNECTION_FAILURES} times consecutively.")
+            print(f"[proxy] Please start OpenClaw on port {self.openclaw_port}:")
+            print(f"[proxy]     openclaw gateway --port {self.openclaw_port}")
+            print(f"[proxy] Exiting...")
+            self._should_exit = True
+
+    async def run(self):
+        """Start the proxy server."""
+        print(f"""
+╔═══════════════════════════════════════════════════════════════╗
+║                    Aegis Proxy                         ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Proxy listening on:     ws://127.0.0.1:{self.proxy_port:<5}                 ║
+║  Forwarding to:          {self.openclaw_url:<25}        ║
+║  Aegis API:       {self.aegis_url:<25}  ║
+║  Scan outgoing:          {str(self.scan_outgoing):<5}                            ║
+║  Block threats:          {str(self.block_threats):<5}                            ║
+║  Verbose:                {str(self.verbose):<5}                            ║
+╠═══════════════════════════════════════════════════════════════╣
+║  Connect your client to ws://127.0.0.1:{self.proxy_port:<5} instead of      ║
+║  connecting directly to the target.                           ║
+╚═══════════════════════════════════════════════════════════════╝
+""")
+
+        # Suppress websocket handshake errors for non-WS requests
+        import logging
+        logging.getLogger("websockets").setLevel(logging.CRITICAL)
+        logging.getLogger("websockets.server").setLevel(logging.CRITICAL)
+
+        async with websockets.serve(
+            self.handle_client,
+            "127.0.0.1",
+            self.proxy_port,
+            ping_interval=30,
+            ping_timeout=10,
+        ):
+            # Run until exit flag is set
+            while not self._should_exit:
+                await asyncio.sleep(1)
+
+            if self._should_exit:
+                print("[proxy] Shutting down due to connection failures...")
+
+    async def cleanup(self):
+        """Clean up resources."""
+        if self._http_client:
+            await self._http_client.aclose()
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Aegis proxy for OpenClaw - scans all messages for security threats"
+    )
+    parser.add_argument(
+        "--port", "-p",
+        type=int,
+        default=18789,
+        help="Proxy listen port (default: 18789)"
+    )
+    parser.add_argument(
+        "--openclaw-host",
+        type=str,
+        default="127.0.0.1",
+        help="OpenClaw host (default: 127.0.0.1)"
+    )
+    parser.add_argument(
+        "--openclaw-port",
+        type=int,
+        default=18790,
+        help="OpenClaw port (default: 18790)"
+    )
+    parser.add_argument(
+        "--aegis-host",
+        type=str,
+        default="127.0.0.1",
+        help="Aegis host (default: 127.0.0.1)"
+    )
+    parser.add_argument(
+        "--aegis-port",
+        type=int,
+        default=8741,
+        help="Aegis port (default: 8741)"
+    )
+    parser.add_argument(
+        "--no-scan-outgoing",
+        action="store_true",
+        help="Don't scan outgoing messages (LLM responses)"
+    )
+    parser.add_argument(
+        "--no-block",
+        action="store_true",
+        help="Log threats but don't block them"
+    )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Log all messages passing through the proxy"
+    )
+
+    args = parser.parse_args()
+
+    proxy = AegisProxy(
+        proxy_port=args.port,
+        openclaw_host=args.openclaw_host,
+        openclaw_port=args.openclaw_port,
+        aegis_host=args.aegis_host,
+        aegis_port=args.aegis_port,
+        scan_outgoing=not args.no_scan_outgoing,
+        block_threats=not args.no_block,
+        verbose=args.verbose,
+    )
+
+    try:
+        asyncio.run(proxy.run())
+    except KeyboardInterrupt:
+        print("\n[proxy] Shutting down...")
+    finally:
+        asyncio.run(proxy.cleanup())
+
+
+if __name__ == "__main__":
+    main()

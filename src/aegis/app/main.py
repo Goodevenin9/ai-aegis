@@ -1,0 +1,1867 @@
+"""
+Main entry point for the Aegis Local Threat Monitor Desktop Application.
+
+Usage:
+    aegis-app [OPTIONS]
+
+Options:
+    --port PORT       API server port (default: 8741)
+    --host HOST       API server host (default: 127.0.0.1)
+    --web             Run in web browser mode (no desktop window)
+    --proxy           Start LLM proxy for any app
+    --openclaw        Enable OpenClaw integration (auto-patches pi-ai)
+    --proxy-port PORT Proxy listen port (default: 8742)
+    --provider NAME   LLM provider: openai, anthropic, ollama, groq, etc.
+    --mode MODE       Proxy mode: analyze (log only) or block (stop threats)
+    --revert-proxy    Undo OpenClaw setup (restore original files)
+    --debug           Enable debug logging
+    --version         Show version and exit
+
+Examples:
+    # Any app (LangChain, CrewAI, custom apps)
+    aegis-app --proxy --provider ollama --web
+
+    # OpenClaw users (one command, auto-patches pi-ai)
+    aegis-app --proxy --provider openai --web --openclaw
+"""
+
+import argparse
+import logging
+import os
+import sys
+import threading
+import time
+import webbrowser
+from pathlib import Path
+
+# Ensure stdout/stderr never crash on Unicode characters (✓ etc.) on any platform.
+# Strategy: try reconfigure first; fall back to wrapping the raw buffer; ignore all errors.
+import io as _io
+for _stream_name in ("stdout", "stderr"):
+    try:
+        getattr(sys, _stream_name).reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        try:
+            _buf = getattr(getattr(sys, _stream_name), "buffer", None)
+            if _buf is not None:
+                setattr(sys, _stream_name, _io.TextIOWrapper(_buf, encoding="utf-8", errors="replace"))
+        except Exception:
+            pass
+
+from aegis.app import (
+    __app_name__,
+    __version__,
+    check_app_dependencies,
+    AppDependencyError,
+)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+
+def print_logo():
+    """Print the Aegis ASCII art logo."""
+    logo = r"""
+╔═══════════════════════════════════════════════════════════════════╗
+║                                                                   ║
+║   ███████╗ ███████╗  ██████╗ ██╗   ██╗ ██████╗  ███████╗          ║
+║   ██╔════╝ ██╔════╝ ██╔════╝ ██║   ██║ ██╔══██╗ ██╔════╝          ║
+║   ███████╗ █████╗   ██║      ██║   ██║ ██████╔╝ █████╗            ║
+║   ╚════██║ ██╔══╝   ██║      ██║   ██║ ██╔══██╗ ██╔══╝            ║
+║   ███████║ ███████╗ ╚██████╗ ╚██████╔╝ ██║  ██║ ███████╗          ║
+║   ╚══════╝ ╚══════╝  ╚═════╝  ╚═════╝  ╚═╝  ╚═╝ ╚══════╝          ║
+║                                                                   ║
+║      ██╗   ██╗ ███████╗  ██████╗ ████████╗  ██████╗  ██████╗      ║
+║      ██║   ██║ ██╔════╝ ██╔════╝ ╚══██╔══╝ ██╔═══██╗ ██╔══██╗     ║
+║      ██║   ██║ █████╗   ██║         ██║    ██║   ██║ ██████╔╝     ║
+║      ╚██╗ ██╔╝ ██╔══╝   ██║         ██║    ██║   ██║ ██╔══██╗     ║
+║       ╚████╔╝  ███████╗ ╚██████╗    ██║    ╚██████╔╝ ██║  ██║     ║
+║        ╚═══╝   ╚══════╝  ╚═════╝    ╚═╝     ╚═════╝  ╚═╝  ╚═╝     ║
+║                                                                   ║
+║              Security & Observability for AI Agents               ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+"""
+    print(logo)
+
+
+def get_assets_path() -> Path:
+    """Get the path to the assets directory."""
+    return Path(__file__).parent / "assets"
+
+
+def start_server(host: str, port: int, ready_event: threading.Event) -> None:
+    """Start the FastAPI server in a background thread."""
+    import uvicorn
+    from aegis.app.server.app import create_app
+
+    app = create_app(host=host, port=port)
+
+    # Signal that we're about to start
+    def signal_ready():
+        time.sleep(0.5)  # Give uvicorn a moment to bind
+        ready_event.set()
+
+    threading.Thread(target=signal_ready, daemon=True).start()
+
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level="warning",
+        access_log=False,
+        # Cap graceful drain at 1s. Default is ~5s+, which made Cmd+Q
+        # / SIGINT shutdown feel hung. Aegis has no long-lived
+        # in-flight requests worth waiting on — the SIEM forwarder ships
+        # via background workers, scans complete in ms.
+        timeout_graceful_shutdown=1,
+    )
+
+
+def run_desktop(host: str, port: int, debug: bool) -> None:
+    """Run the application with a native desktop window."""
+    import os
+    import webview
+
+    assets_path = get_assets_path()
+    loading_html = assets_path / "web" / "loading.html"
+    favicon_path = assets_path / "favicon.ico"
+
+    # Start with loading screen
+    window = webview.create_window(
+        title="Aegis",
+        url=str(loading_html) if loading_html.exists() else f"http://{host}:{port}",
+        width=1200,
+        height=800,
+        min_size=(800, 600),
+        text_select=True,
+    )
+
+    # Start server in background
+    server_ready = threading.Event()
+    server_thread = threading.Thread(
+        target=start_server,
+        args=(host, port, server_ready),
+        daemon=True,
+    )
+    server_thread.start()
+
+    def on_loaded():
+        """Called when webview is ready."""
+        # Wait for server to be ready
+        server_ready.wait(timeout=10)
+        time.sleep(0.3)  # Extra buffer for server startup
+
+        # Navigate to the main app
+        window.load_url(f"http://{host}:{port}")
+
+    def on_closing():
+        # macOS hang on Cmd+Q / window-close: pywebview's Cocoa run loop
+        # waits for the daemon uvicorn thread to drain, but uvicorn's
+        # event loop holds long-lived connections (SSE/keepalive) and
+        # never returns. Short-circuit with os._exit so the process dies
+        # immediately when the window closes — there is no per-process
+        # state to flush (DB writes are committed inline; logs are best-
+        # effort).
+        os._exit(0)
+
+    window.events.closing += on_closing
+
+    # Start webview (blocking). When it returns, the window is gone
+    # and we must hard-exit; daemon-thread cleanup is unreliable on macOS.
+    webview.start(on_loaded, debug=debug)
+    os._exit(0)
+
+
+def run_web(host: str, port: int) -> None:
+    """Run in web-only mode (no desktop window)."""
+    import uvicorn
+    from aegis.app.server.app import create_app
+
+    print_logo()
+    print(f"  Aegis Local Threat Monitor v{__version__}")
+    print(f"  ─────────────────────────────────────────")
+    print(f"  Web UI:  http://{host}:{port}")
+    print(f"  API:     http://{host}:{port}/docs")
+    try:
+        from aegis.app.utils.config_file import get_config_path
+        _cfg_path = get_config_path()
+        print(f"  Config:  {_cfg_path}")
+        if not _cfg_path.exists():
+            print(f"           (will be created on first run)")
+    except Exception:
+        pass
+    print(f"\n  Press Ctrl+C to stop\n")
+
+    url = f"http://{host}:{port}"
+
+    def _open_browser():
+        time.sleep(1.2)  # Wait for uvicorn to bind
+        webbrowser.open(url)
+
+    threading.Thread(target=_open_browser, daemon=True).start()
+
+    app = create_app(host=host, port=port)
+    # Cap graceful drain so Ctrl+C feels responsive — see start_server() above.
+    uvicorn.run(app, host=host, port=port, log_level="info", timeout_graceful_shutdown=1)
+
+
+def run_llm_proxy(provider: str, proxy_port: int, aegis_port: int, verbose: bool = False, mode: str = "analyze", multi: bool = False, openclaw: bool = False, proxy_host: str = "127.0.0.1") -> None:
+    """Run LLM proxy only (no web server)."""
+    try:
+        from aegis.integrations.openclaw_llm_proxy import LLMProxy, MultiProviderProxy
+        import uvicorn
+    except ImportError:
+        print("Error: Missing dependencies. Install with: pip install httpx fastapi uvicorn")
+        sys.exit(1)
+
+    block_threats = (mode == "block")
+
+    print_logo()
+
+    # When started via `aegis-app --proxy --openclaw`, stamp every
+    # audit row with runtime_kind="openclaw". Otherwise fall back to None →
+    # the proxy defaults to "proxy" (renders as "Proxy (unattributed)").
+    integration_name = "openclaw" if openclaw else None
+
+    if multi:
+        # Multi-provider mode with path-based routing
+        proxy = MultiProviderProxy(
+            aegis_url=f"http://127.0.0.1:{aegis_port}",
+            block_threats=block_threats,
+            verbose=verbose,
+            integration=integration_name,
+        )
+
+        print(f"  Aegis Multi-Provider LLM Proxy v{__version__}")
+        print(f"  ─────────────────────────────────────────")
+        print(f"  Proxy:      http://{proxy_host}:{proxy_port}")
+        print(f"  Reports to: http://127.0.0.1:{aegis_port}")
+        print(f"  Mode:       {'BLOCK' if block_threats else 'ANALYZE'}")
+        print(f"\n  Multi-provider routing enabled!")
+        print(f"  Use path-based URLs:")
+        print(f"    http://{proxy_host}:{proxy_port}/openai/v1")
+        print(f"    http://{proxy_host}:{proxy_port}/anthropic")
+        print(f"    http://{proxy_host}:{proxy_port}/ollama/v1")
+        print(f"\n  Press Ctrl+C to stop\n")
+    else:
+        # Single provider mode
+        target_url = LLMProxy.PROVIDERS.get(provider, "https://api.openai.com")
+
+        proxy = LLMProxy(
+            target_url=target_url,
+            aegis_url=f"http://127.0.0.1:{aegis_port}",
+            block_threats=block_threats,
+            verbose=verbose,
+            provider=provider,
+            integration=integration_name,
+        )
+
+        print(f"  Aegis LLM Proxy v{__version__}")
+        print(f"  ─────────────────────────────────────────")
+        print(f"  Proxy:      http://{proxy_host}:{proxy_port}")
+        print(f"  Reports to: http://127.0.0.1:{aegis_port}")
+        print(f"  Provider:   {provider} → {target_url}")
+        print(f"  Mode:       {'BLOCK' if block_threats else 'ANALYZE'}")
+        print(f"\n  Start OpenClaw with:")
+        print(f"    OPENAI_BASE_URL=http://{proxy_host}:{proxy_port} openclaw gateway")
+        print(f"\n  Press Ctrl+C to stop\n")
+
+    app = proxy.create_app()
+    try:
+        uvicorn.run(app, host=proxy_host, port=proxy_port, log_level="warning" if not verbose else "info")
+    except KeyboardInterrupt:
+        print("\n[llm-proxy] Shutting down...")
+    finally:
+        # Revert pi-ai files if --openclaw was used
+        if openclaw:
+            if multi:
+                print(f"\n  Reverting all provider proxy patches...")
+                for provider_name in _PROVIDER_PATCH_MAP.keys():
+                    revert_provider_proxy(provider_name, quiet=True)
+                print("  ✓ All proxy patches reverted")
+            else:
+                print(f"\n  Reverting {provider} proxy patches...")
+                revert_provider_proxy(provider, quiet=False)
+                print("  ✓ Proxy patches reverted")
+
+        # Always show reminder for OpenClaw users
+        print("\n  ════════════════════════════════════════════════════════════")
+        print("  If using OpenClaw with Aegis, remember to remove")
+        print("  the proxy patches when done:")
+        print("    aegis-app --revert-proxy")
+        print("  Or use 'Remove Aegis Proxy' button in the Proxy page.")
+        print("  ════════════════════════════════════════════════════════════\n")
+
+
+def run_web_with_proxy(host: str, port: int, platform: str, proxy_port: int, target_port: int, verbose: bool = False, mode: str = "analyze") -> None:
+    """Run web server and proxy together."""
+    import asyncio
+    import uvicorn
+    from aegis.app.server.app import create_app
+
+    block_threats = (mode == "block")
+    mode_label = "BLOCK" if block_threats else "ANALYZE"
+
+    try:
+        from aegis.integrations.openclaw_proxy import AegisProxy
+    except ImportError:
+        print("Error: Missing dependencies. Install with: pip install websockets httpx")
+        sys.exit(1)
+
+    print_logo()
+    print(f"  Aegis Local Threat Monitor v{__version__}")
+    print(f"  ─────────────────────────────────────────")
+    print(f"  Web UI:     http://{host}:{port}")
+    print(f"  API:        http://{host}:{port}/docs")
+    print(f"  Proxy:      ws://127.0.0.1:{proxy_port} → OpenClaw ({target_port})")
+    print(f"  Mode:       {mode_label} {'(threats will be blocked)' if block_threats else '(threats logged only)'}")
+    if verbose:
+        print(f"  Verbose:    ON (logging all messages)")
+    print(f"\n  Press Ctrl+C to stop\n")
+
+    app = create_app(host=host, port=port)
+
+    # Run both uvicorn and proxy
+    async def run_both():
+        proxy = AegisProxy(
+            proxy_port=proxy_port,
+            openclaw_host="127.0.0.1",
+            openclaw_port=target_port,
+            aegis_host="127.0.0.1",
+            aegis_port=port,
+            verbose=verbose,
+            block_threats=block_threats,
+        )
+
+        config = uvicorn.Config(app, host=host, port=port, log_level="warning")
+        server = uvicorn.Server(config)
+
+        await asyncio.gather(
+            server.serve(),
+            proxy.run(),
+        )
+
+    try:
+        asyncio.run(run_both())
+    except KeyboardInterrupt:
+        print("\n  Shutting down...")
+
+
+def run_web_with_llm_proxy(host: str, port: int, provider: str, proxy_port: int, verbose: bool = False, mode: str = "analyze", multi: bool = False, openclaw: bool = False, proxy_host: str = "127.0.0.1") -> None:
+    """Run web server and LLM proxy together."""
+    import asyncio
+    import uvicorn
+    from aegis.app.server.app import create_app
+    from aegis.app.server.routes.proxy import set_proxy_running_in_process, set_openclaw_mode
+
+    # Track if started with --openclaw for cleanup on stop
+    set_openclaw_mode(openclaw)
+
+    try:
+        from aegis.integrations.openclaw_llm_proxy import LLMProxy, MultiProviderProxy
+    except ImportError:
+        print("Error: Missing dependencies. Install with: pip install httpx fastapi uvicorn")
+        sys.exit(1)
+
+    block_threats = (mode == "block")
+
+    print_logo()
+    print(f"  Aegis Local Threat Monitor v{__version__}")
+    print(f"  ─────────────────────────────────────────")
+    print(f"  Web UI:     http://{host}:{port}")
+    print(f"  API:        http://{host}:{port}/docs")
+
+    if multi:
+        print(f"  LLM Proxy:  http://{proxy_host}:{proxy_port} (multi-provider)")
+        print(f"  Mode:       {'BLOCK' if block_threats else 'ANALYZE'}")
+        if verbose:
+            print(f"  Verbose:    ON")
+        print(f"\n  Multi-provider routing enabled!")
+        print(f"  Configure your apps with:")
+        print(f"    OpenAI:    base_url=\"http://{proxy_host}:{proxy_port}/openai/v1\"")
+        print(f"    Anthropic: base_url=\"http://{proxy_host}:{proxy_port}/anthropic\"")
+        print(f"    Ollama:    base_url=\"http://{proxy_host}:{proxy_port}/ollama/v1\"")
+        print(f"    Groq:      base_url=\"http://{proxy_host}:{proxy_port}/groq/v1\"")
+
+        # Compute once and reuse for both the proxy constructor and the
+        # `set_proxy_running_in_process` registry call.
+        integration_name = "openclaw" if openclaw else None
+
+        proxy = MultiProviderProxy(
+            aegis_url=f"http://127.0.0.1:{port}",
+            block_threats=block_threats,
+            verbose=verbose,
+            integration=integration_name,
+        )
+        # Signal multi-provider mode
+        set_proxy_running_in_process(True, "multi", integration=integration_name)
+    else:
+        target_url = LLMProxy.PROVIDERS.get(provider, "https://api.openai.com")
+        print(f"  LLM Proxy:  http://{proxy_host}:{proxy_port} → {provider}")
+        print(f"  Mode:       {'BLOCK' if block_threats else 'ANALYZE'}")
+        if verbose:
+            print(f"  Verbose:    ON")
+        print(f"\n  Configure your app with:")
+        print(f"    OPENAI_BASE_URL=http://{proxy_host}:{proxy_port}/v1 python your_app.py")
+
+        integration_name = "openclaw" if openclaw else None
+
+        proxy = LLMProxy(
+            target_url=target_url,
+            aegis_url=f"http://127.0.0.1:{port}",
+            block_threats=block_threats,
+            verbose=verbose,
+            provider=provider,
+            integration=integration_name,
+        )
+        set_proxy_running_in_process(True, provider, integration=integration_name)
+
+    print(f"\n  Press Ctrl+C to stop\n")
+
+    web_app = create_app(host=host, port=port)
+    proxy_app = proxy.create_app()
+
+    async def run_both():
+        web_config = uvicorn.Config(web_app, host=host, port=port, log_level="warning")
+        web_server = uvicorn.Server(web_config)
+
+        proxy_config = uvicorn.Config(proxy_app, host=proxy_host, port=proxy_port, log_level="warning" if not verbose else "info")
+        proxy_server = uvicorn.Server(proxy_config)
+
+        await asyncio.gather(
+            web_server.serve(),
+            proxy_server.serve(),
+        )
+
+    try:
+        asyncio.run(run_both())
+    except KeyboardInterrupt:
+        print("\n  Shutting down...")
+    finally:
+        set_proxy_running_in_process(False)
+        # Revert pi-ai files if --openclaw was used
+        if openclaw:
+            if multi:
+                print(f"\n  Reverting all provider proxy patches...")
+                for provider_name in _PROVIDER_PATCH_MAP.keys():
+                    revert_provider_proxy(provider_name, quiet=True)
+                print("  ✓ All proxy patches reverted")
+            else:
+                print(f"\n  Reverting {provider} proxy patches...")
+                revert_provider_proxy(provider, quiet=False)
+                print("  ✓ Proxy patches reverted")
+
+        # Always show reminder for OpenClaw users
+        print("\n  ════════════════════════════════════════════════════════════")
+        print("  If using OpenClaw with Aegis, remember to remove")
+        print("  the proxy patches when done:")
+        print("    aegis-app --revert-proxy")
+        print("  Or use 'Remove Aegis Proxy' button in the Proxy page.")
+        print("  ════════════════════════════════════════════════════════════\n")
+
+
+def _find_pi_ai_path() -> str:
+    """Find the pi-ai installation path. Returns path or exits with error."""
+    import subprocess
+
+    search_paths = []
+
+    # Method 1: npm root -g
+    try:
+        result = subprocess.run(
+            ["npm", "root", "-g"],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0:
+            npm_global = result.stdout.strip()
+            search_paths.append(os.path.join(npm_global, "openclaw", "node_modules", "@mariozechner", "pi-ai"))
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    # Method 2: which/where openclaw -> trace back
+    try:
+        # Use 'where' on Windows, 'which' on Unix
+        which_cmd = "where" if sys.platform == "win32" else "which"
+        result = subprocess.run(
+            [which_cmd, "openclaw"],
+            capture_output=True, text=True, timeout=10, shell=(sys.platform == "win32")
+        )
+        if result.returncode == 0:
+            # On Windows, 'where' returns multiple lines; take the first
+            openclaw_bin = result.stdout.strip().split('\n')[0].strip()
+            openclaw_real = os.path.realpath(openclaw_bin)
+            parts = openclaw_real.split(os.sep)
+            for i, part in enumerate(parts):
+                if part == "openclaw" and i > 0 and parts[i - 1] == "node_modules":
+                    base = os.sep.join(parts[:i + 1])
+                    search_paths.append(os.path.join(base, "node_modules", "@mariozechner", "pi-ai"))
+                    break
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    # Method 3: Common paths (Windows npm global, Unix nvm)
+    home = os.path.expanduser("~")
+
+    # Windows: %APPDATA%\npm\node_modules
+    if sys.platform == "win32":
+        appdata = os.getenv("APPDATA")
+        if appdata:
+            search_paths.append(os.path.join(appdata, "npm", "node_modules", "openclaw", "node_modules", "@mariozechner", "pi-ai"))
+
+    # Unix: nvm paths
+    nvm_base = os.path.join(home, ".nvm", "versions", "node")
+    if os.path.isdir(nvm_base):
+        for node_ver in os.listdir(nvm_base):
+            search_paths.append(os.path.join(
+                nvm_base, node_ver, "lib", "node_modules", "openclaw",
+                "node_modules", "@mariozechner", "pi-ai"
+            ))
+
+    # Deduplicate and check
+    seen = set()
+    for path in search_paths:
+        path = os.path.normpath(path)
+        if path in seen:
+            continue
+        seen.add(path)
+        if os.path.isdir(path):
+            return path
+
+    print("  ✗ Could not find pi-ai installation.")
+    print()
+    print("  Make sure OpenClaw is installed globally:")
+    print("    npm install -g openclaw")
+    sys.exit(1)
+
+
+def _secure_path_join(base_path: str, relative_path: str) -> str:
+    """Securely join paths, preventing path traversal attacks.
+
+    Args:
+        base_path: The base directory (must be absolute)
+        relative_path: The relative path to join (e.g., "dist/providers/openai.js")
+
+    Returns:
+        The joined absolute path
+
+    Raises:
+        ValueError: If the resulting path escapes the base directory
+    """
+    # Normalize paths
+    base_path = os.path.abspath(base_path)
+    # Join and resolve to absolute path
+    joined = os.path.abspath(os.path.join(base_path, relative_path))
+
+    # Security check: ensure the result is within base_path
+    if not joined.startswith(base_path + os.sep) and joined != base_path:
+        raise ValueError(f"Path traversal detected: {relative_path} escapes {base_path}")
+
+    return joined
+
+
+# Provider → which pi-ai files to patch
+_PROVIDER_PATCH_MAP = {
+    # All OpenAI-compatible providers go through these 2 files
+    "openai": ["dist/providers/openai-completions.js", "dist/providers/openai-responses.js"],
+    "groq": ["dist/providers/openai-completions.js", "dist/providers/openai-responses.js"],
+    "cerebras": ["dist/providers/openai-completions.js", "dist/providers/openai-responses.js"],
+    "mistral": ["dist/providers/openai-completions.js", "dist/providers/openai-responses.js"],
+    "xai": ["dist/providers/openai-completions.js", "dist/providers/openai-responses.js"],
+    "deepseek": ["dist/providers/openai-completions.js", "dist/providers/openai-responses.js"],
+    "together": ["dist/providers/openai-completions.js", "dist/providers/openai-responses.js"],
+    "cohere": ["dist/providers/openai-completions.js", "dist/providers/openai-responses.js"],
+    "moonshot": ["dist/providers/openai-completions.js", "dist/providers/openai-responses.js"],
+    "minimax": ["dist/providers/openai-completions.js", "dist/providers/openai-responses.js"],
+    # Anthropic has its own file
+    "anthropic": ["dist/providers/anthropic.js"],
+    # Google has 2 files
+    "gemini": ["dist/providers/google.js", "dist/providers/google-gemini-cli.js"],
+}
+
+# All patchable files
+_ALL_PATCH_FILES = [
+    "dist/providers/openai-completions.js",
+    "dist/providers/openai-responses.js",
+    "dist/providers/anthropic.js",
+    "dist/providers/google.js",
+    "dist/providers/google-gemini-cli.js",
+]
+
+# All patches keyed by file
+_ALL_PATCHES = [
+    {
+        "file": "dist/providers/openai-completions.js",
+        "search": "baseURL: model.baseUrl,",
+        "replace": "baseURL: process.env.OPENAI_BASE_URL || model.baseUrl,",
+        "desc": "openai-completions.js (OPENAI_BASE_URL)",
+    },
+    {
+        "file": "dist/providers/openai-responses.js",
+        "search": "baseURL: model.baseUrl,",
+        "replace": "baseURL: process.env.OPENAI_BASE_URL || model.baseUrl,",
+        "desc": "openai-responses.js  (OPENAI_BASE_URL)",
+    },
+    {
+        "file": "dist/providers/anthropic.js",
+        "search": "baseURL: model.baseUrl,",
+        "replace": "baseURL: process.env.ANTHROPIC_BASE_URL || model.baseUrl,",
+        "desc": "anthropic.js         (ANTHROPIC_BASE_URL)",
+    },
+    {
+        "file": "dist/providers/google.js",
+        "search": "if (model.baseUrl) {",
+        "replace": "const _gBaseUrl = process.env.GOOGLE_GENAI_BASE_URL || model.baseUrl;\n    if (_gBaseUrl) {",
+        "desc": "google.js            (GOOGLE_GENAI_BASE_URL)",
+    },
+    {
+        "file": "dist/providers/google.js",
+        "search": "httpOptions.baseUrl = model.baseUrl;",
+        "replace": "httpOptions.baseUrl = _gBaseUrl;",
+        "desc": "google.js            (baseUrl assignment)",
+    },
+    {
+        "file": "dist/providers/google-gemini-cli.js",
+        "search": "const baseUrl = model.baseUrl?.trim();",
+        "replace": "const baseUrl = (process.env.GOOGLE_GENAI_BASE_URL || model.baseUrl)?.trim();",
+        "desc": "google-gemini-cli.js (GOOGLE_GENAI_BASE_URL)",
+    },
+]
+
+# Provider → env var name
+_PROVIDER_ENV_VAR = {
+    "openai": "OPENAI_BASE_URL",
+    "anthropic": "ANTHROPIC_BASE_URL",
+    "gemini": "GOOGLE_GENAI_BASE_URL",
+}
+
+# Provider → basePath suffix
+_PROVIDER_BASE_PATH = {
+    "openai": "/v1",
+    "anthropic": "",
+    "gemini": "/v1beta",
+}
+
+
+def _check_provider_files_exist(provider: str) -> bool:
+    """Check if pi-ai files for this provider exist.
+
+    Returns True if files exist, False otherwise (with error message).
+    """
+    target_files = _PROVIDER_PATCH_MAP.get(provider, _PROVIDER_PATCH_MAP["openai"])
+    target_files = list(dict.fromkeys(target_files))
+
+    try:
+        pi_ai_path = _find_pi_ai_path()
+    except SystemExit:
+        # pi-ai not found - error already printed
+        return False
+
+    missing_files = []
+    for rel_path in target_files:
+        try:
+            filepath = _secure_path_join(pi_ai_path, rel_path)
+            if not os.path.isfile(filepath):
+                missing_files.append(rel_path)
+        except ValueError:
+            missing_files.append(rel_path)
+
+    if missing_files:
+        print()
+        print(f"  ERROR: Cannot use --openclaw with provider '{provider}'")
+        print(f"  ═══════════════════════════════════════════════════════")
+        print()
+        print(f"  Required pi-ai files not found:")
+        for f in missing_files:
+            print(f"    - {os.path.basename(f)}")
+        print()
+        print(f"  This provider is not supported at this moment.")
+        print(f"  The pi-ai library may have been updated or is missing these files.")
+        print()
+        print(f"  Try without --openclaw flag:")
+        print(f"    aegis-app --proxy --provider {provider} --web")
+        print()
+        return False
+
+    return True
+
+
+def setup_proxy(provider: str = "openai") -> None:
+    """One-time setup: patch OpenClaw's pi-ai library for a specific provider."""
+    import shutil
+
+    # Resolve provider to patch files
+    if provider in _PROVIDER_PATCH_MAP:
+        target_files = _PROVIDER_PATCH_MAP[provider]
+        provider_label = provider
+    else:
+        # Unknown provider — assume OpenAI-compatible
+        target_files = _PROVIDER_PATCH_MAP["openai"]
+        provider_label = f"{provider} (OpenAI-compatible)"
+
+    # Deduplicate
+    target_files = list(dict.fromkeys(target_files))
+
+    # Determine env var for next steps
+    env_var = _PROVIDER_ENV_VAR.get(provider, "OPENAI_BASE_URL")
+    base_path = _PROVIDER_BASE_PATH.get(provider, "/v1")
+
+    print()
+    print("  Aegis Proxy Setup")
+    print("  ════════════════════════════════════════════════════════════")
+    print()
+    print("  WHY THIS IS NEEDED:")
+    print("  OpenClaw uses the @mariozechner/pi-ai library which hardcodes")
+    print("  LLM API URLs in its source, bypassing env var overrides.")
+    print("  This patch restores env var support so traffic routes through")
+    print("  the Aegis proxy for threat scanning.")
+    print()
+    print(f"  PROVIDER: {provider_label}")
+    print(f"  FILES TO PATCH: {len(target_files)}")
+    for f in target_files:
+        print(f"    - {os.path.basename(f)}")
+    print()
+    print("  ════════════════════════════════════════════════════════════")
+    print()
+
+    # --- Find pi-ai installation ---
+    print("  [1/3] Searching for pi-ai installation...")
+    pi_ai_path = _find_pi_ai_path()
+    print(f"  ✓ Found pi-ai at: {pi_ai_path}")
+    print()
+
+    # --- Filter patches to only the target files ---
+    patches = [p for p in _ALL_PATCHES if p["file"] in target_files]
+
+    # --- Apply patches ---
+    print("  [2/3] Applying patches...")
+
+    patched = 0
+    skipped = 0
+    failed = 0
+
+    for patch in patches:
+        # Security: Use secure path join to prevent path traversal
+        try:
+            filepath = _secure_path_join(pi_ai_path, patch["file"])
+        except ValueError as e:
+            print(f"    ✗ Security error: {e}")
+            failed += 1
+            continue
+
+        if not os.path.isfile(filepath):
+            print(f"    ✗ Not found: {patch['desc']}")
+            failed += 1
+            continue
+
+        with open(filepath, "r") as f:
+            content = f.read()
+
+        if patch["replace"] in content:
+            print(f"    ○ Already patched: {patch['desc']}")
+            skipped += 1
+            continue
+
+        if patch["search"] not in content:
+            print(f"    ✗ Pattern not found: {patch['desc']} (pi-ai version may have changed)")
+            failed += 1
+            continue
+
+        # Create backup
+        backup_path = filepath + ".aegis.bak"
+        if not os.path.exists(backup_path):
+            shutil.copy2(filepath, backup_path)
+
+        # Apply patch
+        new_content = content.replace(patch["search"], patch["replace"])
+        with open(filepath, "w") as f:
+            f.write(new_content)
+
+        print(f"    ✓ Patched: {patch['desc']}")
+        patched += 1
+
+    print()
+
+    # --- Summary ---
+    print("  [3/3] Summary")
+    print(f"    Patched: {patched}  Skipped (already done): {skipped}  Failed: {failed}")
+    print()
+
+    if failed > 0:
+        print("  ⚠ Some patches failed. The proxy may not work.")
+        print("  Try updating OpenClaw and running --setup-proxy again.")
+        print()
+
+    if patched > 0 or skipped > 0:
+        print("  ✓ Setup complete! Proxy routing is now supported.")
+        print()
+        print("  NEXT STEPS:")
+        print(f"    1. Start Aegis proxy:")
+        print(f"         aegis-app --proxy --provider {provider}")
+        print()
+        print(f"    2. Start OpenClaw with proxy routing:")
+        print(f"         {env_var}=http://localhost:{os.environ.get('SV_PROXY_PORT', '8742')}{base_path} openclaw gateway")
+        print()
+        print(f"  NOTE: Re-run after updating OpenClaw (npm update -g openclaw)")
+        print()
+        print(f"  To undo: aegis-app --revert-proxy --provider {provider}")
+    print()
+
+
+def _auto_setup_proxy_if_needed(provider: str) -> None:
+    """Check if proxy is already set up for this provider, auto-run setup if not."""
+    target_files = _PROVIDER_PATCH_MAP.get(provider, _PROVIDER_PATCH_MAP["openai"])
+    patches = [p for p in _ALL_PATCHES if p["file"] in target_files]
+
+    try:
+        pi_ai_path = _find_pi_ai_path()
+    except SystemExit:
+        # pi-ai not found, skip auto-setup
+        return
+
+    needs_setup = False
+    for patch in patches:
+        # Security: Use secure path join to prevent path traversal
+        try:
+            filepath = _secure_path_join(pi_ai_path, patch["file"])
+        except ValueError:
+            continue
+
+        if not os.path.isfile(filepath):
+            continue
+        with open(filepath, "r") as f:
+            content = f.read()
+        if patch["replace"] not in content and patch["search"] in content:
+            needs_setup = True
+            break
+
+    if needs_setup:
+        print(f"[proxy] Auto-running setup for {provider} (first time)...")
+        print()
+        setup_proxy(provider=provider)
+
+
+def _auto_setup_proxy_multi() -> None:
+    """Auto-patch all provider files for multi-provider proxy mode."""
+    all_files = set()
+    for files in _PROVIDER_PATCH_MAP.values():
+        all_files.update(files)
+    patches_to_apply = [p for p in _ALL_PATCHES if p["file"] in all_files]
+
+    try:
+        pi_ai_path = _find_pi_ai_path()
+    except SystemExit:
+        return
+
+    import shutil
+    for patch in patches_to_apply:
+        try:
+            filepath = _secure_path_join(pi_ai_path, patch["file"])
+        except ValueError:
+            continue
+        if not os.path.isfile(filepath):
+            continue
+        with open(filepath, "r") as f:
+            content = f.read()
+        if patch["replace"] in content:
+            continue
+        if patch["search"] not in content:
+            continue
+        backup_path = filepath + ".aegis.bak"
+        if not os.path.exists(backup_path):
+            shutil.copy2(filepath, backup_path)
+        new_content = content.replace(patch["search"], patch["replace"])
+        with open(filepath, "w") as f:
+            f.write(new_content)
+        logger.info(f"[proxy] Auto-patched: {patch['desc']}")
+
+
+def revert_proxy() -> None:
+    """Revert proxy setup: restore ALL pi-ai files from backups."""
+    import shutil
+
+    print()
+    print("  Aegis Proxy Revert")
+    print("  ════════════════════════════════════════════════════════════")
+    print()
+    print(f"  FILES TO CHECK: {len(_ALL_PATCH_FILES)}")
+    print("  ════════════════════════════════════════════════════════════")
+    print()
+
+    # --- Restore all pi-ai files ---
+    print("  Restoring pi-ai files...")
+    pi_ai_path = _find_pi_ai_path()
+    print(f"  Found pi-ai at: {pi_ai_path}")
+    print()
+
+    restored = 0
+    no_backup = 0
+    errors = 0
+
+    for rel_path in _ALL_PATCH_FILES:
+        # Security: Use secure path join to prevent path traversal
+        try:
+            filepath = _secure_path_join(pi_ai_path, rel_path)
+        except ValueError as e:
+            print(f"    ✗ Security error: {e}")
+            errors += 1
+            continue
+
+        backup_path = filepath + ".aegis.bak"
+        filename = os.path.basename(rel_path)
+
+        if not os.path.isfile(backup_path):
+            print(f"    ○ No backup: {filename}")
+            no_backup += 1
+            continue
+
+        shutil.copy2(backup_path, filepath)
+        os.remove(backup_path)
+        print(f"    ✓ Restored: {filename}")
+        restored += 1
+
+    print()
+
+    # --- Summary ---
+    print(f"  Files restored: {restored}")
+    print()
+
+    if restored > 0:
+        print("  ✓ Revert complete. OpenClaw is back to its original state.")
+        print("    API keys and environment variables were not modified.")
+    else:
+        print("  Nothing to revert. Everything was already clean.")
+    print()
+
+
+def revert_provider_proxy(provider: str, quiet: bool = False) -> None:
+    """Revert proxy setup for a specific provider only.
+
+    Called automatically when stopping a proxy that was started with --openclaw.
+    """
+    import shutil
+
+    # Get files for this provider
+    target_files = _PROVIDER_PATCH_MAP.get(provider, _PROVIDER_PATCH_MAP["openai"])
+    target_files = list(dict.fromkeys(target_files))  # Dedupe
+
+    try:
+        pi_ai_path = _find_pi_ai_path()
+    except SystemExit:
+        # pi-ai not found, nothing to revert
+        return
+
+    restored = 0
+    missing_files = []
+    for rel_path in target_files:
+        try:
+            filepath = _secure_path_join(pi_ai_path, rel_path)
+        except ValueError:
+            missing_files.append(rel_path)
+            continue
+
+        if not os.path.isfile(filepath):
+            missing_files.append(rel_path)
+            continue
+
+        backup_path = filepath + ".aegis.bak"
+        if not os.path.isfile(backup_path):
+            continue
+
+        shutil.copy2(backup_path, filepath)
+        os.remove(backup_path)
+        restored += 1
+
+    if missing_files and not quiet:
+        print(f"\n  [proxy] WARNING: Some pi-ai files not found for {provider}")
+        print(f"          pi-ai may have been updated. Run:")
+        print(f"            aegis-app --revert-proxy")
+        print(f"          Then start proxy again with --openclaw to re-patch.")
+    elif restored > 0 and not quiet:
+        print(f"\n  [proxy] Reverted pi-ai files for {provider} ({restored} file{'s' if restored > 1 else ''})")
+
+
+def _handle_scan_skill() -> None:
+    """Handle the `aegis-app scan-skill` subcommand."""
+    import asyncio
+
+    sub = argparse.ArgumentParser(
+        prog="aegis-app scan-skill",
+        description="Scan an OpenClaw skill directory for security risks before installing.",
+    )
+    sub.add_argument("path", help="Path to the skill directory to scan")
+    sub.add_argument(
+        "--output",
+        choices=["text", "json"],
+        default="text",
+        help="Output format: human-readable text (default) or machine-readable JSON",
+    )
+    sub.add_argument(
+        "--fail-on",
+        choices=["low", "medium", "high"],
+        default="medium",
+        dest="fail_on",
+        help="Exit with code 1 if risk level is at or above this threshold (default: medium)",
+    )
+
+    args = sub.parse_args(sys.argv[2:])
+
+    async def _run():
+        from aegis.app.database.connection import DatabaseConnection
+        from aegis.app.database.migrations import init_database_schema
+        from aegis.app.database.repositories.skill_scans import (
+            SkillScansRepository,
+            ScanRecord,
+        )
+        from aegis.app.services.skill_scanner import SkillScannerService
+
+        db = DatabaseConnection()
+        await db.connect()
+        await init_database_schema(db)
+
+        scanner = SkillScannerService(db)
+        result = await scanner.scan(args.path, invocation_source="cli")
+
+        # Persist the scan record
+        repo = SkillScansRepository(db)
+        record = ScanRecord(
+            id=result.id,
+            scanned_path=result.scanned_path,
+            skill_name=result.skill_name,
+            scan_timestamp=result.scan_timestamp,
+            invocation_source="cli",
+            risk_level=result.risk_level,
+            findings_count=result.findings_count,
+            findings_json=result.findings_json_str(),
+            manifest_present=1 if result.manifest_present else 0,
+        )
+        try:
+            await repo.insert_scan(record)
+        except Exception as exc:
+            logging.getLogger(__name__).warning(f"Could not persist scan record: {exc}")
+
+        return result
+
+    try:
+        result = asyncio.run(_run())
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(2)
+    except Exception as exc:
+        print(f"Scan failed: {exc}", file=sys.stderr)
+        sys.exit(2)
+
+    if args.output == "json":
+        import json as _json
+        output = {
+            "id": result.id,
+            "scanned_path": result.scanned_path,
+            "skill_name": result.skill_name,
+            "scan_timestamp": result.scan_timestamp,
+            "invocation_source": "cli",
+            "risk_level": result.risk_level,
+            "findings_count": result.findings_count,
+            "manifest_present": result.manifest_present,
+            "findings": [f.to_dict() for f in result.findings],
+        }
+        print(_json.dumps(output, indent=2))
+    else:
+        if result.risk_level == "HIGH":
+            banner = "\u26a0\ufe0f  RISK: HIGH"
+            recommendation = "Recommendation: DO NOT INSTALL"
+        elif result.risk_level == "MEDIUM":
+            banner = "\u26a1 RISK: MEDIUM"
+            recommendation = "Recommendation: REVIEW CAREFULLY \u2014 inspect all findings before installing"
+        else:
+            banner = "\u2705 RISK: LOW"
+            recommendation = "Recommendation: SAFE TO INSTALL"
+
+        print(f"\n{banner}")
+        print(f"Skill: {result.skill_name}  ({result.scanned_path})")
+        print(f"Scanned: {result.scan_timestamp}")
+
+        if result.findings:
+            print(f"\nFindings ({result.findings_count}):")
+            for f in result.findings:
+                loc = (
+                    f"{f.file_path}:{f.line_number}"
+                    if f.line_number
+                    else f.file_path or "(manifest)"
+                )
+                print(f"  \u2022 [{f.severity.upper()}] {f.category}  {loc}")
+                if f.excerpt:
+                    print(f"    {f.excerpt[:120]}")
+        else:
+            print("\nNo suspicious patterns detected.")
+
+        print(f"\n{recommendation}\n")
+
+    # Exit code logic (T030)
+    risk_order = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
+    threshold_map = {"low": 0, "medium": 1, "high": 2}
+    if risk_order[result.risk_level] >= threshold_map[args.fail_on]:
+        sys.exit(1)
+    sys.exit(0)
+
+
+# Five-bullet enrollment disclosure (#114). Module-level so the wording can
+# be imported + asserted by a unit test without spawning a process. Each
+# bullet is anchored to a real, auditable code path.
+ENROLLMENT_DISCLOSURE_BULLETS = [
+    "Enrolling installs managed policies. Your org's signed tool-permission "
+    + "bundle is synced down and enforced on this device (see the MCP Policies page).",
+    "Opt-in audit forwarding may be enabled. If your admin opted in, this "
+    + "device forwards agent/tool audit + lifecycle events and local rule-detection "
+    + "verdicts to their destinations.",
+    "What's forwarded is metadata only. Tool ids, decisions, detection verdicts + "
+    + "severities + threat-type labels, device + app version, timestamps — never your "
+    + "prompt text, model output, tool arguments, or the text a rule matched.",
+    "Destinations come from your enrollment response. They are NOT hardcoded; "
+    + "they arrive from your enrollment authority and are badged 'managed' locally.",
+    "You can inspect everything, any time. Run `sv inspect-uplink` or open the "
+    + "Cloud Activity page to see exactly what flows in and out.",
+]
+
+
+def _confirm_enrollment_disclosure(auto_yes: bool = False) -> bool:
+    """Print the five-bullet enrollment disclosure and prompt for consent.
+
+    Returns True to proceed, False to abort. The prompt defaults to NO —
+    only a literal ``y`` / ``Y`` proceeds. ``auto_yes`` (from ``--yes``)
+    skips the interactive prompt for non-interactive / CI use, but the
+    disclosure block is ALWAYS printed regardless. There is no silent
+    auto-yes path.
+    """
+    print()
+    print("=" * 68)
+    print("  Aegis device enrollment — what this does")
+    print("=" * 68)
+    for i, bullet in enumerate(ENROLLMENT_DISCLOSURE_BULLETS, start=1):
+        print(f"  {i}. {bullet}")
+    print("=" * 68)
+
+    if auto_yes:
+        print("Proceeding (--yes).")
+        return True
+
+    try:
+        answer = input("Continue? [y/N] ").strip()
+    except (EOFError, KeyboardInterrupt):
+        # No TTY / Ctrl-C — treat as a decline. Never assume consent.
+        print()
+        return False
+    return answer in ("y", "Y")
+
+
+def _handle_inspect_uplink() -> None:
+    """Handle the `aegis-app inspect-uplink` subcommand (#113).
+
+    Terminal-first parallel to the Cloud Activity page: prints the same
+    enrollment status + inbound (synced policies) + outbound (forwarding)
+    summary that the web page renders, by reusing the aggregated
+    ``/api/v1/cloud-activity`` route handler in-process.
+
+    Exit codes:
+      0 — printed successfully (enrolled or not)
+      2 — unexpected error
+    """
+    import argparse as _argparse
+    import asyncio
+
+    sub = _argparse.ArgumentParser(
+        prog="aegis-app inspect-uplink",
+        description="Show what flows in and out of this enrolled device.",
+    )
+    sub.parse_args(sys.argv[2:])
+
+    try:
+        from aegis.app.server.routes.device_admin import cloud_activity
+
+        snap = asyncio.run(cloud_activity())
+    except Exception as exc:  # noqa: BLE001
+        print(f"inspect-uplink failed: {exc}", file=sys.stderr)
+        sys.exit(2)
+
+    if not snap.enrolled:
+        print("This device is NOT enrolled — nothing flows to or from the cloud.")
+        print("Enroll with: aegis-app enroll <svet_token>")
+        sys.exit(0)
+
+    e = snap.enrollment
+    print("=" * 60)
+    print("  Cloud Activity — uplink inspection")
+    print("=" * 60)
+    print("Enrollment")
+    print(f"  Organization : {e.org_name or e.org_id or '—'}")
+    groups = ", ".join(e.group_memberships) if e.group_memberships else "—"
+    print(f"  Group(s)     : {groups}")
+    print(f"  Managed by   : {e.admin_email or '—'}")
+    print(f"  User         : {e.user_email or '—'}")
+    print(f"  Device ID    : {e.device_id or '—'}")
+    print(f"  Connection   : {e.connection_state}")
+    print(f"  Last sync    : {e.last_sync_at or '—'} ({e.last_sync_status or 'n/a'})")
+
+    inb = snap.inbound
+    print("\nInbound · synced policies  (cloud -> device)")
+    if not inb.any_active:
+        print("  No policy bundle applied yet (≤60s after enrollment).")
+    else:
+        ver = f"v{inb.bundle_version}" if inb.bundle_version is not None else "—"
+        print(f"  Bundle       : {ver}  ({inb.policy_count} policies, {inb.rule_count} rules)")
+        print(f"  Verification : {inb.verification_status}")
+        print(f"  Signing key  : {inb.signing_key_fingerprint or 'not captured'}")
+        print(f"  Last applied : {inb.last_applied_at or '—'}")
+        for r in inb.rules[:20]:
+            reason = f"  — {r.reason}" if r.reason else ""
+            print(f"    [{r.effect}] {r.tool_id} (priority {r.priority}){reason}")
+
+    out = snap.outbound
+    print("\nOutbound · forwarding  (device -> destinations)")
+    print("  Metadata only — never prompt text, output, or tool arguments.")
+    all_dests = list(out.enrollment_destinations) + list(out.user_destinations)
+    if not all_dests:
+        print("  No forwarding destinations configured. Nothing is pushed up.")
+    else:
+        for d in all_dests:
+            tag = "managed" if d.source == "enrollment" else "you added"
+            state = "" if d.enabled else " [disabled]"
+            print(f"    [{tag}]{state} {d.name}: {d.url}  (sent {d.events_sent})")
+    print("\n  OCSF event types emitted:")
+    for ev in out.event_types:
+        print(f"    {ev.event_code}  (class {ev.class_uid} {ev.class_name})")
+
+    print("=" * 60)
+    sys.exit(0)
+
+
+def _handle_enroll() -> None:
+    """Handle the `aegis-app enroll <token>` subcommand.
+
+    Redeems an `svet_*` enrollment token against the Aegis cloud, persists
+    org-binding credentials + Supabase JWT + policy bundle signing key to disk,
+    then exits cleanly. The next launch of `aegis-app` (no args) will
+    detect the enrolled credentials and start the cloud-sync loop.
+
+    Exit codes:
+      0 — enrollment succeeded
+      1 — token rejected (401), device-id collision (409), or other expected failure
+      2 — argument error / unexpected exception
+    """
+    import asyncio
+
+    sub = argparse.ArgumentParser(
+        prog="aegis-app enroll",
+        description="Enroll this device against a Aegis organization.",
+    )
+    sub.add_argument(
+        "token",
+        nargs="?",
+        help="The svet_<...> enrollment token (or set AEGIS_ENROLL_TOKEN)",
+    )
+    sub.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Skip the interactive disclosure confirmation (for non-interactive / CI use).",
+    )
+    args = sub.parse_args(sys.argv[2:])
+
+    token = args.token or os.environ.get("AEGIS_ENROLL_TOKEN")
+    if not token:
+        print(
+            "Error: enrollment token required. Pass as argument or set "
+            "AEGIS_ENROLL_TOKEN.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    if not token.startswith("svet_"):
+        print(
+            "Error: enrollment tokens must start with `svet_`. "
+            "Personal API keys (`svpk_*` or legacy) use Cloud Connect in the UI, not enroll.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    # ---- Enrollment disclosure (#114) ----
+    # Make the contract truthful and in-your-face BEFORE anything changes on
+    # disk. Each bullet maps to a real code path the user can audit:
+    #   1. managed policies  -> services/cloud_sync + MCP Policies page
+    #   2. opt-in forwarding  -> services/device_lifecycle.register_enrollment_destinations
+    #   3. metadata-only      -> services/device_lifecycle.encode_lifecycle_event (raw_data=None)
+    #   4. admin destinations -> enrollment response `forwarder_destinations`
+    #   5. inspectability     -> `sv inspect-uplink` / Cloud Activity page
+    if not _confirm_enrollment_disclosure(auto_yes=args.yes):
+        print("Enrollment cancelled. No changes were made.")
+        sys.exit(0)
+
+    from aegis.app.services.enrollment import EnrollmentError, enroll
+
+    try:
+        result = asyncio.run(enroll(token))
+    except EnrollmentError as exc:
+        print(f"Enrollment failed: {exc} (code: {exc.code})", file=sys.stderr)
+        if exc.code == "device_id_collision":
+            print(
+                "  → Cloned VM detected. Run `POST /api/system/device-id/reset` "
+                "via the local app or curl, then retry enrollment with a fresh token.",
+                file=sys.stderr,
+            )
+        sys.exit(1)
+    except Exception as exc:  # noqa: BLE001
+        print(f"Enrollment failed: {exc}", file=sys.stderr)
+        sys.exit(2)
+
+    print(f"Enrolled as {result.user_email} ({result.org_name})")
+    if result.admin_email:
+        print(f"  Managed by: {result.admin_email}")
+    if result.group_memberships:
+        print(f"  Groups: {', '.join(result.group_memberships)}")
+    print("\nRun `aegis-app` to launch the local app — it will start the cloud-sync loop automatically.")
+    sys.exit(0)
+
+
+def _handle_plugin_command(args) -> None:
+    """Dispatch --install-plugin / --uninstall-plugin to the same async
+    handler the POST /api/hooks/<agent>/{install,uninstall} routes use.
+
+    Runs the handler in a fresh event loop and prints the response as
+    pretty JSON. Exit code is 0 on ok, 1 on failure.
+    """
+    import asyncio
+    import json
+
+    if args.install_plugin:
+        name, action = args.install_plugin, "install"
+    else:
+        name, action = args.uninstall_plugin, "uninstall"
+
+    if name == "claude-code":
+        from aegis.app.server.routes import hooks_claude_code as mod
+        handler = mod.install_plugin if action == "install" else mod.uninstall_plugin
+        result = asyncio.run(handler())
+    elif name == "openclaw":
+        from aegis.app.server.routes import hooks as mod
+        if action == "install":
+            # OpenClaw's install_plugin accepts an Optional[InstallRequest];
+            # None matches the route's default ("install with bundled config").
+            result = asyncio.run(mod.install_plugin(None))
+        else:
+            result = asyncio.run(mod.uninstall_plugin())
+    elif name == "codex":
+        from aegis.app.server.routes import hooks_codex as mod
+        handler = mod.install_plugin if action == "install" else mod.uninstall_plugin
+        result = asyncio.run(handler())
+    elif name == "copilot-cli":
+        from aegis.app.server.routes import hooks_copilot_cli as mod
+        handler = mod.install_plugin if action == "install" else mod.uninstall_plugin
+        result = asyncio.run(handler())
+    elif name == "cursor":
+        from aegis.app.server.routes import hooks_cursor as mod
+        handler = mod.install_plugin if action == "install" else mod.uninstall_plugin
+        result = asyncio.run(handler())
+    else:
+        print(f"Unknown plugin: {name}. Supported: claude-code, openclaw, codex, copilot-cli, cursor.", file=sys.stderr)
+        sys.exit(1)
+
+    # Response models are Pydantic — serialise consistently.
+    if hasattr(result, "model_dump"):
+        data = result.model_dump()
+    elif hasattr(result, "dict"):
+        data = result.dict()
+    elif isinstance(result, dict):
+        data = result
+    else:
+        data = {"result": str(result)}
+    print(json.dumps(data, indent=2, default=str))
+
+    # Plugin handlers return ok-shaped responses. Surface failure as exit 1.
+    ok = data.get("ok") if isinstance(data, dict) else None
+
+    # After a successful Claude Code install, surface the OPTIONAL status
+    # line. It is not wired automatically (it lives in the user's global
+    # ~/.claude/settings.json `statusLine`, which we never overwrite — a
+    # user may already have one). The JSON above is machine-shaped; this
+    # block tells a human exactly how to turn it on. Codex / OpenClaw have
+    # their own status surfaces, so this is Claude-Code-only.
+    if (
+        name == "claude-code"
+        and action == "install"
+        and isinstance(data, dict)
+        and data.get("ok") is not False
+    ):
+        # Prefer the staging path — it is version-stable, so the command
+        # the user pastes survives version bumps (the cache path is
+        # versioned, e.g. aegis-guard/4.5.0, and would break on
+        # upgrade). Fall back to the versioned cache path if staging is
+        # somehow absent.
+        sl_dir = data.get("staging_dir") or data.get("claude_install_path")
+        if sl_dir:
+            statusline_cmd = f'node "{sl_dir}/hooks/statusline.js"'
+            print()
+            print("─" * 64)
+            print("📊 Optional: add the Aegis status line to Claude Code")
+            print("   Shows live threat + tool-call counts in your status bar.")
+            print("   Add this to ~/.claude/settings.json (top level):")
+            print()
+            print('     "statusLine": {')
+            print('       "type": "command",')
+            print(f'       "command": {json.dumps(statusline_cmd)},')
+            print('       "refreshInterval": 5')
+            print("     }")
+            print()
+            print("   Already have a statusLine? Call statusline.js from your")
+            print("   own script instead — or skip it; the plugin works fully")
+            print("   without the status line.")
+            print("─" * 64)
+
+    sys.exit(0 if ok is None or ok is True else 1)
+
+
+def main() -> None:
+    """Main entry point."""
+    # Guardian ML runtime: installers (PyInstaller) bundle the model weights at
+    # models/guardian.runtime.json.gz inside the frozen tree (sys._MEIPASS). Point
+    # svguardian at it so the local ML layer works fully offline from first launch
+    # — no GitHub fetch, survives air-gapped machines. This only sets WHERE the
+    # weights are; whether Guardian actually runs is still gated by the Settings
+    # toggle (guardian_ml_enabled, default ON) and AEGIS_ML_ENABLED. An
+    # explicit SV_GUARDIAN_RUNTIME (air-gapped override) always wins.
+    if getattr(sys, "frozen", False) and not os.environ.get("SV_GUARDIAN_RUNTIME"):
+        _bundled_runtime = os.path.join(
+            getattr(sys, "_MEIPASS", os.path.dirname(sys.executable)),
+            "models",
+            "guardian.runtime.json.gz",
+        )
+        if os.path.exists(_bundled_runtime):
+            os.environ["SV_GUARDIAN_RUNTIME"] = _bundled_runtime
+
+    # Dispatch enroll subcommand before the main parser runs
+    if len(sys.argv) > 1 and sys.argv[1] == "enroll":
+        _handle_enroll()
+        return
+
+    # Dispatch scan-skill subcommand before the main parser runs
+    if len(sys.argv) > 1 and sys.argv[1] == "scan-skill":
+        _handle_scan_skill()
+        return
+
+    # Dispatch inspect-uplink subcommand (#113) before the main parser runs
+    if len(sys.argv) > 1 and sys.argv[1] == "inspect-uplink":
+        _handle_inspect_uplink()
+        return
+
+    parser = argparse.ArgumentParser(
+        description="Aegis Local Threat Monitor Desktop Application",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  Single provider (Ollama):
+    aegis-app --proxy --provider ollama --web
+    Then set: OPENAI_BASE_URL=http://localhost:8742/ollama/v1  (proxy port = --port + 1)
+
+  Multiple providers (use different LLMs simultaneously):
+    aegis-app --proxy --multi --web
+    Then set: OPENAI_BASE_URL=http://localhost:8742/openai/v1
+              ANTHROPIC_BASE_URL=http://localhost:8742/anthropic
+    (Use --port 8800 to run on 8800/8801 instead of 8741/8742)
+
+  OpenClaw integration:
+    aegis-app --proxy --provider anthropic --web --openclaw
+    Then run: ANTHROPIC_BASE_URL=http://localhost:8742/anthropic openclaw gateway
+
+  Revert OpenClaw patches:
+    aegis-app --revert-proxy
+""",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8741,
+        help="API server port (default: 8741)",
+    )
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="127.0.0.1",
+        help="API server host (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--web",
+        action="store_true",
+        help="Open browser UI instead of desktop window",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging",
+    )
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        help="Show version and exit",
+    )
+    parser.add_argument(
+        "--proxy",
+        action="store_true",
+        help="Start LLM proxy server. Use with --provider (single) or --multi (multiple LLMs)",
+    )
+    parser.add_argument(
+        "--openclaw",
+        action="store_true",
+        help="Auto-patch pi-ai provider files for OpenClaw/Clawdbot integration",
+    )
+    parser.add_argument(
+        "--multi",
+        action="store_true",
+        help="Multi-provider mode: route to multiple LLMs via path (/openai/v1, /anthropic, /ollama/v1)",
+    )
+    parser.add_argument(
+        "--proxy-port",
+        type=int,
+        default=None,
+        help="LLM proxy listen port (default: app port + 1, i.e. 8742 when using default port 8741)",
+    )
+    parser.add_argument(
+        "--provider",
+        type=str,
+        choices=["openai", "anthropic", "groq", "cerebras", "mistral", "xai", "gemini", "moonshot", "minimax", "deepseek", "together", "cohere"],
+        default="openai",
+        help="Single LLM provider to proxy. Ignored if --multi is set",
+    )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Log all messages passing through proxy",
+    )
+    parser.add_argument(
+        "--mode",
+        type=str,
+        choices=["analyze", "block"],
+        default="analyze",
+        help="analyze: log threats only (default), block: stop threats",
+    )
+    parser.add_argument(
+        "--setup-proxy",
+        action="store_true",
+        help="One-time setup: patch OpenClaw pi-ai files for proxy routing",
+    )
+    parser.add_argument(
+        "--revert-proxy",
+        action="store_true",
+        help="Restore original OpenClaw pi-ai files (undo --openclaw patches)",
+    )
+    parser.add_argument(
+        "--install-plugin",
+        type=str,
+        choices=["claude-code", "openclaw", "codex", "copilot-cli", "cursor"],
+        metavar="NAME",
+        help="Install a Aegis Guard plugin (claude-code, openclaw, codex, copilot-cli, or cursor) and exit",
+    )
+    parser.add_argument(
+        "--uninstall-plugin",
+        type=str,
+        choices=["claude-code", "openclaw", "codex", "copilot-cli", "cursor"],
+        metavar="NAME",
+        help="Uninstall a Aegis Guard plugin (claude-code, openclaw, codex, copilot-cli, or cursor) and exit",
+    )
+
+    args = parser.parse_args()
+
+    # Plugin install / uninstall short-circuit. Runs the same handler the
+    # POST /api/hooks/<agent>/{install,uninstall} routes invoke, prints
+    # the response as JSON, exits. Doesn't need the web server running —
+    # the handlers touch only the file system and Claude Code's config
+    # files.
+    if args.install_plugin or args.uninstall_plugin:
+        _handle_plugin_command(args)
+        return
+
+    # If --port / --host were not explicitly passed, prefer values from svconfig.yml
+    explicit_args = {a.lstrip("-").replace("-", "_") for a in sys.argv[1:] if a.startswith("-")}
+    if "port" not in explicit_args or "host" not in explicit_args:
+        try:
+            from aegis.app.utils.config_file import get_server_defaults
+            cfg_host, cfg_port = get_server_defaults()
+            if "port" not in explicit_args:
+                args.port = cfg_port
+            if "host" not in explicit_args:
+                args.host = cfg_host
+        except Exception:
+            pass  # Fall back to argparse defaults
+
+    # Read proxy defaults from config (host, port, mode, integration)
+    _proxy_host_cfg = "127.0.0.1"
+    _proxy_port_cfg: "int | None" = None
+    _config_wants_proxy = False
+    _proxy_mode_cfg = "multi-provider"
+    _proxy_integration_cfg = "openclaw"
+    try:
+        from aegis.app.utils.config_file import get_proxy_defaults, load_config as _load_cfg, VALID_PROXY_MODES
+        _proxy_host_cfg, _proxy_port_cfg = get_proxy_defaults()
+        _cfg_data = _load_cfg()
+        _proxy_cfg_data = _cfg_data.get("proxy", {})
+        _proxy_mode_cfg = _proxy_cfg_data.get("mode", "")
+        _proxy_integration_cfg = _proxy_cfg_data.get("integration", "openclaw")
+        _config_wants_proxy = _proxy_mode_cfg in VALID_PROXY_MODES
+
+        # OpenClaw/ClawdBot: plugin handles monitoring; proxy needed only
+        # when block_mode is enabled for active threat/tool blocking.
+        if _config_wants_proxy and _proxy_integration_cfg in ("openclaw", "clawdbot"):
+            _security_cfg = _cfg_data.get("security", {})
+            _block_mode = bool(_security_cfg.get("block_mode", False))
+            if not _block_mode:
+                _config_wants_proxy = False
+    except Exception:
+        pass
+
+    # Auto-compute proxy port: CLI > config file > (server port + 1)
+    if args.proxy_port is None:
+        if _proxy_port_cfg is not None:
+            args.proxy_port = _proxy_port_cfg
+        else:
+            args.proxy_port = args.port + 1
+
+    # Expose ports to the FastAPI process via env vars so proxy routes use the right ports
+    os.environ['SV_PROXY_PORT'] = str(args.proxy_port)
+    os.environ['SV_WEB_PORT'] = str(args.port)
+
+    if args.version:
+        print(f"Aegis Local Threat Monitor v{__version__}")
+        sys.exit(0)
+
+    if args.setup_proxy:
+        setup_proxy(provider=args.provider or "openai")
+        return
+
+    if args.revert_proxy:
+        revert_proxy()
+        return
+
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+        logger.debug("Debug mode enabled")
+
+    # Proxy mode - starts LLM proxy (works with any app)
+    if args.proxy:
+        # If --openclaw flag, auto-patch pi-ai files
+        if args.openclaw:
+            if args.multi:
+                # Multi-provider mode: patch all unique files (not per-provider to avoid duplicates)
+                print("[proxy] Multi-provider mode: patching all provider files...")
+                print(f"[proxy] Providers to patch: {', '.join(_PROVIDER_PATCH_MAP.keys())}")
+
+                # Collect all unique files across all providers
+                all_files = set()
+                for files in _PROVIDER_PATCH_MAP.values():
+                    all_files.update(files)
+
+                # Get patches for all unique files
+                patches_to_apply = [p for p in _ALL_PATCHES if p["file"] in all_files]
+
+                # Apply patches once per unique file
+                try:
+                    pi_ai_path = _find_pi_ai_path()
+                    import shutil
+
+                    for patch in patches_to_apply:
+                        try:
+                            filepath = _secure_path_join(pi_ai_path, patch["file"])
+                        except ValueError:
+                            continue
+
+                        if not os.path.isfile(filepath):
+                            continue
+
+                        with open(filepath, "r") as f:
+                            content = f.read()
+
+                        # Only patch if needed (not already patched)
+                        if patch["replace"] in content:
+                            print(f"  ✓ Already patched: {patch['desc']}")
+                            continue
+
+                        if patch["search"] not in content:
+                            print(f"  ⚠ Pattern not found: {patch['desc']}")
+                            continue
+
+                        # Create backup
+                        backup_path = filepath + ".aegis.bak"
+                        if not os.path.exists(backup_path):
+                            shutil.copy2(filepath, backup_path)
+
+                        # Apply patch
+                        new_content = content.replace(patch["search"], patch["replace"])
+                        with open(filepath, "w") as f:
+                            f.write(new_content)
+                        print(f"  ✓ Patched: {patch['desc']}")
+
+                except SystemExit:
+                    print("  ✗ Could not find pi-ai installation.")
+                    return
+            else:
+                # Single-provider mode: patch only specified provider
+                if not _check_provider_files_exist(args.provider):
+                    return
+                _auto_setup_proxy_if_needed(args.provider)
+
+        if args.web:
+            # Run both web server and LLM proxy together
+            run_web_with_llm_proxy(args.host, args.port, args.provider, args.proxy_port, args.verbose, args.mode, args.multi, args.openclaw, proxy_host=_proxy_host_cfg)
+            return
+        else:
+            # Run LLM proxy only
+            run_llm_proxy(args.provider, args.proxy_port, args.port, args.verbose, args.mode, args.multi, args.openclaw, proxy_host=_proxy_host_cfg)
+            return
+
+    # Pre-flight port check. The Web UI binds `args.port` and the proxy binds
+    # `args.proxy_port` (default = port + 1). A double-clicked .app can't pass
+    # --port, and a stderr "port busy" line is invisible to a GUI user — so a
+    # busy default port used to make the app SILENTLY fail to open. Instead:
+    #   - port NOT set explicitly on the CLI  -> AUTO-FALLBACK to the next free
+    #     (server, proxy) pair, so the app "just works" on a clean nearby port.
+    #   - port set explicitly (--port)        -> respect it and error loudly if
+    #     busy (the user may have pointed agents/integrations at that exact port;
+    #     silently moving it would break them).
+    import socket as _sock
+
+    def _port_free(_p: int) -> bool:
+        if _p > 65534:
+            return False
+        try:
+            with _sock.socket(_sock.AF_INET, _sock.SOCK_STREAM) as _s:
+                _s.settimeout(0.2)
+                return _s.connect_ex(("127.0.0.1", _p)) != 0
+        except Exception:
+            return True  # can't probe -> assume free, let the real bind decide
+
+    _proxy_offset = args.proxy_port - args.port   # preserve the server↔proxy gap
+    _keep_offset = _proxy_offset >= 1
+
+    def _pair_free(_server: int) -> bool:
+        # Both the server port AND its proxy (server + offset) must be free.
+        _proxy = (_server + _proxy_offset) if _keep_offset else args.proxy_port
+        return _port_free(_server) and _port_free(_proxy)
+
+    def _aegis_on(_p: int) -> bool:
+        # True iff the occupant of this port is Aegis itself, detected by
+        # its /health response shape (works across app versions — no new marker
+        # field required, so an already-running OLDER build is still recognised).
+        try:
+            import json as _json
+            import urllib.request as _url
+            with _url.urlopen(f"http://127.0.0.1:{_p}/health", timeout=0.8) as _r:
+                if getattr(_r, "status", 200) != 200:
+                    return False
+                _data = _json.loads(_r.read(4096).decode("utf-8", "replace"))
+            return isinstance(_data, dict) and (
+                "rules_loaded" in _data or ("database" in _data and "status" in _data)
+            )
+        except Exception:
+            return False
+
+    if not _pair_free(args.port):
+        # If OUR app is already running on the server port, do NOT auto-fallback
+        # and start a SECOND copy on another port — just tell the user it's
+        # already up and surface the existing instance.
+        if _aegis_on(args.port):
+            _url_str = f"http://{args.host}:{args.port}"
+            print(f"\n  ✓  Aegis is already running at {_url_str}")
+            print("     Not starting a second copy. Opening the existing window…\n")
+            try:
+                import webbrowser
+                webbrowser.open(_url_str)
+            except Exception:
+                pass
+            sys.exit(0)
+
+        if "port" in explicit_args:
+            _busy = [p for p in (args.port, args.proxy_port) if not _port_free(p)]
+            print(f"\n  ⚠  Port {' and '.join(map(str, _busy))} already in use.")
+            print("     Start Aegis on a different port:")
+            print("       aegis-app --web --port 8800")
+            print("     (proxy starts automatically on 8801)\n")
+            sys.exit(1)
+
+        # Auto-fallback: scan upward for the next free (server, proxy) pair,
+        # starting 4 ports ABOVE the default so a fallback jumps clear of the
+        # whole 8741-8744 default block to 8745+.
+        _orig_port = args.port
+        _fallback_start = args.port + 4
+        _new_port = next(
+            (c for c in range(_fallback_start, _fallback_start + 100) if _pair_free(c)),
+            None,
+        )
+        if _new_port is None:
+            print(f"\n  ⚠  Couldn't find a free port near {_orig_port}.")
+            print("     Close whatever is using it, or set server.port in svconfig.yml")
+            print(f"     (~/Library/Application Support/Aegis/ThreatMonitor/svconfig.yml).\n")
+            sys.exit(1)
+        args.port = _new_port
+        if _keep_offset:
+            args.proxy_port = _new_port + _proxy_offset
+        print(f"\n  ⚠  Port {_orig_port} was in use — Aegis switched to "
+              f"{args.port} (proxy on {args.proxy_port}).")
+        print(f"     App: http://{args.host}:{args.port}\n")
+
+    # Check dependencies
+    try:
+        check_app_dependencies()
+    except AppDependencyError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Initialize database before starting
+    import asyncio
+    from aegis.app.database.connection import init_database
+    from aegis.app.database.migrations import init_database_schema
+    from aegis.app.utils.platform import ensure_app_directories
+
+    # Ensure directories exist
+    ensure_app_directories()
+
+    # Initialize database
+    db = asyncio.run(init_database())
+    asyncio.run(init_database_schema(db))
+
+    logger.info(f"Starting Aegis on {args.host}:{args.port}")
+
+    # Write runtime state so a separately-started proxy can auto-detect the web app port
+    try:
+        import json, pathlib
+        _sv_home = pathlib.Path.home() / '.aegis'
+        _sv_home.mkdir(exist_ok=True)
+        (_sv_home / 'runtime.json').write_text(
+            json.dumps({"web_port": args.port, "proxy_port": args.proxy_port})
+        )
+    except Exception:
+        pass
+
+    if args.web:
+        if _config_wants_proxy:
+            _is_openclaw = _proxy_integration_cfg in ("openclaw", "clawdbot")
+            # Auto-patch pi-ai files when integration is openclaw and block_mode is on
+            if _is_openclaw:
+                if (_proxy_mode_cfg == "multi-provider"):
+                    _auto_setup_proxy_multi()
+                else:
+                    _auto_setup_proxy_if_needed(_proxy_integration_cfg)
+            run_web_with_llm_proxy(
+                args.host, args.port, _proxy_integration_cfg, args.proxy_port,
+                args.verbose, args.mode,
+                multi=(_proxy_mode_cfg == "multi-provider"),
+                openclaw=_is_openclaw,
+                proxy_host=_proxy_host_cfg,
+            )
+        else:
+            run_web(args.host, args.port)
+    else:
+        run_desktop(args.host, args.port, args.debug)
+
+
+if __name__ == "__main__":
+    main()

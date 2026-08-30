@@ -1,0 +1,328 @@
+"""
+Essential tool permission engine.
+
+Evaluates tool calls against the bundled essential tool registry
+and user overrides to make block/allow/log_only decisions.
+"""
+
+import logging
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
+
+import yaml
+
+logger = logging.getLogger(__name__)
+
+# Risk level to score mapping
+RISK_SCORES = {
+    "read": 20,
+    "write": 50,
+    "delete": 75,
+    "admin": 90,
+}
+
+
+@dataclass
+class RateLimitResult:
+    """Result of checking a tool's rate limit."""
+
+    allowed: bool
+    current_count: int
+    max_calls: int
+    window_seconds: int
+    retry_after_seconds: Optional[int] = None
+
+
+@dataclass
+class PermissionDecision:
+    """Result of evaluating a tool call against the permission registry."""
+
+    tool_name: Optional[str]  # Registry tool ID (e.g. "gmail.send_email")
+    function_name: str  # Actual function name from LLM response
+    action: str  # "block", "allow", or "log_only"
+    risk: Optional[str]  # "read", "write", "delete", "admin"
+    reason: str
+    is_essential: bool
+
+
+def load_essential_registry(yaml_path: Optional[str] = None) -> dict:
+    """Load the essential tool registry from YAML.
+
+    Searches multiple paths to work both in development and installed package.
+
+    Args:
+        yaml_path: Optional explicit path to the YAML file.
+
+    Returns:
+        Dict mapping tool_id -> tool definition dict.
+    """
+    if yaml_path:
+        paths = [Path(yaml_path)]
+    else:
+        paths = [
+            # When installed as package
+            Path(__file__).parent.parent.parent / "rules" / "tool_permissions" / "sv_tool_essential.yml",
+            # Development layout
+            Path(__file__).parent.parent.parent.parent / "rules" / "tool_permissions" / "sv_tool_essential.yml",
+        ]
+
+    for p in paths:
+        if p.exists():
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f)
+
+                registry = {}
+                for tool in data.get("essential_tools", []):
+                    tool_id = tool.get("id")
+                    if tool_id:
+                        registry[tool_id] = tool
+
+                logger.info(f"Loaded {len(registry)} essential tool definitions from {p}")
+                return registry
+            except Exception as e:
+                logger.warning(f"Failed to load essential registry from {p}: {e}")
+
+    logger.warning("Essential tool registry not found")
+    return {}
+
+
+def get_essential_overrides(overrides_list: list[dict]) -> dict:
+    """Convert a list of override records to a lookup dict.
+
+    Args:
+        overrides_list: List of dicts with tool_id and action keys.
+
+    Returns:
+        Dict mapping tool_id -> action string.
+    """
+    return {
+        o["tool_id"]: o["action"]
+        for o in overrides_list
+        if "tool_id" in o and "action" in o
+    }
+
+
+_SYNCED_EFFECT_TO_ACTION = {
+    "allow": "allow",
+    "deny": "block",
+    "prompt": "block",  # engine has no prompt action; default to safer block
+    "log_only": "log_only",
+}
+
+
+def evaluate_tool_call(
+    function_name: str,
+    essential_registry: dict,
+    overrides: Optional[dict] = None,
+    custom_registry: Optional[dict] = None,
+    synced_overrides: Optional[dict] = None,
+) -> PermissionDecision:
+    """Evaluate a single tool call against the essential and custom registries.
+
+    Check order: essential registry -> custom registry -> log_only (pass-through).
+
+    Args:
+        function_name: The tool function name from the LLM response.
+        essential_registry: Dict of essential tool definitions.
+        overrides: Dict mapping tool_id -> action (from user configuration).
+        custom_registry: Dict mapping tool_id -> custom tool definition dict.
+        synced_overrides: Optional dict mapping tool_id -> {"effect", "policy_name",
+            "policy_version", "reason"}. When provided and a synced rule matches
+            the resolved tool_id, the synced effect takes priority over user
+            overrides and the registry default. Default None preserves existing
+            behavior for callers that don't pass this argument.
+
+    Returns:
+        PermissionDecision with the enforcement action.
+    """
+    if overrides is None:
+        overrides = {}
+    if synced_overrides is None:
+        synced_overrides = {}
+
+    # Normalize for case-insensitive matching (LLM tools may use PascalCase e.g. "Read")
+    function_name_lower = function_name.lower()
+
+    # Case-insensitive override view: a rule stored as `read` must resolve
+    # against a tool the registry calls `Read`. Mirrors the synced-rule
+    # case handling below and the agent-runtime oracles (CC / Codex hooks,
+    # OpenClaw plugin). Maps lowercased tool_id -> action string.
+    overrides_ci = {str(k).lower(): v for k, v in overrides.items()}
+
+    # Cloud-pushed synced rules are the highest authority — they take priority
+    # over the essential / custom registry. The cloud admin authored a policy
+    # targeting this tool_id by name; whether the tool happens to be in the
+    # local essential registry is an implementation detail, not a permission
+    # gate. Skipping this check would allow non-registry MCP tools (e.g.
+    # write_File on an arbitrary filesystem MCP server) to bypass a synced
+    # `deny` rule, which silently weakens cloud policy enforcement.
+    #
+    # Case handling: try exact, then lowercase, then a folded view of the
+    # synced map so a cloud-authored `write_File` rule matches an LLM-emitted
+    # `WRITE_FILE`, `write_file`, `writeFile`, etc.
+    synced_match = synced_overrides.get(function_name) or synced_overrides.get(function_name_lower)
+    if synced_match is None:
+        for key, val in synced_overrides.items():
+            if key.lower() == function_name_lower:
+                synced_match = val
+                break
+    if synced_match is not None:
+        effect = (synced_match.get("effect") or "").lower()
+        action = _SYNCED_EFFECT_TO_ACTION.get(effect, "block")
+        policy_name = synced_match.get("policy_name") or synced_match.get("policy_id") or "synced"
+        policy_version = synced_match.get("policy_version")
+        ver_suffix = f" v{policy_version}" if policy_version is not None else ""
+        essential_match = essential_registry.get(function_name) or essential_registry.get(function_name_lower)
+        return PermissionDecision(
+            tool_name=function_name,
+            function_name=function_name,
+            action=action,
+            risk=(essential_match or {}).get("risk"),
+            reason=f"Synced policy '{policy_name}'{ver_suffix}: {effect}",
+            is_essential=essential_match is not None,
+        )
+
+    # Check if function_name matches any essential tool ID exactly
+    matched_tool_id = None
+    if function_name in essential_registry:
+        matched_tool_id = function_name
+    elif function_name_lower in essential_registry:
+        matched_tool_id = function_name_lower
+
+    if matched_tool_id is not None:
+        tool = essential_registry[matched_tool_id]
+        tool_id = matched_tool_id
+
+        # Cloud-pushed synced rule takes priority over user override + default.
+        synced = synced_overrides.get(tool_id)
+        if synced:
+            effect = (synced.get("effect") or "").lower()
+            action = _SYNCED_EFFECT_TO_ACTION.get(effect, "block")
+            policy_name = synced.get("policy_name") or synced.get("policy_id") or "synced"
+            policy_version = synced.get("policy_version")
+            ver_suffix = f" v{policy_version}" if policy_version is not None else ""
+            return PermissionDecision(
+                tool_name=tool_id,
+                function_name=function_name,
+                action=action,
+                risk=tool.get("risk"),
+                reason=f"Synced policy '{policy_name}'{ver_suffix}: {effect}",
+                is_essential=True,
+            )
+
+        # Check for user override first (case-insensitive)
+        if tool_id.lower() in overrides_ci:
+            action = overrides_ci[tool_id.lower()]
+            return PermissionDecision(
+                tool_name=tool_id,
+                function_name=function_name,
+                action=action,
+                risk=tool.get("risk"),
+                reason=f"User override: {action}",
+                is_essential=True,
+            )
+
+        # Use default from registry
+        default_action = tool.get("default_permission", "block")
+        return PermissionDecision(
+            tool_name=tool_id,
+            function_name=function_name,
+            action=default_action,
+            risk=tool.get("risk"),
+            reason=f"Essential tool default: {default_action}",
+            is_essential=True,
+        )
+
+    # Check if function_name matches the last part of a tool ID
+    # e.g. "send_email" might match "gmail.send_email"
+    for tool_id, tool in essential_registry.items():
+        parts = tool_id.split(".")
+        if len(parts) == 2 and (parts[1] == function_name or parts[1] == function_name_lower):
+            # Cloud-pushed synced rule takes priority over user override + default.
+            synced = synced_overrides.get(tool_id)
+            if synced:
+                effect = (synced.get("effect") or "").lower()
+                action = _SYNCED_EFFECT_TO_ACTION.get(effect, "block")
+                policy_name = synced.get("policy_name") or synced.get("policy_id") or "synced"
+                policy_version = synced.get("policy_version")
+                ver_suffix = f" v{policy_version}" if policy_version is not None else ""
+                return PermissionDecision(
+                    tool_name=tool_id,
+                    function_name=function_name,
+                    action=action,
+                    risk=tool.get("risk"),
+                    reason=f"Synced policy '{policy_name}'{ver_suffix}: {effect} (matched {tool_id})",
+                    is_essential=True,
+                )
+
+            # Exact match on the function part (case-insensitive)
+            if tool_id.lower() in overrides_ci:
+                action = overrides_ci[tool_id.lower()]
+                return PermissionDecision(
+                    tool_name=tool_id,
+                    function_name=function_name,
+                    action=action,
+                    risk=tool.get("risk"),
+                    reason=f"User override: {action} (matched {tool_id})",
+                    is_essential=True,
+                )
+
+            default_action = tool.get("default_permission", "block")
+            return PermissionDecision(
+                tool_name=tool_id,
+                function_name=function_name,
+                action=default_action,
+                risk=tool.get("risk"),
+                reason=f"Essential tool default: {default_action} (matched {tool_id})",
+                is_essential=True,
+            )
+
+    # Check custom tools registry
+    if custom_registry and function_name in custom_registry:
+        custom_tool = custom_registry[function_name]
+
+        # Check for user override first (case-insensitive)
+        if function_name_lower in overrides_ci:
+            action = overrides_ci[function_name_lower]
+            return PermissionDecision(
+                tool_name=function_name,
+                function_name=function_name,
+                action=action,
+                risk=custom_tool.get("risk"),
+                reason=f"Custom tool override: {action}",
+                is_essential=False,
+            )
+
+        default_action = custom_tool.get("default_permission", "block")
+        return PermissionDecision(
+            tool_name=function_name,
+            function_name=function_name,
+            action=default_action,
+            risk=custom_tool.get("risk"),
+            reason=f"Custom tool default: {default_action}",
+            is_essential=False,
+        )
+
+    # Not an essential or custom tool — log only, pass through
+    return PermissionDecision(
+        tool_name=None,
+        function_name=function_name,
+        action="log_only",
+        risk=None,
+        reason="Non-essential tool call (logged only)",
+        is_essential=False,
+    )
+
+
+def get_risk_score(risk: Optional[str]) -> int:
+    """Get numeric risk score for a risk level.
+
+    Args:
+        risk: Risk level string.
+
+    Returns:
+        Risk score (0-100).
+    """
+    return RISK_SCORES.get(risk, 0)

@@ -1,0 +1,2091 @@
+/**
+ * Header Component
+ * Displays AI Analysis, Cloud Connect, and status
+ */
+
+const Header = {
+    serverStatus: 'checking',
+    dropdownOpen: false,
+    cloudModeEnabled: false,
+
+    // Agent integration instructions
+    agents: [
+        { id: 'n8n', name: 'n8n' },
+        { id: 'dify', name: 'Dify' },
+        { id: 'crewai', name: 'CrewAI' },
+        { id: 'claude-desktop', name: 'Claude Desktop' },
+        { id: 'openclaw', name: 'OpenClaw' },
+        { id: 'langchain', name: 'LangChain' },
+        { id: 'langgraph', name: 'LangGraph' },
+    ],
+
+    render() {
+        const container = document.getElementById('header');
+        if (!container) return;
+
+        container.textContent = '';
+
+        // Mobile hamburger menu button (hidden on desktop via CSS)
+        const mobileMenuBtn = document.createElement('button');
+        mobileMenuBtn.className = 'mobile-menu-btn';
+        mobileMenuBtn.id = 'mobile-menu-btn';
+        mobileMenuBtn.setAttribute('aria-label', 'Toggle navigation menu');
+        for (let i = 0; i < 3; i++) {
+            const line = document.createElement('span');
+            line.className = 'hamburger-line';
+            mobileMenuBtn.appendChild(line);
+        }
+        mobileMenuBtn.addEventListener('click', () => this.toggleMobileMenu());
+        container.appendChild(mobileMenuBtn);
+
+        // Left side — page title + subtitle stacked vertically
+        const left = document.createElement('div');
+        left.className = 'header-left';
+
+        const titleGroup = document.createElement('div');
+        // min-width: 0 has to repeat on every level of the flex chain — the
+        // header's own `.header-left` rule is not inherited, and one rigid
+        // link is enough to stop the whole side from shrinking.
+        titleGroup.style.cssText = 'display: flex; flex-direction: column; justify-content: center; min-width: 0;';
+
+        const headerTitleEl = document.createElement('div');
+        headerTitleEl.id = 'header-page-title';
+        // nowrap without an overflow rule meant the title set a hard floor on
+        // the header's left side; it now ellipsizes like the subtitle already did.
+        headerTitleEl.style.cssText = 'font-size: 21px; font-weight: 700; color: var(--text-primary); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+        titleGroup.appendChild(headerTitleEl);
+
+        const headerSubtitleEl = document.createElement('div');
+        headerSubtitleEl.id = 'header-page-subtitle';
+        // One line, ellipsized — the pages explain themselves now
+        // (mastheads, "How to read" links), so the subtitle is a scent, not a
+        // paragraph. setPageInfo mirrors the full text into a tooltip.
+        headerSubtitleEl.style.cssText = 'font-size: 13px; color: var(--text-secondary); margin-top: 1px; max-width: 900px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;';
+        titleGroup.appendChild(headerSubtitleEl);
+
+        left.appendChild(titleGroup);
+        container.appendChild(left);
+
+        // Right side - Help, AI Analysis, agent dropdown, cloud mode (rightmost)
+        const right = document.createElement('div');
+        right.className = 'header-right';
+
+        // Guardian ML — moved out of the left nav (IA): it's one global
+        // on/off switch, not a destination, so it lives here as a status
+        // control. Click opens an anchored card with the explainer + toggle.
+        const guardianCtl = this.createGuardianControl();
+        right.appendChild(guardianCtl);
+
+        // NOTE: the theme toggle moved to the foot of the left rail.
+        // The header is for global/frequent state — Guardian ML, Cloud
+        // Connect — and a display preference set once per session did not
+        // earn a slot there. It also cost 40px of the header's right block,
+        // which is the block that was overflowing on a narrowed window.
+        // See Sidebar.createThemeFooter().
+
+        // Guided tour launcher (compass) — opens the step-by-step walkthrough.
+        // The tour ends on the Guide, which is the single docs entry point now
+        // (the old standalone "?" help button was removed to avoid two doors to
+        // the same place).
+        const tourBtn = this.createTourButton();
+        right.appendChild(tourBtn);
+
+        // Connect Agents — always-visible entry to the two integration routes
+        // (Framework SDKs vs plugins). Shown for every persona regardless of
+        // whether they run the local app or a Terraform/self-host engine, so
+        // the path to "point my agents at this" is one click from any page.
+        const connectBtn = this.createConnectAgentsButton();
+        right.appendChild(connectBtn);
+
+        // NOTE: the "AI Analysis" toggle was removed from the header — it is an
+        // OPTIONAL, configure-once setting (reduce false positives via an LLM)
+        // that fully duplicates Settings → "AI Analysis — Optional". The header
+        // is reserved for global/frequent state (Cloud Connect, theme); a
+        // one-time config button there only added clutter and contributed to
+        // the mobile header overflow. Configure it from Settings instead.
+        // (createLLMToggle/showLLMConfigModal are retained for now in case a
+        // deep-link wants the modal, but nothing renders the header button.)
+
+        // Cloud Mode toggle — global cloud connectivity state. Per-feature
+        // status (Policy Sync, etc.) lives on the feature pages, not in the
+        // header — keeps the top bar uncluttered.
+        const cloudToggle = this.createCloudToggle();
+        right.appendChild(cloudToggle);
+
+        // Language toggle — English ⇄ 中文 (i18n.js). Rightmost so it stays
+        // visible on every page regardless of screen width.
+        const langToggle = this.createLanguageToggle();
+        right.appendChild(langToggle);
+
+        container.appendChild(right);
+
+        // Check cloud mode (the AI-Analysis header indicator was removed; its
+        // state now lives on the Settings page).
+        this.checkCloudMode();
+    },
+
+    toggleMobileMenu() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+        const btn = document.getElementById('mobile-menu-btn');
+
+        if (!sidebar) return;
+
+        const isOpen = sidebar.classList.contains('mobile-open');
+
+        if (isOpen) {
+            sidebar.classList.remove('mobile-open');
+            if (overlay) overlay.classList.remove('active');
+            if (btn) btn.classList.remove('active');
+            document.body.classList.remove('mobile-menu-open');
+        } else {
+            sidebar.classList.add('mobile-open');
+            // Create overlay if it doesn't exist
+            let overlayEl = overlay;
+            if (!overlayEl) {
+                overlayEl = document.createElement('div');
+                overlayEl.id = 'mobile-overlay';
+                overlayEl.className = 'mobile-overlay';
+                overlayEl.addEventListener('click', () => this.toggleMobileMenu());
+                document.body.appendChild(overlayEl);
+            }
+            overlayEl.classList.add('active');
+            if (btn) btn.classList.add('active');
+            document.body.classList.add('mobile-menu-open');
+        }
+    },
+
+    createTourButton() {
+        // Icon-only: after the first week nobody reads "Tour" — the
+        // compass in a circle matches the theme toggle, and the tooltip
+        // carries the words. Frees header width at laptop sizes.
+        const btn = document.createElement('button');
+        btn.className = 'tour-btn';
+        btn.style.cssText = 'background: transparent; border: 2px solid var(--text-secondary); color: var(--text-secondary); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin-right: 10px; padding: 0;';
+        btn.title = 'Take the guided setup tour';
+        btn.setAttribute('aria-label', 'Take the guided setup tour');
+
+        // Compass icon — "find your way around".
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        svg.style.cssText = 'width: 14px; height: 14px;';
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '12'); circle.setAttribute('cy', '12'); circle.setAttribute('r', '10');
+        svg.appendChild(circle);
+        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        poly.setAttribute('points', '16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76');
+        svg.appendChild(poly);
+        btn.appendChild(svg);
+
+        btn.addEventListener('mouseenter', () => {
+            btn.style.borderColor = 'var(--accent-primary)';
+            btn.style.color = 'var(--accent-primary)';
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.borderColor = 'var(--text-secondary)';
+            btn.style.color = 'var(--text-secondary)';
+        });
+        btn.addEventListener('click', () => { if (window.Tour) Tour.start(); });
+        return btn;
+    },
+
+    createLanguageToggle() {
+        const zh = !!(window.I18N && I18N.lang === 'zh');
+        const btn = document.createElement('button');
+        btn.className = 'lang-toggle-btn';
+        btn.id = 'lang-toggle-btn';
+        btn.textContent = zh ? 'EN' : '中文';
+        btn.title = zh ? 'Switch to English' : 'Switch to Chinese';
+        btn.setAttribute('aria-label', btn.title);
+        btn.style.cssText = 'background: transparent; border: 2px solid var(--text-secondary); color: var(--text-secondary); height: 30px; border-radius: 15px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin-right: 10px; padding: 0 10px;';
+        btn.addEventListener('mouseenter', () => {
+            btn.style.borderColor = 'var(--accent-primary)';
+            btn.style.color = 'var(--accent-primary)';
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.borderColor = 'var(--text-secondary)';
+            btn.style.color = 'var(--text-secondary)';
+        });
+        btn.addEventListener('click', () => { if (window.I18N) I18N.toggle(); });
+        return btn;
+    },
+
+    createHelpButton() {
+        const btn = document.createElement('button');
+        btn.className = 'help-btn';
+        btn.style.cssText = 'background: transparent; border: 2px solid var(--text-secondary); color: var(--text-secondary); width: 28px; height: 28px; border-radius: 50%; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin-right: 12px;';
+        btn.textContent = '?';
+        btn.title = 'How to use Aegis';
+
+        btn.addEventListener('mouseenter', () => {
+            btn.style.borderColor = 'var(--accent-primary)';
+            btn.style.color = 'var(--accent-primary)';
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.borderColor = 'var(--text-secondary)';
+            btn.style.color = 'var(--text-secondary)';
+        });
+
+        // Context-aware help: when the user hits "?" from a page that
+        // maps to a Guide section, deep-link there with auto-expand.
+        // Falls back to Guide top for pages without a direct mapping.
+        const GUIDE_SECTION_BY_PAGE = {
+            'siem-export':      'section-siem-forwarder',
+            'skill-scanner':    'section-skill-scanner',
+            'tool-permissions': 'section-tool-permissions',
+            'mcp-policies':     'section-mcp-policies',
+            'costs':            'section-costs',
+        };
+        btn.addEventListener('click', () => {
+            if (!window.Sidebar) return;
+            const current = Sidebar.currentPage;
+            const target = GUIDE_SECTION_BY_PAGE[current];
+            if (target) {
+                Sidebar._pendingScroll = target;
+            }
+            Sidebar.navigate('guide');
+        });
+        return btn;
+    },
+
+    createBlockModeToggle() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'block-mode-toggle-wrapper';
+        wrapper.id = 'block-mode-toggle-wrapper';
+
+        const btn = document.createElement('button');
+        btn.className = 'block-mode-toggle-btn';
+        btn.id = 'block-mode-toggle-btn';
+        btn.title = 'Block Mode - Block threats on both input (before LLM) and output (before client).';
+
+        // Block/Stop icon
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', 'currentColor');
+        icon.setAttribute('stroke-width', '2');
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '12');
+        circle.setAttribute('cy', '12');
+        circle.setAttribute('r', '10');
+        icon.appendChild(circle);
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', '4.93');
+        line.setAttribute('y1', '4.93');
+        line.setAttribute('x2', '19.07');
+        line.setAttribute('y2', '19.07');
+        icon.appendChild(line);
+        btn.appendChild(icon);
+
+        const text = document.createElement('span');
+        text.textContent = 'Block';
+        text.id = 'block-mode-toggle-text';
+        btn.appendChild(text);
+
+        // Toggle switch
+        const toggle = document.createElement('span');
+        toggle.className = 'mini-toggle';
+        toggle.id = 'block-mode-mini-toggle';
+        const toggleKnob = document.createElement('span');
+        toggleKnob.className = 'mini-toggle-knob';
+        toggle.appendChild(toggleKnob);
+        btn.appendChild(toggle);
+
+        btn.addEventListener('click', () => this.toggleBlockMode());
+
+        wrapper.appendChild(btn);
+        return wrapper;
+    },
+
+    async checkBlockMode() {
+        try {
+            const settings = await API.getSettings();
+            this.updateBlockModeToggle(settings.block_threats);
+        } catch (e) {
+            this.updateBlockModeToggle(false); // Default to disabled
+        }
+    },
+
+    updateBlockModeToggle(enabled) {
+        const btn = document.getElementById('block-mode-toggle-btn');
+        const toggle = document.getElementById('block-mode-mini-toggle');
+        if (!btn) return;
+
+        if (enabled) {
+            btn.className = 'block-mode-toggle-btn active';
+            if (toggle) toggle.className = 'mini-toggle on';
+        } else {
+            btn.className = 'block-mode-toggle-btn';
+            if (toggle) toggle.className = 'mini-toggle';
+        }
+    },
+
+    async toggleBlockMode() {
+        try {
+            const settings = await API.getSettings();
+            const newState = !settings.block_threats;
+
+            // Show confirmation
+            const message = newState
+                ? 'Enable Block Mode?\n\nINPUT: Threats will be BLOCKED before reaching the LLM.\nOUTPUT: Threats will be BLOCKED before reaching the client.\n\nAll threats are logged.'
+                : 'Disable Block Mode?\n\nAll threats will be logged only.\nNo blocking will occur.';
+
+            if (!confirm(message)) {
+                return;
+            }
+
+            await API.updateSettings({ block_threats: newState });
+            this.updateBlockModeToggle(newState);
+            if (newState) {
+                Toast.success('Block mode enabled - threats will be blocked');
+            } else {
+                Toast.info('Block mode disabled - threats will be logged only');
+            }
+        } catch (error) {
+            Toast.error('Failed to toggle block mode');
+        }
+    },
+
+    createOutputScanToggle() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'output-scan-toggle-wrapper';
+        wrapper.id = 'output-scan-toggle-wrapper';
+
+        const btn = document.createElement('button');
+        btn.className = 'output-scan-toggle-btn';
+        btn.id = 'output-scan-toggle-btn';
+        btn.title = 'Output Scan (Redact Sensitive Info) - Scan LLM responses for data leakage. Sensitive information is redacted when stored.';
+
+        // Shield icon
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', 'currentColor');
+        icon.setAttribute('stroke-width', '2');
+        const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path1.setAttribute('d', 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z');
+        icon.appendChild(path1);
+        btn.appendChild(icon);
+
+        const text = document.createElement('span');
+        text.textContent = 'Output';
+        text.id = 'output-scan-toggle-text';
+        btn.appendChild(text);
+
+        // Toggle switch
+        const toggle = document.createElement('span');
+        toggle.className = 'mini-toggle';
+        toggle.id = 'output-scan-mini-toggle';
+        const toggleKnob = document.createElement('span');
+        toggleKnob.className = 'mini-toggle-knob';
+        toggle.appendChild(toggleKnob);
+        btn.appendChild(toggle);
+
+        btn.addEventListener('click', () => this.toggleOutputScanMode());
+
+        wrapper.appendChild(btn);
+        return wrapper;
+    },
+
+    async checkOutputScanMode() {
+        try {
+            const settings = await API.getSettings();
+            this.updateOutputScanToggle(settings.scan_llm_responses);
+        } catch (e) {
+            this.updateOutputScanToggle(true); // Default to enabled
+        }
+    },
+
+    updateOutputScanToggle(enabled) {
+        const btn = document.getElementById('output-scan-toggle-btn');
+        const toggle = document.getElementById('output-scan-mini-toggle');
+        if (!btn) return;
+
+        if (enabled) {
+            btn.className = 'output-scan-toggle-btn active';
+            if (toggle) toggle.className = 'mini-toggle on';
+        } else {
+            btn.className = 'output-scan-toggle-btn';
+            if (toggle) toggle.className = 'mini-toggle';
+        }
+    },
+
+    async toggleOutputScanMode() {
+        try {
+            const settings = await API.getSettings();
+            const newState = !settings.scan_llm_responses;
+
+            // Show confirmation
+            const action = newState ? 'enable' : 'disable';
+            const message = newState
+                ? 'Enable output scanning?\n\nLLM responses will be scanned for:\n• Credential leakage\n• System prompt exposure\n• PII disclosure\n\nSecrets are REDACTED when stored. Threats are logged.'
+                : 'Disable output scanning?\n\nLLM responses will not be monitored for data leakage.';
+
+            if (!confirm(message)) {
+                return;
+            }
+
+            await API.updateSettings({ scan_llm_responses: newState });
+            this.updateOutputScanToggle(newState);
+            if (newState) {
+                Toast.success('Output scan enabled');
+            } else {
+                Toast.info('Output scan disabled');
+            }
+        } catch (error) {
+            Toast.error('Failed to toggle output scan');
+        }
+    },
+
+    createLLMToggle() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'llm-toggle-wrapper';
+        wrapper.id = 'llm-toggle-wrapper';
+
+        const btn = document.createElement('button');
+        btn.className = 'llm-toggle-btn';
+        btn.id = 'llm-toggle-btn';
+
+        // AI/Brain icon
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', 'currentColor');
+        icon.setAttribute('stroke-width', '2');
+        const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        path1.setAttribute('cx', '12');
+        path1.setAttribute('cy', '12');
+        path1.setAttribute('r', '3');
+        icon.appendChild(path1);
+        const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path2.setAttribute('d', 'M12 1v4M12 19v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M1 12h4M19 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83');
+        icon.appendChild(path2);
+        btn.appendChild(icon);
+
+        const text = document.createElement('span');
+        text.textContent = 'AI Analysis';
+        text.id = 'llm-toggle-text';
+        btn.appendChild(text);
+
+        btn.addEventListener('click', () => {
+            if (this.cloudModeEnabled) {
+                Toast.info('AI Analysis disabled - Cloud ML analysis is active');
+                return;
+            }
+            this.showLLMConfigModal();
+        });
+
+        wrapper.appendChild(btn);
+        return wrapper;
+    },
+
+    async showLLMConfigModal() {
+        // Fetch current settings
+        let settings;
+        try {
+            settings = await API.getLLMSettings();
+        } catch (e) {
+            settings = { enabled: false, provider: 'ollama', model: 'llama3', endpoint: 'http://localhost:11434' };
+        }
+
+        const content = document.createElement('div');
+        content.className = 'llm-config-modal';
+
+        // Optional info banner
+        const infoBanner = document.createElement('div');
+        infoBanner.style.cssText = 'background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: var(--text-secondary); line-height: 1.5;';
+        const optionalLabel = document.createElement('b');
+        optionalLabel.style.cssText = 'font-size: 15px;';
+        optionalLabel.textContent = 'Optional';
+        infoBanner.appendChild(optionalLabel);
+        infoBanner.appendChild(document.createTextNode(' — only configure AI Analysis if you need to reduce false positives in threat detection.'));
+        const line2 = document.createElement('b');
+        line2.textContent = 'Threat tracking, tool permissions, and cost tracking all work without this.';
+        infoBanner.appendChild(line2);
+        content.appendChild(infoBanner);
+
+        // Enable toggle section
+        const enableSection = document.createElement('div');
+        enableSection.className = 'llm-config-section';
+
+        const enableRow = document.createElement('div');
+        enableRow.className = 'llm-config-row main-toggle';
+
+        const enableInfo = document.createElement('div');
+        enableInfo.className = 'llm-config-info';
+
+        const enableLabel = document.createElement('div');
+        enableLabel.className = 'llm-config-label';
+        enableLabel.textContent = 'Enable AI Analysis';
+        enableInfo.appendChild(enableLabel);
+
+        const enableDesc = document.createElement('div');
+        enableDesc.className = 'llm-config-desc';
+        enableDesc.textContent = 'AI-powered threat analysis using your LLM';
+        enableInfo.appendChild(enableDesc);
+
+        enableRow.appendChild(enableInfo);
+
+        const enableToggle = document.createElement('label');
+        enableToggle.className = 'toggle';
+
+        const enableCheckbox = document.createElement('input');
+        enableCheckbox.type = 'checkbox';
+        enableCheckbox.id = 'llm-enabled-checkbox';
+        enableCheckbox.checked = settings.enabled;
+        enableCheckbox.addEventListener('change', (e) => {
+            const saveBtn = document.getElementById('llm-save-btn');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.classList.remove('disabled');
+            }
+            Toast.info(e.target.checked ? 'AI Analysis enabled - click Save to apply' : 'AI Analysis disabled - click Save to apply');
+        });
+        enableToggle.appendChild(enableCheckbox);
+
+        const enableSlider = document.createElement('span');
+        enableSlider.className = 'toggle-slider';
+        enableToggle.appendChild(enableSlider);
+
+        enableRow.appendChild(enableToggle);
+        enableSection.appendChild(enableRow);
+        content.appendChild(enableSection);
+
+        // Provider selection with cards
+        const providerSection = document.createElement('div');
+        providerSection.className = 'llm-config-section';
+
+        const providerLabel = document.createElement('div');
+        providerLabel.className = 'llm-section-label';
+        providerLabel.textContent = 'Select Provider';
+        providerSection.appendChild(providerLabel);
+
+        const providerGrid = document.createElement('div');
+        providerGrid.className = 'llm-provider-grid';
+
+        const providers = [
+            { id: 'ollama', name: 'Ollama', desc: 'Local models', icon: '🦙' },
+            { id: 'openai', name: 'OpenAI', desc: 'GPT-4, GPT-4o', icon: '🤖' },
+            { id: 'anthropic', name: 'Anthropic', desc: 'Claude 3.5', icon: '🧠' },
+            { id: 'azure', name: 'Azure', desc: 'Azure OpenAI', icon: '☁️' },
+            { id: 'bedrock', name: 'Bedrock', desc: 'AWS Models', icon: '🪨' },
+            { id: 'custom', name: 'Custom', desc: 'OpenAI-compatible', icon: '⚙️' },
+        ];
+
+        providers.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'llm-provider-card' + (p.id === settings.provider ? ' selected' : '');
+            card.dataset.provider = p.id;
+
+            const cardIcon = document.createElement('div');
+            cardIcon.className = 'provider-icon';
+            cardIcon.textContent = p.icon;
+            card.appendChild(cardIcon);
+
+            const cardName = document.createElement('div');
+            cardName.className = 'provider-name';
+            cardName.textContent = p.name;
+            card.appendChild(cardName);
+
+            const cardDesc = document.createElement('div');
+            cardDesc.className = 'provider-desc';
+            cardDesc.textContent = p.desc;
+            card.appendChild(cardDesc);
+
+            card.addEventListener('click', () => {
+                providerGrid.querySelectorAll('.llm-provider-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                this.updateLLMConfigFields(p.id);
+            });
+
+            providerGrid.appendChild(card);
+        });
+
+        providerSection.appendChild(providerGrid);
+        content.appendChild(providerSection);
+
+        // Configuration fields section
+        const configSection = document.createElement('div');
+        configSection.className = 'llm-config-section';
+        configSection.id = 'llm-config-fields';
+
+        // Model dropdown (for predefined providers)
+        const modelGroup = document.createElement('div');
+        modelGroup.className = 'llm-form-group';
+        modelGroup.id = 'llm-model-group';
+
+        const modelLabel = document.createElement('label');
+        modelLabel.textContent = 'Model';
+        modelGroup.appendChild(modelLabel);
+
+        const modelSelect = document.createElement('select');
+        modelSelect.id = 'llm-config-model-select';
+        modelSelect.className = 'llm-form-select';
+        modelGroup.appendChild(modelSelect);
+
+        configSection.appendChild(modelGroup);
+
+        // Custom model input (only for custom provider)
+        const customModelGroup = document.createElement('div');
+        customModelGroup.className = 'llm-form-group';
+        customModelGroup.id = 'llm-custom-model-group';
+        customModelGroup.style.display = 'none';
+
+        const customModelLabel = document.createElement('label');
+        customModelLabel.textContent = 'Model Name';
+        customModelGroup.appendChild(customModelLabel);
+
+        const customModelInput = document.createElement('input');
+        customModelInput.type = 'text';
+        customModelInput.id = 'llm-config-model-custom';
+        customModelInput.className = 'llm-form-input';
+        customModelInput.value = settings.model || '';
+        customModelInput.placeholder = 'e.g., my-custom-model';
+        customModelGroup.appendChild(customModelInput);
+
+        configSection.appendChild(customModelGroup);
+
+        // Endpoint input
+        const endpointGroup = document.createElement('div');
+        endpointGroup.className = 'llm-form-group';
+        endpointGroup.id = 'llm-endpoint-group';
+
+        const endpointLabel = document.createElement('label');
+        endpointLabel.textContent = 'Endpoint URL';
+        endpointGroup.appendChild(endpointLabel);
+
+        const endpointInput = document.createElement('input');
+        endpointInput.type = 'text';
+        endpointInput.id = 'llm-config-endpoint';
+        endpointInput.className = 'llm-form-input';
+        endpointInput.value = settings.endpoint || '';
+        endpointInput.placeholder = 'http://localhost:11434';
+        endpointGroup.appendChild(endpointInput);
+
+        configSection.appendChild(endpointGroup);
+
+        // API Key input
+        const apiKeyGroup = document.createElement('div');
+        apiKeyGroup.className = 'llm-form-group';
+        apiKeyGroup.id = 'llm-apikey-group';
+
+        const apiKeyLabel = document.createElement('label');
+        apiKeyLabel.textContent = 'API Key';
+        apiKeyGroup.appendChild(apiKeyLabel);
+
+        const apiKeyInput = document.createElement('input');
+        apiKeyInput.type = 'password';
+        apiKeyInput.id = 'llm-config-apikey';
+        apiKeyInput.className = 'llm-form-input';
+        apiKeyInput.placeholder = settings.api_key_configured ? '••••••••' : 'sk-...';
+        apiKeyGroup.appendChild(apiKeyInput);
+
+        configSection.appendChild(apiKeyGroup);
+
+        // AWS Region (for Bedrock)
+        const regionGroup = document.createElement('div');
+        regionGroup.className = 'llm-form-group';
+        regionGroup.id = 'llm-region-group';
+        regionGroup.style.display = 'none';
+
+        const regionLabel = document.createElement('label');
+        regionLabel.textContent = 'AWS Region';
+        regionGroup.appendChild(regionLabel);
+
+        const regionSelect = document.createElement('select');
+        regionSelect.id = 'llm-config-region';
+        regionSelect.className = 'llm-form-select';
+
+        ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-northeast-1'].forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r;
+            opt.textContent = r;
+            if (r === (settings.aws_region || 'us-east-1')) opt.selected = true;
+            regionSelect.appendChild(opt);
+        });
+        regionGroup.appendChild(regionSelect);
+
+        configSection.appendChild(regionGroup);
+
+        content.appendChild(configSection);
+
+        // Show/hide fields based on current provider (don't update values on initial load)
+        // Populate model dropdown for initial provider (use true to populate)
+        setTimeout(() => {
+            this.updateLLMConfigFields(settings.provider, true);
+            // Set the currently saved model as selected
+            const modelSelect = document.getElementById('llm-config-model-select');
+            if (modelSelect && settings.model) {
+                modelSelect.value = settings.model;
+            }
+        }, 0);
+
+        // Actions
+        const actions = document.createElement('div');
+        actions.className = 'llm-config-actions';
+
+        // Test status indicator
+        const testStatus = document.createElement('span');
+        testStatus.className = 'llm-test-status';
+        testStatus.id = 'llm-test-status';
+        actions.appendChild(testStatus);
+
+        const testBtn = document.createElement('button');
+        testBtn.className = 'btn btn-secondary';
+        testBtn.textContent = 'Test Connection';
+        testBtn.addEventListener('click', async () => {
+            testBtn.textContent = 'Testing...';
+            testBtn.disabled = true;
+            testStatus.textContent = '';
+            testStatus.className = 'llm-test-status';
+            saveBtn.disabled = true;
+            saveBtn.classList.add('disabled');
+
+            try {
+                await this.saveLLMConfig(false); // Save without closing
+                const result = await API.testLLMConnection();
+                if (result.success) {
+                    testStatus.textContent = '✓ Connected';
+                    testStatus.className = 'llm-test-status success';
+                    saveBtn.disabled = false;
+                    saveBtn.classList.remove('disabled');
+                    // Auto-enable LLM when test passes
+                    const enableCheckbox = document.getElementById('llm-enabled-checkbox');
+                    if (enableCheckbox && !enableCheckbox.checked) {
+                        enableCheckbox.checked = true;
+                    }
+                    Toast.success(result.message);
+                } else {
+                    testStatus.textContent = '✗ Failed';
+                    testStatus.className = 'llm-test-status error';
+                    Toast.error(result.message);
+                }
+            } catch (err) {
+                testStatus.textContent = '✗ Error';
+                testStatus.className = 'llm-test-status error';
+                Toast.error('Test failed: ' + err.message);
+            }
+            testBtn.textContent = 'Test Connection';
+            testBtn.disabled = false;
+        });
+        actions.appendChild(testBtn);
+
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'btn btn-primary disabled';
+        saveBtn.id = 'llm-save-btn';
+        saveBtn.textContent = 'Save';
+        saveBtn.disabled = true;
+        saveBtn.addEventListener('click', async () => {
+            try {
+                await this.saveLLMConfig(false);
+                Modal.close();
+                Toast.success('LLM settings saved');
+                this.checkLLMMode();
+            } catch (err) {
+                Toast.error('Failed to save: ' + err.message);
+            }
+        });
+        actions.appendChild(saveBtn);
+
+        // Enable save button if configured (Ollama doesn't need API key)
+        const isOllama = settings.provider === 'ollama';
+        const isConfigured = isOllama || settings.api_key_configured;
+        if (isConfigured) {
+            saveBtn.disabled = false;
+            saveBtn.classList.remove('disabled');
+            testStatus.textContent = '✓ Configured';
+            testStatus.className = 'llm-test-status success';
+        }
+
+        content.appendChild(actions);
+
+        Modal.show({
+            title: 'AI Analysis Configuration',
+            content: content,
+            size: 'medium',
+        });
+    },
+
+    updateLLMConfigFields(provider, updateValues = true) {
+        const endpointGroup = document.getElementById('llm-endpoint-group');
+        const apiKeyGroup = document.getElementById('llm-apikey-group');
+        const regionGroup = document.getElementById('llm-region-group');
+        const modelGroup = document.getElementById('llm-model-group');
+        const customModelGroup = document.getElementById('llm-custom-model-group');
+        const modelSelect = document.getElementById('llm-config-model-select');
+        const endpointInput = document.getElementById('llm-config-endpoint');
+
+        // Models available per provider
+        const providerModels = {
+            ollama: ['llama3', 'llama3.1', 'llama3.2', 'mistral', 'mixtral', 'codellama', 'gemma2', 'qwen2.5'],
+            openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'],
+            anthropic: ['claude-3-5-sonnet-20241022', 'claude-3-opus-20240229', 'claude-3-haiku-20240307'],
+            azure: ['gpt-4o', 'gpt-4-turbo', 'gpt-4', 'gpt-35-turbo'],
+            bedrock: ['anthropic.claude-3-5-sonnet-20241022-v2:0', 'anthropic.claude-3-opus-20240229-v1:0', 'anthropic.claude-3-haiku-20240307-v1:0', 'amazon.titan-text-express-v1'],
+            custom: [],
+        };
+
+        const defaults = {
+            ollama: { model: 'llama3', endpoint: 'http://localhost:11434', showEndpoint: true, showApiKey: false, showRegion: false },
+            openai: { model: 'gpt-4o', endpoint: '', showEndpoint: false, showApiKey: true, showRegion: false },
+            anthropic: { model: 'claude-3-5-sonnet-20241022', endpoint: '', showEndpoint: false, showApiKey: true, showRegion: false },
+            azure: { model: 'gpt-4o', endpoint: 'https://YOUR-RESOURCE.openai.azure.com', showEndpoint: true, showApiKey: true, showRegion: false },
+            bedrock: { model: 'anthropic.claude-3-5-sonnet-20241022-v2:0', endpoint: '', showEndpoint: false, showApiKey: true, showRegion: true },
+            custom: { model: '', endpoint: 'http://localhost:8080/v1', showEndpoint: true, showApiKey: true, showRegion: false },
+        };
+
+        const config = defaults[provider] || defaults.ollama;
+        const models = providerModels[provider] || [];
+        const isCustom = provider === 'custom';
+
+        if (endpointGroup) endpointGroup.style.display = config.showEndpoint ? 'block' : 'none';
+        if (apiKeyGroup) apiKeyGroup.style.display = config.showApiKey ? 'block' : 'none';
+        if (regionGroup) regionGroup.style.display = config.showRegion ? 'block' : 'none';
+
+        // Show dropdown for predefined providers, text input for custom
+        if (modelGroup) modelGroup.style.display = isCustom ? 'none' : 'block';
+        if (customModelGroup) customModelGroup.style.display = isCustom ? 'block' : 'none';
+
+        // Populate model dropdown
+        if (modelSelect && updateValues) {
+            while (modelSelect.firstChild) {
+                modelSelect.removeChild(modelSelect.firstChild);
+            }
+            models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                if (m === config.model) opt.selected = true;
+                modelSelect.appendChild(opt);
+            });
+        }
+
+        // Update endpoint
+        if (updateValues && endpointInput && config.endpoint) {
+            endpointInput.value = config.endpoint;
+            endpointInput.placeholder = config.endpoint;
+        }
+    },
+
+    async saveLLMConfig(validateApiKey = true) {
+        const enabled = document.getElementById('llm-enabled-checkbox')?.checked || false;
+        const provider = document.querySelector('.llm-provider-card.selected')?.dataset.provider || 'ollama';
+        // Get model from dropdown or custom input based on provider
+        const model = provider === 'custom'
+            ? (document.getElementById('llm-config-model-custom')?.value || '')
+            : (document.getElementById('llm-config-model-select')?.value || '');
+        const endpoint = document.getElementById('llm-config-endpoint')?.value || '';
+        const apiKey = document.getElementById('llm-config-apikey')?.value || '';
+        const awsRegion = document.getElementById('llm-config-region')?.value || 'us-east-1';
+
+        // Validate: API key required for cloud providers
+        const requiresApiKey = ['openai', 'anthropic', 'azure', 'bedrock'].includes(provider);
+        if (validateApiKey && requiresApiKey) {
+            const settings = await API.getLLMSettings();
+            if (!apiKey && !settings.api_key_configured) {
+                throw new Error('API key is required for ' + this.formatProvider(provider));
+            }
+        }
+
+        const update = { enabled, provider };
+        if (model) update.model = model;
+        if (endpoint) update.endpoint = endpoint;
+        if (apiKey) update.api_key = apiKey;
+        if (provider === 'bedrock') update.aws_region = awsRegion;
+
+        await API.updateLLMSettings(update);
+    },
+
+    formatProvider(provider) {
+        const names = {
+            ollama: 'Ollama',
+            openai: 'OpenAI',
+            anthropic: 'Anthropic',
+            azure: 'Azure',
+            bedrock: 'Bedrock',
+            custom: 'Custom',
+        };
+        return names[provider] || provider;
+    },
+
+    async checkLLMMode() {
+        try {
+            const settings = await API.getLLMSettings();
+            this.updateLLMToggle(settings.enabled, settings.provider, settings.model);
+        } catch (e) {
+            this.updateLLMToggle(false);
+        }
+    },
+
+    updateLLMToggle(enabled, provider, model) {
+        const btn = document.getElementById('llm-toggle-btn');
+        const text = document.getElementById('llm-toggle-text');
+        const indicator = document.getElementById('llm-toggle-indicator');
+        if (!btn) return;
+
+        if (enabled) {
+            btn.className = 'llm-toggle-btn active';
+            btn.classList.remove('flashing-border');
+            if (text) {
+                // Show "AI Analysis - ON (MODEL)" format
+                const modelShort = model ? model.split('-')[0].split('/').pop().toUpperCase() : 'LLM';
+                text.textContent = `AI Analysis - ON (${modelShort})`;
+            }
+            if (indicator) {
+                indicator.className = 'llm-toggle-indicator on';
+                indicator.textContent = '';
+            }
+        } else {
+            btn.className = 'llm-toggle-btn';
+            if (text) text.textContent = 'AI Analysis';
+            if (indicator) {
+                indicator.className = 'llm-toggle-indicator';
+                indicator.textContent = '';
+            }
+        }
+    },
+
+    async toggleLLMMode() {
+        try {
+            const settings = await API.getLLMSettings();
+            const newState = !settings.enabled;
+
+            // If enabling and no provider configured, redirect to settings
+            if (newState && !settings.provider) {
+                if (window.Sidebar) Sidebar.navigate('settings');
+                Toast.info('Configure your LLM provider first');
+                return;
+            }
+
+            await API.updateLLMSettings({ enabled: newState });
+            this.updateLLMToggle(newState, settings.provider, settings.model);
+            Toast.success(newState ? 'AI Analysis enabled' : 'AI Analysis disabled');
+        } catch (error) {
+            Toast.error('Failed to toggle AI Analysis');
+        }
+    },
+
+    createCloudToggle() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'cloud-toggle-wrapper';
+        wrapper.id = 'cloud-toggle-wrapper';
+
+        const btn = document.createElement('button');
+        btn.className = 'cloud-toggle-btn gradient-btn';
+        btn.id = 'cloud-toggle-btn';
+
+        // Cloud icon
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', 'currentColor');
+        icon.setAttribute('stroke-width', '2');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z');
+        icon.appendChild(path);
+        btn.appendChild(icon);
+
+        // Text label
+        const text = document.createElement('span');
+        text.textContent = 'Cloud Connect';
+        text.id = 'cloud-toggle-text';
+        btn.appendChild(text);
+
+        btn.addEventListener('click', () => this.toggleCloudMode());
+
+        wrapper.appendChild(btn);
+        return wrapper;
+    },
+
+    async checkCloudMode() {
+        try {
+            const settings = await API.getCloudSettings();
+            this.cloudModeEnabled = settings.cloud_mode_enabled && settings.credentials_configured;
+            this.updateCloudToggle(settings.cloud_mode_enabled, settings.credentials_configured);
+            this.updateLLMButtonState();
+        } catch (e) {
+            this.cloudModeEnabled = false;
+            this.updateCloudToggle(false, false);
+        }
+    },
+
+    updateLLMButtonState() {
+        const btn = document.getElementById('llm-toggle-btn');
+        const text = document.getElementById('llm-toggle-text');
+        if (!btn) return;
+
+        if (this.cloudModeEnabled) {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+            btn.classList.remove('flashing-border');
+            btn.className = 'llm-toggle-btn disabled';
+            if (text) text.textContent = 'AI Analysis (Cloud Active)';
+            btn.title = 'Disabled - Cloud ML analysis is active';
+        } else {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.title = '';
+        }
+    },
+
+    updateCloudToggle(enabled, configured) {
+        const btn = document.getElementById('cloud-toggle-btn');
+        const text = document.getElementById('cloud-toggle-text');
+        const wrapper = document.getElementById('cloud-toggle-wrapper');
+        if (!btn) return;
+
+        // Remove existing indicator and tooltip if any
+        const existingIndicator = document.getElementById('cloud-mode-indicator');
+        if (existingIndicator) existingIndicator.remove();
+        const existingTooltip = document.getElementById('cloud-mode-tooltip');
+        if (existingTooltip) existingTooltip.remove();
+
+        if (enabled) {
+            btn.className = 'cloud-toggle-btn gradient-btn active';
+            if (text) text.textContent = 'Connected';
+
+            if (wrapper) {
+                wrapper.style.position = 'relative';
+
+                // Add "ON" badge
+                const indicator = document.createElement('div');
+                indicator.id = 'cloud-mode-indicator';
+                indicator.style.cssText = 'position: absolute; top: -8px; right: -8px; background: var(--accent-primary, #5eadb8); color: white; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px;';
+                indicator.textContent = 'ON';
+                wrapper.appendChild(indicator);
+
+                // Add hover tooltip
+                const tooltip = document.createElement('div');
+                tooltip.id = 'cloud-mode-tooltip';
+                tooltip.style.cssText = 'position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-tertiary, #21262d); color: var(--text-primary, #e6edf3); border: 1px solid var(--accent-primary, #5eadb8); padding: 10px 14px; border-radius: 8px; font-size: 12px; white-space: nowrap; opacity: 0; visibility: hidden; transition: all 0.2s; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2);';
+
+                const titleLine = document.createElement('div');
+                titleLine.style.cssText = 'font-weight: 600; margin-bottom: 4px;';
+                titleLine.textContent = 'Cloud Connect is on';
+                tooltip.appendChild(titleLine);
+
+                const routeLine = document.createElement('div');
+                routeLine.style.cssText = 'font-size: 11px; opacity: 0.9;';
+                routeLine.textContent = 'Scans routed to scan.aegis.example';
+                tooltip.appendChild(routeLine);
+
+                const linkLine = document.createElement('div');
+                linkLine.style.cssText = 'font-size: 11px; margin-top: 4px;';
+                const link = document.createElement('a');
+                link.href = 'https://app.aegis.example';
+                link.target = '_blank';
+                link.style.cssText = 'color: white; text-decoration: underline;';
+                link.textContent = 'View threat analysis dashboard →';
+                linkLine.appendChild(link);
+                tooltip.appendChild(linkLine);
+
+                wrapper.appendChild(tooltip);
+
+                wrapper.addEventListener('mouseenter', () => {
+                    tooltip.style.opacity = '1';
+                    tooltip.style.visibility = 'visible';
+                });
+                wrapper.addEventListener('mouseleave', () => {
+                    tooltip.style.opacity = '0';
+                    tooltip.style.visibility = 'hidden';
+                });
+            }
+        } else {
+            btn.className = 'cloud-toggle-btn gradient-btn';
+            if (text) text.textContent = 'Cloud Connect';
+        }
+    },
+
+    async toggleCloudMode() {
+        try {
+            const settings = await API.getCloudSettings();
+
+            if (!settings.credentials_configured) {
+                // Show cloud connect guidance modal
+                this.showCloudConnectGuide();
+                return;
+            }
+
+            const newState = !settings.cloud_mode_enabled;
+            await API.setCloudMode(newState);
+            this.updateCloudToggle(newState, true);
+            Toast.success(newState ? 'Cloud mode enabled' : 'Cloud mode disabled');
+        } catch (error) {
+            Toast.error('Failed to toggle cloud mode');
+        }
+    },
+
+    showCloudConnectGuide() {
+        const content = document.createElement('div');
+        content.className = 'cloud-connect-guide';
+
+        const intro = document.createElement('p');
+        intro.textContent = 'Connect to Aegis Cloud for centralized rule & policy management, fleet visibility, and a real-time dashboard. Your prompt text stays on this device by default; cloud ML analysis is a separate, optional opt-in.';
+        intro.style.marginBottom = '20px';
+        content.appendChild(intro);
+
+        const steps = [
+            { num: '1', title: 'Create Account', desc: 'Sign up at app.aegis.example (free tier available)' },
+            { num: '2', title: 'Get API Key', desc: 'Go to Access Management -> Create a new key' },
+            { num: '3', title: 'Add API Key', desc: 'Go to Settings and add your API key' },
+            { num: '4', title: 'Connect', desc: 'Click Cloud Connect to sync rules, policies & fleet metadata. Your prompts stay on-device by default.' },
+        ];
+
+        const stepsList = document.createElement('div');
+        stepsList.className = 'cloud-steps';
+
+        steps.forEach(step => {
+            const stepEl = document.createElement('div');
+            stepEl.className = 'cloud-step';
+
+            const numEl = document.createElement('span');
+            numEl.className = 'step-number';
+            numEl.textContent = step.num;
+            stepEl.appendChild(numEl);
+
+            const textEl = document.createElement('div');
+            textEl.className = 'step-text';
+
+            const titleEl = document.createElement('strong');
+            titleEl.textContent = step.title;
+            textEl.appendChild(titleEl);
+
+            const descEl = document.createElement('p');
+            descEl.textContent = step.desc;
+            textEl.appendChild(descEl);
+
+            stepEl.appendChild(textEl);
+            stepsList.appendChild(stepEl);
+        });
+
+        // CTA buttons — one-click trial leads (#194 f2: device flow, the
+        // device connects itself, no key to copy); manual path demoted.
+        const cta = document.createElement('div');
+        cta.style.cssText = 'margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;';
+
+        const trialBtn = document.createElement('button');
+        trialBtn.className = 'btn btn-primary';
+        trialBtn.textContent = 'Start free cloud trial';
+        trialBtn.title = 'Sign up in the browser; this device connects itself. No key to copy.';
+        trialBtn.addEventListener('click', () => {
+            Modal.close();
+            if (window.SettingsPage) SettingsPage._autoStartTrial = true;
+            if (window.Sidebar) Sidebar.navigate('settings');
+        });
+        cta.appendChild(trialBtn);
+
+        const ctaBtn = document.createElement('button');
+        ctaBtn.className = 'btn btn-secondary';
+        ctaBtn.textContent = 'Go to app.aegis.example';
+        ctaBtn.addEventListener('click', () => {
+            window.open('https://app.aegis.example/login?redirect=desktop', '_blank');
+        });
+        cta.appendChild(ctaBtn);
+
+        const localNote = document.createElement('div');
+        localNote.className = 'local-mode-highlight';
+        localNote.style.marginTop = '20px';
+        localNote.style.padding = '12px 16px';
+        localNote.style.background = 'rgba(94, 173, 184, 0.08)';
+        localNote.style.border = '1px solid var(--accent-primary)';
+        localNote.style.borderRadius = '8px';
+        localNote.style.fontSize = '13px';
+        localNote.style.textAlign = 'left';
+
+        const noteIcon = document.createElement('span');
+        noteIcon.textContent = '\u2713 ';
+        noteIcon.style.color = 'var(--success)';
+        noteIcon.style.fontWeight = 'bold';
+        localNote.appendChild(noteIcon);
+
+        const noteText = document.createElement('span');
+        noteText.textContent = 'The desktop app works 100% locally. Even with Cloud Connect on, your prompts stay on this device by default:';
+        localNote.appendChild(noteText);
+
+        const noteList = document.createElement('ul');
+        noteList.style.cssText = 'margin: 8px 0 0; padding-left: 18px; line-height: 1.6;';
+        [
+            'Prompt input and output are analyzed on-device; by default none of that text is sent to Aegis Cloud.',
+            'Rule sync, policy sync, fleet metadata, and governance keep working, and none of them send your prompts.',
+            'Cloud ML analysis is a separate opt-in that sends prompt text to scan.aegis.example.',
+            'EU data-residency: when your organization enforces it, local-only analysis is hard-locked on and cannot be disabled. Cloud ML stays off and SIEM forwarders are capped to metadata-level detail, so prompt text does not leave this device.',
+        ].forEach(t => {
+            const li = document.createElement('li');
+            li.textContent = t;
+            noteList.appendChild(li);
+        });
+        localNote.appendChild(noteList);
+
+        content.appendChild(cta);
+
+        // Manual key path AFTER the one-click CTA — it's the fallback (and
+        // the only route for org svet_ enrollment tokens), not the default.
+        const manualLabel = document.createElement('div');
+        manualLabel.style.cssText = 'margin-top:24px;margin-bottom:10px;font-weight:600;font-size:13px;color:var(--text-secondary);';
+        manualLabel.textContent = 'Prefer to connect manually?';
+        content.appendChild(manualLabel);
+        content.appendChild(stepsList);
+
+        // Privacy note moved to the TOP of the modal so the local-only /
+        // EU-residency guarantees are the first thing the user reads, before
+        // the connection steps.
+        localNote.style.marginTop = '0';
+        localNote.style.marginBottom = '20px';
+        content.insertBefore(localNote, content.firstChild);
+
+        Modal.show({
+            title: 'Connect to Aegis Cloud',
+            content: content,
+            size: 'medium',
+        });
+    },
+
+    openCloudConnect() {
+        // Close LLM modal first, then show cloud connect
+        Modal.close();
+        setTimeout(() => this.showCloudConnectGuide(), 200);
+    },
+
+    // Guardian ML header control — the sentinel robot that used to live as a
+    // left-nav row. The nav row navigated to Settings just to reach one
+    // toggle; here the click opens an anchored card that explains what the
+    // model does and flips it in place. The card IS the informed-consent
+    // surface, so the toggle commits directly (no second confirm modal —
+    // unlike the Settings page, where the toggle stands alone). The old
+    // 'guardian-ml' route (Settings → Guardian section) still works for deep
+    // links and is reachable from the card footer.
+    createGuardianControl() {
+        const wrap = document.createElement('div');
+        wrap.className = 'guardian-hdr-wrap';
+        wrap.style.cssText = 'position: relative; display: flex; margin-right: 10px;';
+
+        // Icon-only circular button — a single small darkened circle with the
+        // sentinel robot inside. The header was getting crowded (title cluster
+        // + Guardian + theme + tour + Connect + Cloud), so Guardian drops its
+        // text label and status dot and reads as one compact glyph, matching
+        // the theme toggle's circular footprint. On/off state is carried by
+        // the circle itself: accent ring + soft glow when active, muted +
+        // dimmed robot when off.
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'guardian-hdr-btn';
+        btn.className = 'guardian-hdr-btn';
+        btn.setAttribute('aria-haspopup', 'dialog');
+        btn.setAttribute('aria-expanded', 'false');
+        btn.setAttribute('aria-label', 'Guardian ML: local AI threat detection. Click to turn on or off.');
+        btn.title = 'Guardian ML: local AI threat detection. Click to turn on or off.';
+        // Filled darkened disc (bg-tertiary) so the robot sits on a subtle
+        // backdrop rather than floating; 30px to match the theme circle.
+        btn.style.cssText = 'position: relative; background: var(--bg-tertiary); border: 1.5px solid var(--border-default); width: 30px; height: 30px; padding: 0; border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s; flex-shrink: 0;';
+
+        // The sentinel robot IS the icon — carried over from its old nav row
+        // so the mascot survives the move. Static here (no 30s orbit): the
+        // header sits next to the page title on every page, and a perpetual
+        // orbiting satellite there is noise, not delight.
+        const robo = document.createElement('span');
+        robo.className = 'gm-robo gm-static gm-hdr';
+        robo.setAttribute('aria-hidden', 'true');
+        robo.innerHTML = `<svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <g class="gm-bot">
+                <line class="gm-ant" x1="17.6" y1="12.4" x2="15.5" y2="8.2" stroke-linecap="round"/>
+                <circle class="gm-ant-tip l" cx="15" cy="7.3" r="1.5"/>
+                <line class="gm-ant" x1="22.4" y1="12.4" x2="24.5" y2="8.2" stroke-linecap="round"/>
+                <circle class="gm-ant-tip r" cx="25" cy="7.3" r="1.5"/>
+                <rect class="gm-head" x="11.5" y="12.2" width="17" height="14.5" rx="4.6"/>
+                <circle class="gm-eye l" cx="17.2" cy="18.6" r="1.6"/>
+                <circle class="gm-eye r" cx="22.8" cy="18.6" r="1.6"/>
+                <path class="gm-smile" d="M16.6 22 Q20 24.6 23.4 22" stroke-linecap="round"/>
+            </g>
+        </svg>`;
+        btn.appendChild(robo);
+
+        // Kept for the status-reflect plumbing below (the on/off signal now
+        // lives on the circle ring itself, but the card's status line still
+        // reads this node's state). Off-DOM: a 0-size hidden marker.
+        const dot = document.createElement('span');
+        dot.id = 'guardian-hdr-dot';
+        dot.style.cssText = 'display: none;';
+        btn.appendChild(dot);
+        wrap.appendChild(btn);
+
+        // ---- Anchored card ----
+        const pop = document.createElement('div');
+        pop.id = 'guardian-hdr-pop';
+        pop.setAttribute('role', 'dialog');
+        pop.setAttribute('aria-label', 'Guardian ML: local ML threat detection');
+        pop.style.cssText = 'display: none; position: absolute; top: 38px; right: 0; width: 330px; background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 12px; padding: 16px 18px; box-shadow: 0 12px 32px rgba(0,0,0,0.30); z-index: 1200; text-align: left; cursor: default;';
+
+        const headRow = document.createElement('div');
+        headRow.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 4px;';
+        const title = document.createElement('div');
+        title.style.cssText = 'font-size: 15px; font-weight: 700; color: var(--text-primary); flex: 1;';
+        title.textContent = 'Guardian ML';
+        headRow.appendChild(title);
+
+        // Toggle switch — same .toggle / .toggle-slider markup as Settings so
+        // the two surfaces stay visually identical.
+        const toggle = document.createElement('label');
+        toggle.className = 'toggle';
+        toggle.style.cssText = 'flex-shrink: 0;';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.setAttribute('aria-label', 'Toggle Guardian ML detection');
+        const slider = document.createElement('span');
+        slider.className = 'toggle-slider';
+        toggle.appendChild(checkbox);
+        toggle.appendChild(slider);
+        headRow.appendChild(toggle);
+        pop.appendChild(headRow);
+
+        const sub = document.createElement('div');
+        sub.style.cssText = 'font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 10px;';
+        sub.textContent = 'Local ML model screening every analyze call alongside the regex rules. It catches obfuscated, paraphrased, and encoded attacks the rules miss.';
+        pop.appendChild(sub);
+
+        const list = document.createElement('ul');
+        list.style.cssText = 'margin: 0 0 12px; padding-left: 16px; font-size: 12px; line-height: 1.7; color: var(--text-secondary);';
+        [
+            'Fully offline: nothing leaves your machine, no API key.',
+            'Sub-millisecond on a typical prompt or tool call.',
+            'Additive only: strengthens a verdict, never silences a rule.',
+        ].forEach(t => {
+            const li = document.createElement('li');
+            li.textContent = t;
+            list.appendChild(li);
+        });
+        pop.appendChild(list);
+
+        const statusLine = document.createElement('div');
+        statusLine.id = 'guardian-hdr-status';
+        statusLine.style.cssText = 'display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; padding: 7px 10px; border-radius: 7px; background: var(--bg-tertiary); margin-bottom: 10px;';
+        const stDot = document.createElement('span');
+        stDot.style.cssText = 'width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;';
+        const stText = document.createElement('span');
+        statusLine.appendChild(stDot);
+        statusLine.appendChild(stText);
+        pop.appendChild(statusLine);
+
+        const foot = document.createElement('a');
+        foot.href = '#';
+        foot.style.cssText = 'font-size: 12px; font-weight: 600; color: var(--accent-primary); text-decoration: none;';
+        foot.textContent = 'Guardian settings →';
+        foot.addEventListener('click', (e) => {
+            e.preventDefault();
+            closePop();
+            if (window.Sidebar) Sidebar.navigate('guardian-ml');
+        });
+        pop.appendChild(foot);
+        wrap.appendChild(pop);
+
+        // ---- State plumbing ----
+        // One place keeps the circle ring + card status + checkbox in sync.
+        // On = accent ring + soft teal glow + full-opacity robot; off = muted
+        // border, no glow, dimmed robot. That's the entire at-a-glance signal
+        // now that the text label and status dot are gone.
+        const reflect = (on) => {
+            checkbox.checked = on;
+            btn.style.borderColor = on ? 'var(--accent-primary)' : 'var(--border-default)';
+            btn.style.boxShadow = on ? '0 0 0 1px rgba(94,173,184,0.35), 0 0 8px rgba(94,173,184,0.30)' : 'none';
+            robo.style.opacity = on ? '1' : '0.45';
+            btn.dataset.on = on ? 'true' : 'false';
+            stDot.style.background = on ? 'var(--accent-primary)' : 'var(--text-muted)';
+            stText.textContent = on
+                ? 'Active: screening every call alongside the regex rules'
+                : 'Off: detection is running on regex rules only';
+        };
+
+        // Optimistic default ON (matches the server default) so the dot
+        // doesn't flash "off" before the settings fetch resolves.
+        reflect(true);
+        const refresh = () => API.getSettings()
+            .then(s => reflect((s && s.guardian_ml_enabled) !== false))
+            .catch(() => { /* keep last known state */ });
+        refresh();
+
+        let suppress = false;
+        checkbox.addEventListener('change', async (e) => {
+            if (suppress) return;
+            const enabled = e.target.checked;
+            reflect(enabled);
+            try {
+                await API.updateSettings({ guardian_ml_enabled: enabled });
+                if (window.Toast) {
+                    Toast.success(enabled
+                        ? 'Guardian ML detection enabled'
+                        : 'Guardian ML detection disabled: regex rules still active');
+                }
+            } catch (err) {
+                suppress = true;
+                reflect(!enabled);
+                suppress = false;
+                if (window.Toast) Toast.error('Failed to update Guardian setting');
+            }
+        });
+
+        // ---- Open / close ----
+        const openPop = () => {
+            refresh();           // never show a stale toggle state
+            pop.style.display = 'block';
+            btn.setAttribute('aria-expanded', 'true');
+        };
+        const closePop = () => {
+            pop.style.display = 'none';
+            btn.setAttribute('aria-expanded', 'false');
+        };
+        btn.addEventListener('click', () => {
+            (pop.style.display === 'none' ? openPop : closePop)();
+        });
+        // Hover brightens the disc without overriding the on/off ring color
+        // (that's reflect()'s job) — a subtle background lift only.
+        btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--bg-hover, #30363d)'; });
+        btn.addEventListener('mouseleave', () => { btn.style.background = 'var(--bg-tertiary)'; });
+
+        // Outside click / Escape dismiss. Header re-renders (e.g. theme
+        // toggle) recreate this control, so tear down the previous document
+        // listeners first — otherwise they stack per render and hold dead
+        // DOM alive.
+        if (this._guardianTeardown) this._guardianTeardown();
+        const onDocClick = (e) => { if (!wrap.contains(e.target)) closePop(); };
+        const onDocKey = (e) => { if (e.key === 'Escape') closePop(); };
+        document.addEventListener('click', onDocClick);
+        document.addEventListener('keydown', onDocKey);
+        this._guardianTeardown = () => {
+            document.removeEventListener('click', onDocClick);
+            document.removeEventListener('keydown', onDocKey);
+        };
+
+        return wrap;
+    },
+
+    createConnectAgentsButton() {
+        const btn = document.createElement('button');
+        // Matches the Tour button's neutral colour (text-secondary border + text,
+        // accent on hover) but carries a soft drop shadow so it still reads as the
+        // primary CTA. Shadow uses rgba black so it's visible in light AND dark.
+        btn.style.cssText = 'background: transparent; border: 2px solid var(--text-secondary); color: var(--text-secondary); height: 30px; padding: 0 15px; border-radius: 15px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: all 0.2s; margin-right: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); white-space: nowrap;';
+        btn.title = 'Connect your agents to this engine';
+
+        // Plug icon — "connect".
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        svg.style.cssText = 'width: 14px; height: 14px;';
+        [
+            'M9 2v6', 'M15 2v6', 'M7 8h10v3a5 5 0 0 1-10 0V8z', 'M12 16v6',
+        ].forEach(d => { const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', d); svg.appendChild(p); });
+        btn.appendChild(svg);
+
+        const label = document.createElement('span');
+        label.textContent = 'Connect Agents';
+        btn.appendChild(label);
+
+        btn.addEventListener('mouseenter', () => { btn.style.borderColor = 'var(--accent-primary)'; btn.style.color = 'var(--accent-primary)'; btn.style.boxShadow = '0 3px 12px rgba(0,0,0,0.26)'; });
+        btn.addEventListener('mouseleave', () => { btn.style.borderColor = 'var(--text-secondary)'; btn.style.color = 'var(--text-secondary)'; btn.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18)'; });
+        btn.addEventListener('click', () => this.showConnectAgentsChooser());
+        return btn;
+    },
+
+    // Two-route chooser. Shared by the header button and the first-run welcome
+    // so there is exactly one place that defines "how do I connect my agents".
+    // Each route deep-links into the Connect Your Agents guide page.
+    showConnectAgentsChooser() {
+        const content = document.createElement('div');
+        content.className = 'connect-agents-chooser';
+
+        const intro = document.createElement('p');
+        intro.style.cssText = 'margin: 0 0 18px; color: var(--text-secondary); font-size: 14px; line-height: 1.55;';
+        intro.textContent = 'Point your existing agents at this engine. Pick the route that matches how you build them. It works the same whether this is the local app or an engine you deployed with Terraform.';
+        content.appendChild(intro);
+
+        const routes = [
+            {
+                badge: 'Route A',
+                title: 'I use a framework',
+                sub: 'LangChain · LangGraph · CrewAI · Hermes',
+                desc: 'One SDK import secures every tool call. Lightweight --no-deps install when your engine is remote.',
+                anchor: 'route-frameworks',
+            },
+            {
+                badge: 'Route B',
+                title: 'I use a coding agent',
+                sub: 'Claude Code · Codex · Copilot CLI · Cursor · OpenClaw',
+                desc: 'Native Guard plugin hooks your coding agent directly: install the app, register the plugin.',
+                anchor: 'route-plugins',
+            },
+        ];
+
+        routes.forEach(r => {
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.style.cssText = 'display: block; width: 100%; text-align: left; background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; cursor: pointer; color: var(--text-primary); transition: border-color 0.15s, box-shadow 0.15s;';
+            card.onmouseenter = () => { card.style.borderColor = 'var(--accent-primary)'; card.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'; };
+            card.onmouseleave = () => { card.style.borderColor = 'var(--border-default)'; card.style.boxShadow = 'none'; };
+
+            const badge = document.createElement('span');
+            badge.style.cssText = 'display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--accent-primary); background: var(--bg-tertiary); border: 1px solid var(--border-default); border-radius: 4px; padding: 2px 8px; margin-bottom: 8px;';
+            badge.textContent = r.badge;
+            card.appendChild(badge);
+
+            const title = document.createElement('div');
+            title.style.cssText = 'font-size: 16px; font-weight: 700; margin-bottom: 2px;';
+            title.textContent = r.title;
+            card.appendChild(title);
+
+            const sub = document.createElement('div');
+            sub.style.cssText = 'font-size: 12px; font-weight: 600; color: var(--accent-primary); margin-bottom: 6px;';
+            sub.textContent = r.sub;
+            card.appendChild(sub);
+
+            const desc = document.createElement('div');
+            desc.style.cssText = 'font-size: 13px; color: var(--text-secondary); line-height: 1.5;';
+            desc.textContent = r.desc;
+            card.appendChild(desc);
+
+            card.addEventListener('click', () => {
+                if (window.GuideConnectAgentsPage) GuideConnectAgentsPage.scrollTo = r.anchor;
+                Modal.close();
+                if (window.Sidebar) Sidebar.navigate('guide-connect-agents');
+            });
+            content.appendChild(card);
+        });
+
+        const footer = document.createElement('p');
+        footer.style.cssText = 'margin: 6px 0 0; font-size: 12px; color: var(--text-secondary);';
+        footer.textContent = 'Using n8n, Dify, Ollama, or any HTTP client? See the Integrations pages in the sidebar.';
+        content.appendChild(footer);
+
+        Modal.show({
+            title: 'Connect your agents',
+            content: content,
+            size: 'medium',
+        });
+    },
+
+    createAgentDropdown() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'agent-dropdown-wrapper';
+
+        const btn = document.createElement('button');
+        btn.className = 'agent-dropdown-btn flashing-border';
+
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', 'currentColor');
+        icon.setAttribute('stroke-width', '2');
+        // Robot/Agent icon
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', '3');
+        rect.setAttribute('y', '11');
+        rect.setAttribute('width', '18');
+        rect.setAttribute('height', '10');
+        rect.setAttribute('rx', '2');
+        icon.appendChild(rect);
+        const circle1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle1.setAttribute('cx', '12');
+        circle1.setAttribute('cy', '5');
+        circle1.setAttribute('r', '2');
+        icon.appendChild(circle1);
+        const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path1.setAttribute('d', 'M12 7v4');
+        icon.appendChild(path1);
+        const circle2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle2.setAttribute('cx', '8');
+        circle2.setAttribute('cy', '16');
+        circle2.setAttribute('r', '1');
+        circle2.setAttribute('fill', 'currentColor');
+        icon.appendChild(circle2);
+        const circle3 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle3.setAttribute('cx', '16');
+        circle3.setAttribute('cy', '16');
+        circle3.setAttribute('r', '1');
+        circle3.setAttribute('fill', 'currentColor');
+        icon.appendChild(circle3);
+        btn.appendChild(icon);
+
+        const text = document.createElement('span');
+        text.textContent = 'Agent Integrations';
+        btn.appendChild(text);
+
+        const arrow = document.createElement('span');
+        arrow.className = 'dropdown-arrow';
+        arrow.textContent = '\u25BC';
+        btn.appendChild(arrow);
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleDropdown(wrapper);
+        });
+
+        wrapper.appendChild(btn);
+
+        // Dropdown menu
+        const menu = document.createElement('div');
+        menu.className = 'agent-dropdown-menu';
+
+        this.agents.forEach(agent => {
+            const item = document.createElement('div');
+            item.className = 'agent-dropdown-item';
+            item.textContent = agent.name;
+            item.addEventListener('click', () => {
+                this.showAgentInstructions(agent.id);
+                this.closeDropdown(wrapper);
+            });
+            menu.appendChild(item);
+        });
+
+        wrapper.appendChild(menu);
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => this.closeDropdown(wrapper));
+
+        return wrapper;
+    },
+
+    toggleDropdown(wrapper) {
+        const menu = wrapper.querySelector('.agent-dropdown-menu');
+        const isOpen = menu.classList.contains('active');
+        if (isOpen) {
+            this.closeDropdown(wrapper);
+        } else {
+            menu.classList.add('active');
+            this.dropdownOpen = true;
+        }
+    },
+
+    closeDropdown(wrapper) {
+        const menu = wrapper.querySelector('.agent-dropdown-menu');
+        if (menu) {
+            menu.classList.remove('active');
+        }
+        this.dropdownOpen = false;
+    },
+
+    showAgentInstructions(agentId) {
+        const instructions = this.getAgentInstructions(agentId);
+        if (!instructions) return;
+
+        const content = document.createElement('div');
+        content.className = 'agent-instructions';
+
+        // Description
+        const desc = document.createElement('p');
+        desc.className = 'agent-description';
+        desc.textContent = instructions.description;
+        desc.style.marginBottom = '20px';
+        desc.style.color = 'var(--text-secondary)';
+        content.appendChild(desc);
+
+        // Why Proxy section (if present)
+        if (instructions.whyProxy) {
+            const whyBox = document.createElement('div');
+            whyBox.className = 'cloud-highlight-banner';
+            whyBox.style.cssText = 'margin-bottom:20px;padding:16px;background:var(--bg-secondary);border:1px solid var(--border-default);border-left:3px solid var(--accent-primary, #5eadb8);border-radius:8px;';
+
+            const whyTitle = document.createElement('strong');
+            whyTitle.textContent = instructions.whyProxy.title;
+            whyTitle.style.display = 'block';
+            whyTitle.style.marginBottom = '10px';
+            whyTitle.style.color = 'var(--text-primary)';
+            whyBox.appendChild(whyTitle);
+
+            const reasonsList = document.createElement('ul');
+            reasonsList.style.cssText = 'margin:0;padding-left:20px;font-size:13px;color:var(--text-secondary);';
+            instructions.whyProxy.reasons.forEach(reason => {
+                const li = document.createElement('li');
+                li.textContent = reason;
+                li.style.marginBottom = '4px';
+                reasonsList.appendChild(li);
+            });
+            whyBox.appendChild(reasonsList);
+
+            content.appendChild(whyBox);
+        }
+
+        // Steps
+        if (instructions.steps && instructions.steps.length > 0) {
+            const stepsList = document.createElement('div');
+            stepsList.className = 'cloud-steps';
+
+            instructions.steps.forEach(step => {
+                const stepEl = document.createElement('div');
+                stepEl.className = 'cloud-step';
+
+                const numEl = document.createElement('span');
+                numEl.className = 'step-number';
+                numEl.textContent = step.num;
+                stepEl.appendChild(numEl);
+
+                const textEl = document.createElement('div');
+                textEl.className = 'step-text';
+
+                const titleEl = document.createElement('strong');
+                titleEl.textContent = step.title;
+                textEl.appendChild(titleEl);
+
+                const descEl = document.createElement('p');
+                descEl.textContent = step.desc;
+                textEl.appendChild(descEl);
+
+                // Code snippet for this step
+                if (step.code) {
+                    const codeBlock = document.createElement('pre');
+                    codeBlock.className = 'step-code';
+                    codeBlock.style.cssText = 'background:var(--bg-tertiary);padding:8px 12px;border-radius:6px;margin-top:8px;font-size:12px;overflow-x:auto;';
+                    const codeEl = document.createElement('code');
+                    codeEl.textContent = step.code;
+                    codeBlock.appendChild(codeEl);
+                    textEl.appendChild(codeBlock);
+                }
+
+                stepEl.appendChild(textEl);
+                stepsList.appendChild(stepEl);
+            });
+
+            content.appendChild(stepsList);
+        }
+
+        // Full code block (if provided)
+        if (instructions.code) {
+            const codeSection = document.createElement('div');
+            codeSection.style.marginTop = '20px';
+
+            const codeLabel = document.createElement('div');
+            codeLabel.style.cssText = 'font-size:12px;color:var(--text-secondary);margin-bottom:8px;';
+            codeLabel.textContent = 'Full Code:';
+            codeSection.appendChild(codeLabel);
+
+            const block = document.createElement('div');
+            block.className = 'instructions-block';
+
+            const pre = document.createElement('pre');
+            const code = document.createElement('code');
+            code.textContent = instructions.code;
+            pre.appendChild(code);
+            block.appendChild(pre);
+
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'btn btn-small btn-primary copy-btn';
+            copyBtn.textContent = 'Copy';
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(instructions.code).then(() => {
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
+                });
+            });
+            block.appendChild(copyBtn);
+
+            codeSection.appendChild(block);
+            content.appendChild(codeSection);
+        }
+
+        // Note section (if provided)
+        if (instructions.note) {
+            const noteEl = document.createElement('div');
+            noteEl.className = 'local-mode-highlight';
+            noteEl.style.cssText = 'margin-top:20px;padding:12px 16px;background:rgba(94, 173, 184, 0.08);border:1px solid var(--accent-primary);border-radius:8px;font-size:13px;';
+
+            const noteIcon = document.createElement('span');
+            noteIcon.textContent = '💡 ';
+            noteEl.appendChild(noteIcon);
+
+            const noteText = document.createElement('span');
+            noteText.textContent = instructions.note;
+            noteEl.appendChild(noteText);
+
+            content.appendChild(noteEl);
+        }
+
+        Modal.show({
+            title: instructions.name + ' Integration',
+            content: content,
+            size: 'medium',
+        });
+    },
+
+    getAgentInstructions(agentId) {
+        const instructions = {
+            'n8n': {
+                name: 'n8n',
+                description: 'Workflow automation platform with visual workflow builder',
+                steps: [
+                    { num: '1', title: 'Open Settings', desc: 'Go to Settings → Community Nodes' },
+                    { num: '2', title: 'Install Node', desc: 'Search and install: n8n-nodes-aegis' },
+                    { num: '3', title: 'Add to Workflow', desc: 'Drag Aegis node into your workflow' },
+                    { num: '4', title: 'Configure Endpoint', desc: 'Paste your endpoint URL', code: 'Local: http://localhost:8741/analyze\nCloud: https://scan.aegis.example/analyze' },
+                ],
+                note: 'Enable "Output Scan" in header to scan LLM responses for data leakage, PII, and credential exposure.',
+            },
+            'dify': {
+                name: 'Dify',
+                description: 'LLM application development platform',
+                steps: [
+                    { num: '1', title: 'Open Settings', desc: 'Navigate to Settings → Triggers' },
+                    { num: '2', title: 'Add Webhook', desc: 'Click "Add Webhook" button' },
+                    { num: '3', title: 'Configure URL', desc: 'Paste your endpoint URL', code: 'Local: http://localhost:8741/analyze\nCloud: https://scan.aegis.example/analyze' },
+                    { num: '4', title: 'Set Headers', desc: 'Content-Type: application/json' },
+                    { num: '5', title: 'Configure Body', desc: 'Set request body format', code: '{"text": "<message>"}' },
+                ],
+            },
+            'crewai': {
+                name: 'CrewAI Enterprise',
+                description: 'AI agent orchestration framework',
+                steps: [
+                    { num: '1', title: 'Open Crew Settings', desc: 'Navigate to your Crew configuration' },
+                    { num: '2', title: 'Set Webhook URL', desc: 'Configure stepWebhookUrl parameter', code: 'Local: http://localhost:8741/analyze\nCloud: https://scan.aegis.example/analyze' },
+                    { num: '3', title: 'Deploy', desc: 'Save and deploy your Crew' },
+                ],
+                note: 'The webhook receives {"text": "..."} and returns threat analysis for each agent step.',
+            },
+            'claude-desktop': {
+                name: 'Claude Desktop',
+                description: 'MCP integration for Claude Desktop & Cursor IDE',
+                steps: [
+                    { num: '1', title: 'Install Package', desc: 'Install Aegis with MCP support', code: 'pip install ai-aegis[mcp]' },
+                    { num: '2', title: 'Edit Config', desc: 'Open claude_desktop_config.json' },
+                    { num: '3', title: 'Add Server', desc: 'Add Aegis MCP server', code: '{\n  "mcpServers": {\n    "aegis": {\n      "command": "aegis-mcp"\n    }\n  }\n}' },
+                    { num: '4', title: 'Restart Claude', desc: 'Restart Claude Desktop to apply changes' },
+                ],
+                note: 'See docs/MCP_GUIDE.md for full setup instructions.',
+            },
+            'openclaw': {
+                name: 'OpenClaw',
+                description: 'Open-source AI agent platform with Smart Output Detection',
+                whyProxy: {
+                    title: 'Why Proxy Mode?',
+                    reasons: [
+                        'OpenClaw has no message interception hooks',
+                        'Hooks only fire AFTER messages reach the LLM (too late)',
+                        'Skills require LLM cooperation (unreliable)',
+                        'Proxy intercepts at the network level, before any message reaches the LLM'
+                    ]
+                },
+                steps: [
+                    { num: '1', title: 'Start OpenClaw', desc: 'Run OpenClaw gateway on alternate port', code: 'openclaw gateway --port 18790' },
+                    { num: '2', title: 'Start Proxy', desc: 'Go to OpenClaw Proxy page in sidebar and click Start Proxy, or run from terminal:', code: '# Option 1: Use the Proxy page in sidebar\n# Option 2: Run from terminal:\npython -m aegis.integrations.openclaw_proxy' },
+                    { num: '3', title: 'Connect Client', desc: 'Use OpenClaw TUI normally - it connects through proxy automatically', code: 'openclaw tui' },
+                ],
+                note: 'Manage proxy from the OpenClaw Proxy page in sidebar. Configure Block Mode and Output Scanning for threat detection.',
+            },
+            'langchain': {
+                name: 'LangChain',
+                description: 'LLM application framework with callback support',
+                steps: [
+                    { num: '1', title: 'Install Package', desc: 'Install Aegis client', code: 'pip install ai-aegis' },
+                    { num: '2', title: 'Create Callback', desc: 'Implement AegisCallback class with input/output scanning' },
+                    { num: '3', title: 'Add to Chain', desc: 'Pass callback to your chain invocation' },
+                ],
+                code: `from langchain_core.callbacks import BaseCallbackHandler
+from aegis import AegisClient
+
+class AegisCallback(BaseCallbackHandler):
+    def __init__(self):
+        self.client = AegisClient()
+
+    def on_chat_model_start(self, serialized, messages, **kwargs):
+        # Scan input (prompt injection detection)
+        for msg_list in messages:
+            for msg in msg_list:
+                if self.client.analyze(msg.content).is_threat:
+                    raise ValueError("Blocked by Aegis")
+
+    def on_llm_end(self, response, **kwargs):
+        # Scan output (data leakage detection)
+        for gen in response.generations:
+            for g in gen:
+                result = self.client.analyze(g.text, llm_response=True)
+                if result.is_threat:
+                    print(f"⚠️ Output leakage: {result.threat_type}")
+
+# Usage:
+response = chain.invoke(input, config={
+    "callbacks": [AegisCallback()]
+})`,
+                note: 'Scans both input (prompt injection) and output (data leakage, PII exposure).',
+            },
+            'langgraph': {
+                name: 'LangGraph',
+                description: 'Stateful agent orchestration with graph-based workflows',
+                steps: [
+                    { num: '1', title: 'Install Package', desc: 'Install Aegis client', code: 'pip install ai-aegis' },
+                    { num: '2', title: 'Create Security Nodes', desc: 'Define input and output security check nodes' },
+                    { num: '3', title: 'Add to Graph', desc: 'Insert nodes before and after LLM' },
+                ],
+                code: `from langgraph.graph import StateGraph, START, END
+from aegis import AegisClient
+
+client = AegisClient()
+
+def input_security(state: dict) -> dict:
+    """Scan input for prompt injection"""
+    last_msg = state["messages"][-1].content
+    if client.analyze(last_msg).is_threat:
+        raise ValueError("Blocked by Aegis")
+    return state
+
+def output_security(state: dict) -> dict:
+    """Scan output for data leakage"""
+    if "response" in state:
+        result = client.analyze(state["response"], llm_response=True)
+        if result.is_threat:
+            state["security_warning"] = result.threat_type
+    return state
+
+# Add to your graph:
+graph.add_edge(START, "input_security")
+graph.add_edge("input_security", "llm")
+graph.add_edge("llm", "output_security")
+graph.add_edge("output_security", END)`,
+                note: 'Smart Output Detection: scans for credentials, PII, system prompt leaks, and encoded data in responses.',
+            },
+        };
+        return instructions[agentId];
+    },
+
+    getPageTitle() {
+        const titles = {
+            'guide': 'Guide',
+            dashboard: 'Dashboard',
+            threats: 'Threat Analytics',
+            rules: 'Rules',
+            'tool-permissions': 'Tool Permissions',
+            'tool-activity': 'Tool Activity & Inventory',
+            'bill-of-tools': 'Tool Activity & Inventory',
+            'redactions': 'Secret Detections',
+            'mcp-policies': 'MCP Policies',
+            proxy: 'Security',
+            settings: 'Settings',
+        };
+        const currentPage = window.Sidebar ? Sidebar.currentPage : 'dashboard';
+        return titles[currentPage] || 'Dashboard';
+    },
+
+    getStatusText() {
+        const texts = {
+            checking: 'Checking...',
+            healthy: 'Server Online',
+            degraded: 'Degraded',
+            offline: 'Offline',
+        };
+        return texts[this.serverStatus] || 'Unknown';
+    },
+
+    createThemeIcon() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+
+        if (isDark) {
+            // Sun icon
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', '12');
+            circle.setAttribute('cy', '12');
+            circle.setAttribute('r', '5');
+            svg.appendChild(circle);
+
+            const rays = [
+                'M12 1v2', 'M12 21v2', 'M4.22 4.22l1.42 1.42',
+                'M18.36 18.36l1.42 1.42', 'M1 12h2', 'M21 12h2',
+                'M4.22 19.78l1.42-1.42', 'M18.36 5.64l1.42-1.42'
+            ];
+            rays.forEach(d => {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                line.setAttribute('d', d);
+                svg.appendChild(line);
+            });
+        } else {
+            // Moon icon
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z');
+            svg.appendChild(path);
+        }
+
+        return svg;
+    },
+
+
+    async checkStatus() {
+        try {
+            const health = await API.health();
+            this.serverStatus = health.status || 'healthy';
+        } catch (e) {
+            this.serverStatus = 'offline';
+        }
+        this.updateStatusBadge();
+    },
+
+    updateStatusBadge() {
+        const badge = document.getElementById('server-status');
+        if (!badge) return;
+
+        badge.className = 'status-badge ' + this.serverStatus;
+        const textSpan = badge.querySelector('span:last-child');
+        if (textSpan) {
+            textSpan.textContent = this.getStatusText();
+        }
+    },
+
+    PAGE_INFO: {
+        dashboard:         { title: 'Dashboard',           subtitle: 'Scanned requests, active threats, cost trends, and recent activity' },
+        threats:           { title: 'Threat Monitor',      subtitle: 'All LLM requests analyzed for threats' },
+        replay:            { title: 'Observability',      subtitle: 'Per-agent timeline of scans, tool calls, and LLM cost' },
+        rules:             { title: 'Detection Rules',     subtitle: 'Manage community and custom threat detection rules' },
+        'tool-permissions':{ title: 'Tool Permissions',   subtitle: 'Control which tools your agent is allowed to call' },
+        'tool-activity':   { title: 'Tool Activity & Inventory', subtitle: 'Tool-call audit log + the inventory of every (MCP server, tool) pair your agents called: two tabs, one dataset' },
+        'bill-of-tools':   { title: 'Tool Activity & Inventory', subtitle: 'Tool-call audit log + the inventory of every (MCP server, tool) pair your agents called: two tabs, one dataset' },
+        'redactions':      { title: 'Secret Detections',   subtitle: 'Redactions audit log: credentials/PII caught and scrubbed. No raw secret values stored, only SHA-256 hashes.' },
+        governance:        { title: 'Agent Governance',          subtitle: 'This device’s local protection posture: operational, not a legal/compliance assessment' },
+        'mcp-policies':    { title: 'MCP Policies',        subtitle: 'Org-managed tool rules synced from your Aegis cloud (read-only)' },
+        'guardian-ml':     { title: 'Guardian ML',         subtitle: 'Local ML threat detection: runs offline alongside the regex rules' },
+        costs:             { title: 'Cost & Tokens',       subtitle: 'Track LLM token spend per agent' },
+        integrations:      { title: 'Integrations',        subtitle: 'Connect Aegis to your AI framework' },
+        guide:             { title: 'Guide',               subtitle: 'Setup instructions and integration examples' },
+        'guide-connect-agents': { title: 'Connect Your Agents', subtitle: 'Point your existing agents at this engine: Framework SDKs or coding-agent plugins, local or self-host' },
+        settings:          { title: 'Settings',            subtitle: 'Configure Aegis for your environment' },
+        'proxy-langchain': { title: 'LangChain',           subtitle: 'Aegis SDK for LangChain tool calls: optional legacy proxy' },
+        'proxy-langgraph': { title: 'LangGraph',           subtitle: 'Aegis SDK for LangGraph tool calls: optional legacy proxy' },
+        'proxy-crewai':    { title: 'CrewAI',              subtitle: 'Aegis SDK for CrewAI tool calls: optional legacy proxy' },
+        'proxy-hermes':    { title: 'Hermes',              subtitle: 'Aegis SDK for Hermes (hermes-agent) tool calls: optional legacy proxy' },
+        'proxy-ollama':    { title: 'Ollama Proxy',        subtitle: 'Proxy setup for Ollama agents' },
+        'proxy-openclaw':  { title: 'OpenClaw Proxy',      subtitle: 'Proxy setup for OpenClaw agents' },
+        'proxy-n8n':       { title: 'n8n Proxy',           subtitle: 'Proxy setup for n8n workflows' },
+    },
+
+    updateTitle() {
+        const currentPage = window.Sidebar ? Sidebar.currentPage : 'dashboard';
+        const info = this.PAGE_INFO[currentPage] || { title: this.getPageTitle(), subtitle: '' };
+
+        const hpt = document.getElementById('header-page-title');
+        if (hpt) hpt.textContent = info.title;
+        const hps = document.getElementById('header-page-subtitle');
+        if (hps) hps.textContent = info.subtitle;
+    },
+
+    setPageInfo(title, subtitle) {
+        const hpt = document.getElementById('header-page-title');
+        if (hpt) hpt.textContent = title || '';
+        const hps = document.getElementById('header-page-subtitle');
+        if (hps) {
+            hps.textContent = subtitle !== undefined ? subtitle : '';
+            // Subtitle is clamped to one line — the full text survives as a
+            // tooltip for the few pages whose description still runs long.
+            hps.title = subtitle || '';
+        }
+    },
+};
+
+window.Header = Header;

@@ -1,0 +1,40 @@
+{
+  "name": "aegis-guard",
+  "version": "4.6.0",
+  "description": "Real-time policy enforcement and tamper-evident audit for MCP tool calls invoked from an OpenAI Codex session. Forwards every tool call to a local Aegis app for cloud-managed deny rules and persistent audit logging. Fails open if the local app is unreachable.",
+  "author": {
+    "name": "Aegis",
+    "url": "https://aegis.example"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "security",
+    "audit",
+    "policy-enforcement",
+    "mcp",
+    "guardrails"
+  ],
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Aegis Guard",
+    "shortDescription": "Real-time policy enforcement and tamper-evident audit for Codex tool calls.",
+    "longDescription": "Aegis Guard intercepts every PreToolUse, PostToolUse, and UserPromptSubmit event in your Codex session, forwards them to a local companion app on 127.0.0.1, and applies cloud-managed deny rules in real time. Tool calls are written to a SHA-256 hash-chained audit log on disk. Prompt-injection patterns and credential leaks are surfaced in a local dashboard. Fails open — Codex keeps working when Aegis is down.",
+    "developerName": "Aegis",
+    "category": "Security",
+    "capabilities": [
+      "hooks"
+    ],
+    "websiteUrl": "https://aegis.example",
+    "privacyPolicyUrl": "https://github.com/Wanshanghao/ai-aegis/blob/v4.6.0/src/aegis/plugins/codex/PRIVACY.md",
+    "brandColor": "#5EADB8",
+    "defaultPrompt": [
+      "Show me my recent Codex tool calls in Aegis."
+    ],
+    "screenshots": [
+      "https://raw.githubusercontent.com/Wanshanghao/ai-aegis/v4.6.0/docs/screenshots/dashboard.png",
+      "https://raw.githubusercontent.com/Wanshanghao/ai-aegis/v4.6.0/docs/screenshots/tool-permissions-light.png",
+      "https://raw.githubusercontent.com/Wanshanghao/ai-aegis/v4.6.0/docs/screenshots/tool-activity-detail.png",
+      "https://raw.githubusercontent.com/Wanshanghao/ai-aegis/v4.6.0/docs/screenshots/costs-light.png"
+    ]
+  }
+}

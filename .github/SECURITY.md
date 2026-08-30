@@ -1,0 +1,447 @@
+# Security Policy
+
+**Aegis AI Threat Monitor**
+**Last Updated:** February 9, 2026
+
+---
+
+## Our Security Commitment
+
+Security is at the core of Aegis. We take the security of our software and our users' data seriously. This document outlines our security practices and how to report vulnerabilities.
+
+---
+
+## Supported Versions
+
+We provide security updates for the following versions:
+
+| Version | Supported          | End of Support |
+| ------- | ------------------ | -------------- |
+| 2.1.x   | ✅ Yes            | Current        |
+| 2.0.x   | ✅ Yes            | June 2026      |
+| 1.3.x   | ⚠️ Limited       | March 2026     |
+| < 1.3   | ❌ No             | Ended          |
+
+**Recommendation:** Always use the latest version for the best security and features.
+
+---
+
+## Reporting a Vulnerability
+
+### How to Report
+
+We appreciate responsible disclosure of security vulnerabilities. If you discover a security issue, please report it through one of these channels:
+
+**Primary (Recommended):**
+- **GitHub Security Advisories:** [Report a vulnerability](https://github.com/Wanshanghao/ai-aegis/security/advisories/new)
+- **Email:** security@aegis.example (or contact@aegis.example with subject "SECURITY:")
+
+**Alternative:**
+- Create a **private** GitHub issue (if your repository supports it)
+- For critical vulnerabilities, use encrypted email (PGP key below)
+
+### What to Include
+
+Please provide as much information as possible:
+
+```
+**Summary:**
+Brief description of the vulnerability
+
+**Affected Versions:**
+Which versions are affected?
+
+**Vulnerability Type:**
+(e.g., RCE, XSS, SQL Injection, Authentication bypass, etc.)
+
+**Steps to Reproduce:**
+1. Step one
+2. Step two
+3. Step three
+
+**Proof of Concept:**
+Code or commands that demonstrate the issue
+
+**Impact:**
+What could an attacker do with this vulnerability?
+
+**Suggested Fix:**
+(Optional) Your recommendation for fixing the issue
+
+**CVE ID:**
+(If already assigned)
+```
+
+### What NOT to Do
+
+Please do **NOT**:
+- ❌ Publicly disclose the vulnerability before we've had a chance to fix it
+- ❌ Exploit the vulnerability beyond what's needed to demonstrate it
+- ❌ Access, modify, or delete other users' data
+- ❌ Perform DoS/DDoS attacks
+- ❌ Engage in social engineering, phishing, or physical attacks
+- ❌ Demand payment or bounty before reporting (we're a small open source project)
+
+---
+
+## Our Response Process
+
+### Timeline
+
+1. **Initial Response:** Within 48 hours
+   - We'll acknowledge receipt of your report
+   - Confirm we're investigating
+
+2. **Assessment:** Within 5 business days
+   - Validate the vulnerability
+   - Assess severity and impact
+   - Determine affected versions
+
+3. **Fix Development:** Varies by severity
+   - **Critical:** Within 7 days
+   - **High:** Within 14 days
+   - **Medium:** Within 30 days
+   - **Low:** Next regular release
+
+4. **Disclosure:** After fix is released
+   - Public disclosure coordinated with reporter
+   - Credit given to reporter (if desired)
+   - CVE assigned if applicable
+
+### Severity Levels
+
+We use the CVSS 3.1 scoring system:
+
+| Severity | CVSS Score | Response Time | Examples |
+|----------|-----------|---------------|----------|
+| **Critical** | 9.0-10.0 | 7 days | RCE, Authentication bypass |
+| **High** | 7.0-8.9 | 14 days | Privilege escalation, SQL injection |
+| **Medium** | 4.0-6.9 | 30 days | XSS, Information disclosure |
+| **Low** | 0.1-3.9 | Next release | Minor information leak |
+
+---
+
+## Recognition
+
+### Hall of Fame
+
+We maintain a public list of security researchers who have helped improve Aegis:
+
+**2025:**
+- (Awaiting first security report)
+
+**How to be listed:**
+- Report a valid security vulnerability
+- Allow us to fix it before public disclosure
+- Let us know if you'd like credit (name, link, Twitter handle)
+
+### What We Offer
+
+As a small open source project, we do not offer monetary bug bounties. However, we provide:
+
+- ✅ **Public credit** in release notes and security advisories
+- ✅ **Hall of Fame** recognition in this file
+- ✅ **Early disclosure** of the fix
+- ✅ **Direct communication** with our development team
+- ✅ **CVE credit** if a CVE is assigned
+
+---
+
+## Security Best Practices
+
+### For Users
+
+**Using Aegis Securely:**
+
+1. **Use Local Mode for Sensitive Data**
+   ```python
+   client = AegisClient(mode="local")
+   # No data leaves your infrastructure
+   ```
+
+2. **Keep Dependencies Updated**
+   ```bash
+   pip install --upgrade ai-aegis
+   ```
+
+3. **Validate API Keys**
+   ```python
+   # Don't hardcode API keys
+   import os
+   api_key = os.getenv("AEGIS_API_KEY")
+   ```
+
+4. **Monitor for Updates**
+   - Watch GitHub releases
+   - Subscribe to security advisories
+   - Enable Dependabot alerts
+
+5. **Review Logs Regularly**
+   ```python
+   # Enable logging for security events
+   import logging
+   logging.basicConfig(level=logging.WARNING)
+   ```
+
+### For Contributors
+
+**Secure Development:**
+
+1. **Never commit secrets** (API keys, passwords, tokens)
+   - Use `.env` files (gitignored)
+   - Use environment variables
+   - Use secrets management tools
+
+2. **Validate all input**
+   ```python
+   # Always sanitize user input
+   def analyze(text: str):
+       if not isinstance(text, str):
+           raise ValueError("Input must be string")
+       if len(text) > 100000:
+           raise ValueError("Input too large")
+   ```
+
+3. **Use parameterized queries** (avoid SQL injection)
+   ```python
+   # Good
+   cursor.execute("SELECT * FROM rules WHERE id = ?", (rule_id,))
+
+   # Bad
+   cursor.execute(f"SELECT * FROM rules WHERE id = {rule_id}")
+   ```
+
+4. **Keep dependencies updated**
+   ```bash
+   pip install --upgrade -r requirements.txt
+   ```
+
+5. **Run security tools**
+   ```bash
+   # Static analysis
+   bandit -r src/
+
+   # Dependency scanning
+   safety check
+
+   # Type checking
+   mypy src/
+   ```
+
+---
+
+## Known Security Considerations
+
+### Design Decisions
+
+**Local Mode Default:**
+- By default, Aegis operates in local mode
+- No network communication unless explicitly configured
+- Maximum privacy and security for users
+
+**Pattern-Based Detection:**
+- Uses regex and rule-based matching (not ML in local mode)
+- Patterns are open source and auditable
+- No "black box" decisions
+
+**API Mode Security:**
+- TLS 1.3 encryption for all communications
+- API keys hashed before storage
+- 30-day data retention maximum
+- See [Privacy Policy](../docs/legal/PRIVACY_POLICY.md) for details
+
+---
+
+## Desktop App Security
+
+The desktop application (`pip install ai-aegis[app]`) has additional security considerations:
+
+### Local API Server Security
+
+**Network Binding:**
+- API server binds to `localhost` (127.0.0.1) by default
+- Port 8741 is used for local communication
+- **No external network access** unless explicitly configured with `--host 0.0.0.0` (not recommended)
+
+**Access Control:**
+- No authentication required for localhost connections (trusted local environment)
+- If exposed to network (not recommended), implement reverse proxy with authentication
+
+**Attack Surface:**
+- Only local processes can reach the API
+- No remote exploitation possible in default configuration
+
+### SQLite Database Security
+
+**Data at Rest:**
+- Database stored in user-specific directory (requires user permissions to access)
+- No encryption at rest by default (relies on OS-level permissions)
+- Contains: threat intel records, custom rules, app settings
+
+**File Permissions:**
+- Database created with default OS permissions (typically 644)
+- Only the user running the app has write access
+
+**Data Sensitivity:**
+- Threat intel records contain analyzed text (may include sensitive content)
+- Custom rules contain detection patterns (not sensitive)
+- No credentials or API keys stored in database
+
+**Recommendations:**
+- Use full-disk encryption for sensitive environments
+- Regularly backup and secure database file if it contains sensitive analysis history
+
+### Desktop App Dependencies
+
+All desktop app dependencies use permissive open-source licenses:
+
+| Package | Version | License | Purpose |
+|---------|---------|---------|---------|
+| SQLite | (built-in) | Public Domain | Database engine |
+| aiosqlite | >=0.19.0 | MIT | Async SQLite wrapper |
+| SQLAlchemy | >=2.0.0 | MIT | Database ORM |
+| pywebview | >=5.0 | BSD-3-Clause | Lightweight cross-platform webview |
+| FastAPI | >=0.100.0 | MIT | Local API server |
+| Uvicorn | >=0.20.0 | BSD-3-Clause | ASGI server |
+| Starlette | (FastAPI dep) | BSD-3-Clause | Web framework |
+| Pydantic | (FastAPI dep) | MIT | Data validation |
+| platformdirs | >=3.0.0 | MIT | Cross-platform paths |
+| watchdog | >=3.0.0 | Apache-2.0 | File system events |
+| httpx | >=0.24.0 | BSD-3-Clause | Async HTTP client |
+| Click | (Uvicorn dep) | BSD-3-Clause | CLI framework |
+
+**All dependencies allow commercial use** with minimal attribution requirements.
+
+### Core Dependencies
+
+We carefully audit all dependencies:
+
+**Core SDK Dependencies:**
+- `PyYAML` - MIT License (YAML parsing)
+- `requests` - Apache 2.0 (HTTP client)
+- `aiohttp` - Apache 2.0 (Async HTTP) - **minimum v3.12.14** for security fixes
+- `urllib3` - MIT License (HTTP library) - **minimum v2.6.3** for security fixes
+
+**Security Monitoring:**
+- Dependabot enabled
+- Regular `safety check` scans
+- Automated security updates for critical CVEs
+- CodeQL static analysis on all PRs
+
+---
+
+## 📚 Security Resources
+
+### Related Documentation
+
+- [Privacy Policy](../docs/legal/PRIVACY_POLICY.md) - Data handling and privacy
+- [Contributor Agreement](../docs/legal/CONTRIBUTOR_AGREEMENT.md) - Security responsibilities
+- [API Documentation](docs/API_SPECIFICATION.md) - Secure API usage
+
+### Security Contacts
+
+- **Security Issues:** security@aegis.example (or contact@aegis.example)
+- **Privacy Issues:** contact@aegis.example
+- **General Issues:** [GitHub Issues](https://github.com/Wanshanghao/ai-aegis/issues)
+
+### PGP Key (Optional)
+
+For highly sensitive vulnerabilities, you may encrypt your email:
+
+```
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+(PGP key not yet generated - use encrypted GitHub Security Advisories instead)
+-----END PGP PUBLIC KEY BLOCK-----
+```
+
+**Recommendation:** Use GitHub Security Advisories for encrypted reporting.
+
+---
+
+## Past Security Advisories
+
+### 2026
+
+**v2.0.0 (January 2026) - Dependency Security Updates**
+
+The following vulnerabilities were addressed by updating dependencies:
+
+| CVE | Severity | Package | Fixed Version | Description |
+|-----|----------|---------|---------------|-------------|
+| CVE-2025-53643 | High | aiohttp | >=3.12.14 | HTTP Request Smuggling |
+| CVE-2024-52303 | Medium | aiohttp | >=3.12.14 | Memory leak in middleware |
+| CVE-2025-66418 | High | urllib3 | >=2.6.3 | Unbounded decompression chain |
+| CVE-2025-66471 | High | urllib3 | >=2.6.3 | Streaming API decompression bomb |
+| CVE-2026-21441 | High | urllib3 | >=2.6.3 | Redirect decompression bypass |
+
+**Additional fixes in v2.0.0:**
+- Removed clear-text logging of sensitive information (client IDs, session keys)
+- Added explicit permissions to GitHub Actions workflows (principle of least privilege)
+
+### 2025
+
+**No security advisories issued.**
+
+We will publish all security advisories at:
+- GitHub Security Advisories: https://github.com/Wanshanghao/ai-aegis/security/advisories
+- This file (summary)
+
+---
+
+## Security Compliance
+
+### Standards & Frameworks
+
+Our security practices are informed by:
+
+- ✅ **OWASP Top 10** - Web application security risks
+- ✅ **OWASP API Security Top 10** - API-specific vulnerabilities
+- ✅ **CWE Top 25** - Common weakness enumeration
+- ✅ **NIST Cybersecurity Framework** - Risk management
+- ✅ **MITRE ATT&CK** - Threat intelligence
+
+**Note:** "Informed by" means we use these as guidelines. We are not formally certified.
+
+### Code Security
+
+**Static Analysis:**
+- `bandit` - Python security linter
+- `safety` - Dependency vulnerability scanner
+- `mypy` - Type checking for security bugs
+
+**Testing:**
+- Unit tests for security functions
+- Integration tests for API security
+- Penetration testing (periodic)
+
+**CI/CD Security:**
+- Automated security scans on every PR
+- Dependency updates via Dependabot
+- Code review required for all changes
+
+---
+
+## 🙏 Thank You
+
+We deeply appreciate the security research community's efforts to keep open source software secure. Your responsible disclosure helps protect our users and improve our software.
+
+**Found a vulnerability?** Report it: security@aegis.example
+
+**Want to help?** Contribute: [CONTRIBUTOR_AGREEMENT.md](../docs/legal/CONTRIBUTOR_AGREEMENT.md)
+
+---
+
+<div align="center">
+
+**Security is a journey, not a destination.**
+
+We're committed to continuous improvement of our security practices.
+
+**Questions?** Contact us at contact@aegis.example
+
+</div>
+
+---
+
+**Last Updated:** February 9, 2026
+**Next Review:** May 2026

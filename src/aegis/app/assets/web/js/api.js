@@ -1,0 +1,921 @@
+/**
+ * Aegis API Client
+ * Wrapper for all API calls to the local FastAPI server
+ */
+
+const API = {
+    baseUrl: '',  // Empty for same-origin requests
+
+    /**
+     * Make an API request
+     */
+    async request(endpoint, options = {}) {
+        const url = `${this.baseUrl}${endpoint}`;
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            },
+            ...options,
+        };
+
+        try {
+            const response = await fetch(url, config);
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+                throw new Error(error.detail || `HTTP ${response.status}`);
+            }
+
+            if (response.status === 204) {
+                return {};
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error(`API Error [${endpoint}]:`, error);
+            throw error;
+        }
+    },
+
+    // ==================== Health ====================
+
+    async health() {
+        return this.request('/health');
+    },
+
+    // ==================== Analyze ====================
+
+    async analyze(content) {
+        return this.request('/analyze', {
+            method: 'POST',
+            body: JSON.stringify({ text: content }),
+        });
+    },
+
+    // ==================== Threat Analytics ====================
+
+    async getThreatAnalytics() {
+        // Get dashboard summary from threat intel and rules
+        try {
+            const [threats, rules] = await Promise.all([
+                this.getThreats({ page_size: 50 }),
+                this.getRules(),
+            ]);
+
+            const items = threats.items || [];
+            const totalCount = threats.total || items.length;  // Use total from API response
+            const ruleItems = rules.items || [];
+
+            // Calculate stats from available items (sample)
+            const criticalCount = items.filter(t => t.risk_score >= 80).length;
+            const recentThreats = items.slice(0, 5);
+            const activeRulesCount = ruleItems.filter(r => r.enabled).length;
+
+            // Group by type
+            const threatTypes = {};
+            items.forEach(t => {
+                const type = t.threat_type || 'unknown';
+                threatTypes[type] = (threatTypes[type] || 0) + 1;
+            });
+
+            // Compute average analysis latency from items with recorded processing time
+            const latencyItems = items.filter(t => t.processing_time_ms > 0);
+            const avgLatencyMs = latencyItems.length > 0
+                ? latencyItems.reduce((sum, t) => sum + t.processing_time_ms, 0) / latencyItems.length
+                : null;
+
+            return {
+                total_threats: totalCount,  // Use actual total from API
+                critical_count: criticalCount,
+                blocked_count: items.filter(t => t.action_taken === 'blocked').length,
+                active_rules: activeRulesCount,
+                recent_threats: recentThreats,
+                threat_types: threatTypes,
+                avg_latency_ms: avgLatencyMs,
+            };
+        } catch (e) {
+            return {
+                total_threats: 0,
+                critical_count: 0,
+                blocked_count: 0,
+                active_rules: 0,
+                recent_threats: [],
+                threat_types: {},
+            };
+        }
+    },
+
+    // ==================== Threat Intel ====================
+
+    // Bundle 0.4 — Agent Replay Timeline. Merged feed of scans + tool-audits + cost
+    // records, sorted by time DESC. See routes/replay.py for the server side.
+    async getReplayTimeline(params = {}) {
+        const q = new URLSearchParams();
+        if (params.agent) q.set('agent', params.agent);
+        if (params.since) q.set('since', params.since);
+        if (params.until) q.set('until', params.until);
+        if (params.limit) q.set('limit', params.limit);
+        if (params.kinds && params.kinds.length) q.set('include_kinds', params.kinds.join(','));
+        const qs = q.toString();
+        return this.request(`/api/replay/timeline${qs ? '?' + qs : ''}`).catch(() => ({
+            items: [], total: 0, agents: [], filters: {},
+        }));
+    },
+
+    // active-agent-observability #143 — Agent–Tool Live Graph. Agent nodes
+    // (runtime) → tool/MCP nodes, edges colored by enforcement outcome.
+    // See routes/graph.py for the server side.
+    async getAgentToolGraph(params = {}) {
+        const q = new URLSearchParams();
+        if (params.window_days) q.set('window_days', params.window_days);
+        const qs = q.toString();
+        return this.request(`/api/graph/agent-tool${qs ? '?' + qs : ''}`).catch(() => ({
+            window_days: params.window_days || 7,
+            node_cap: 0, truncated: false, dropped_edges: 0, nodes: [], edges: [],
+        }));
+    },
+
+    // active-agent-observability — 3-layer Agent Map. harness → agent/session →
+    // tool nodes; session nodes carry num ("agent #N"), active, idle_days. Edges
+    // tiered (harness-session / session-tool). See routes/graph.py build_graph_3layer.
+    async getAgentSessionGraph(params = {}) {
+        const q = new URLSearchParams();
+        if (params.window_days) q.set('window_days', params.window_days);
+        const qs = q.toString();
+        return this.request(`/api/graph/agent-session${qs ? '?' + qs : ''}`).catch(() => ({
+            window_days: params.window_days || 7,
+            node_cap: 0, truncated: false, dropped_edges: 0, nodes: [], edges: [],
+        }));
+    },
+
+    // active-agent-observability #142 — Agent Run Trace. Runs (one per agent
+    // session) and the ordered enforced-tool-call spans within a run.
+    async getTraces(params = {}) {
+        const q = new URLSearchParams();
+        if (params.window_days) q.set('window_days', params.window_days);
+        if (params.limit) q.set('limit', params.limit);
+        const qs = q.toString();
+        return this.request(`/api/traces${qs ? '?' + qs : ''}`).catch(() => ({
+            window_days: params.window_days || 7, runs: [],
+        }));
+    },
+
+    async getTrace(traceId) {
+        return this.request(`/api/traces/${encodeURIComponent(traceId)}`).catch(() => null);
+    },
+
+    // conversion-ux — Instant Agent Audit. Opt-in retroactive scan of on-disk
+    // agent transcripts; consent travels in the run request body.
+    async getInstantAuditStatus() {
+        return this.request('/api/instant-audit/status').catch(() => null);
+    },
+
+    async runInstantAudit(body) {
+        return this.request('/api/instant-audit/run', {
+            method: 'POST', body: JSON.stringify(body || {}),
+        }).catch(() => ({ error: true }));
+    },
+
+    async getInstantAuditReport() {
+        return this.request('/api/instant-audit/report').catch(() => null);
+    },
+
+    async deleteInstantAuditReport() {
+        return this.request('/api/instant-audit/report', { method: 'DELETE' }).catch(() => null);
+    },
+
+    // agent-observability §3.2 — blocked-action ledger. What enforcement
+    // PREVENTED in the window, grouped by reason + by tool, with hit counts.
+    async getBlockedLedger(params = {}) {
+        const q = new URLSearchParams();
+        if (params.window_days) q.set('window_days', params.window_days);
+        const qs = q.toString();
+        return this.request(`/api/blocked-ledger${qs ? '?' + qs : ''}`).catch(() => ({
+            window_days: params.window_days || 7,
+            summary: { blocked_total: 0, tools_blocked: 0, agents_affected: 0, last_at: null },
+            by_reason: [], by_tool: [],
+        }));
+    },
+
+    // active-agent-observability — Timeline. Flat, newest-first feed of every
+    // enforced tool call (across all runs). Reuses the existing call-audit log.
+    async getCallAudit(params = {}) {
+        const q = new URLSearchParams();
+        q.set('limit', params.limit || 200);
+        if (params.offset) q.set('offset', params.offset);
+        if (params.action) q.set('action', params.action);
+        const qs = q.toString();
+        return this.request(`/api/tool-permissions/call-audit${qs ? '?' + qs : ''}`).catch(() => ({
+            entries: [], total: 0,
+        }));
+    },
+
+    // active-agent-observability — Timeline overview chart. Per-day verdict
+    // counts aggregated server-side over the FULL window, so the chart never
+    // under-counts blocks the way the paged feed (200 rows) would.
+    async getCallAuditActivity(params = {}) {
+        const q = new URLSearchParams();
+        q.set('window_days', params.windowDays || 7);
+        return this.request(`/api/tool-permissions/call-audit/activity?${q.toString()}`).catch(() => ({
+            window_days: params.windowDays || 7, buckets: [],
+        }));
+    },
+
+    async getThreats(params = {}) {
+        const queryParams = new URLSearchParams();
+        if (params.page) queryParams.set('page', params.page);
+        if (params.page_size) queryParams.set('page_size', params.page_size);
+        if (params.threat_type) queryParams.set('threat_type', params.threat_type);
+        if (params.min_risk) queryParams.set('min_risk', params.min_risk);
+        if (params.max_risk) queryParams.set('max_risk', params.max_risk);
+        // Bundle 0.3 — agent slice. The threat-intel route already accepts
+        // ?source=... server-side; just plumb it through the SDK call.
+        if (params.source) queryParams.set('source', params.source);
+        // Deep-link from an Agent Runs detection to the exact record.
+        if (params.request_id) queryParams.set('request_id', params.request_id);
+        // All scans for one agent run (Runs page scanned-content panel).
+        if (params.session_id) queryParams.set('session_id', params.session_id);
+        // Range-scoped fetches (dashboard charts). Server-side filter.
+        if (params.start_date) queryParams.set('start_date', params.start_date);
+        if (params.end_date) queryParams.set('end_date', params.end_date);
+        // Sessions merged trace reads a session's scans oldest-first.
+        if (params.sort) queryParams.set('sort', params.sort);
+        if (params.order) queryParams.set('order', params.order);
+
+        const query = queryParams.toString();
+        return this.request(`/api/threat-intel${query ? '?' + query : ''}`).catch(() => ({
+            items: [],
+            total: 0,
+            total_pages: 0,
+        }));
+    },
+
+    async getThreat(id) {
+        return this.request(`/api/threat-intel/${id}`);
+    },
+
+    async deleteThreats(options = {}) {
+        return this.request('/api/threat-intel', {
+            method: 'DELETE',
+            body: JSON.stringify(options),
+        });
+    },
+
+    async deleteThreat(id) {
+        return this.request(`/api/threat-intel/${id}`, {
+            method: 'DELETE',
+        });
+    },
+
+    // disposition: 'false_positive' to dismiss, null to undo. Keeps the
+    // record (evidence) — the non-destructive alternative to deleteThreat.
+    async setThreatDisposition(id, disposition) {
+        return this.request(`/api/threat-intel/${id}/disposition`, {
+            method: 'POST',
+            body: JSON.stringify({ disposition }),
+        });
+    },
+
+    // ==================== Rules ====================
+
+    async getRules() {
+        return this.request('/api/rules').catch(() => ({
+            items: [],
+            total: 0,
+            categories: [],
+        }));
+    },
+
+    async toggleRule(ruleId, enabled) {
+        return this.request(`/api/rules/${ruleId}/toggle`, {
+            method: 'POST',
+            body: JSON.stringify({ enabled }),
+        });
+    },
+
+    async generatePatterns(description) {
+        return this.request('/api/rules/generate', {
+            method: 'POST',
+            body: JSON.stringify({ description }),
+        });
+    },
+
+    async createRule(ruleData) {
+        return this.request('/api/rules/custom', {
+            method: 'POST',
+            body: JSON.stringify(ruleData),
+        });
+    },
+
+    async getCustomRulesCount() {
+        try {
+            const response = await this.getRules();
+            const items = response.items || [];
+            return items.filter(r => r.source === 'custom').length;
+        } catch (e) {
+            return 0;
+        }
+    },
+
+    // ==================== SIEM Forwarders ====================
+
+    async listSiemForwarders() {
+        return this.request('/api/siem-forwarders').catch(() => ({ items: [], total: 0 }));
+    },
+
+    async getSiemForwarder(id) {
+        return this.request(`/api/siem-forwarders/${id}`);
+    },
+
+    async createSiemForwarder(payload) {
+        return this.request('/api/siem-forwarders', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
+    },
+
+    async updateSiemForwarder(id, payload) {
+        return this.request(`/api/siem-forwarders/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
+    },
+
+    async deleteSiemForwarder(id) {
+        return this.request(`/api/siem-forwarders/${id}`, { method: 'DELETE' });
+    },
+
+    async testSiemForwarder(id) {
+        return this.request(`/api/siem-forwarders/${id}/test`, { method: 'POST' });
+    },
+
+    // Pre-save Test Connection — fires a synthetic OCSF event against
+    // the supplied config without persisting. Used by the Add/Edit
+    // modal's "Test connection" button so operators can validate URL
+    // + credentials before committing to a DB row.
+    async testSiemForwarderConfig(config) {
+        return this.request('/api/siem-forwarders/test-config', {
+            method: 'POST',
+            body: JSON.stringify(config),
+        });
+    },
+
+    async getSiemForwarderHealth(id) {
+        return this.request(`/api/siem-forwarders/${id}/health`);
+    },
+
+    async resetSiemForwarderBreaker(id) {
+        return this.request(`/api/siem-forwarders/${id}/reset-breaker`, {
+            method: 'POST',
+        });
+    },
+
+    // Global SIEM forwarding kill-switch (v24 — single boolean toggle)
+    async getSiemGlobalSettings() {
+        return this.request('/api/siem-forwarders/global-settings');
+    },
+    async setSiemGlobalSettings(enabled) {
+        return this.request('/api/siem-forwarders/global-settings', {
+            method: 'PUT',
+            body: JSON.stringify({ enabled: !!enabled }),
+            headers: { 'Content-Type': 'application/json' },
+        });
+    },
+
+    // ==================== Cloud Rule Sync (preview → review → apply) ====================
+
+    async syncPreviewStart() {
+        return this.request('/api/rules/sync/preview', { method: 'POST' });
+    },
+
+    async syncPreviewPage(token, page = 1, perPage = 10) {
+        const qs = `?page=${encodeURIComponent(page)}&per_page=${encodeURIComponent(perPage)}`;
+        return this.request(`/api/rules/sync/preview/${encodeURIComponent(token)}${qs}`);
+    },
+
+    async syncPreviewApply(token, replaceExisting = false, opts = {}) {
+        const body = {
+            preview_token: token,
+            replace_existing: replaceExisting,
+        };
+        // Selective save — pass a list of rule_ids to apply ONLY those, or
+        // a list of rule_ids to skip, or neither to apply everything. The
+        // server prefers `selected_rule_ids` when both are set.
+        if (Array.isArray(opts.selectedRuleIds)) {
+            body.selected_rule_ids = opts.selectedRuleIds;
+        }
+        if (Array.isArray(opts.skipRuleIds)) {
+            body.skip_rule_ids = opts.skipRuleIds;
+        }
+        return this.request('/api/rules/sync/apply', {
+            method: 'POST',
+            body: JSON.stringify(body),
+        });
+    },
+
+    async syncPreviewDiscard(token) {
+        return this.request(`/api/rules/sync/preview/${encodeURIComponent(token)}`, {
+            method: 'DELETE',
+        });
+    },
+
+    // ==================== General Settings ====================
+
+    async getSettings() {
+        return this.request('/api/settings').catch(() => ({
+            scan_llm_responses: true,
+        }));
+    },
+
+    async updateSettings(settings) {
+        const result = await this.request('/api/settings', {
+            method: 'PUT',
+            body: JSON.stringify(settings),
+        });
+        if (result && result.config_updated && result.config_file) {
+            const fileName = result.config_file.split('/').pop().split('\\').pop();
+            const msg = `${fileName} updated`;
+            if (window.Toast) Toast.info(msg);
+            else if (window.UI && UI.showNotification) UI.showNotification(msg, 'info');
+        }
+        return result;
+    },
+
+    // ==================== Cloud Settings ====================
+
+    async getCloudSettings() {
+        return this.request('/api/settings/cloud').catch(() => ({
+            credentials_configured: false,
+            cloud_mode_enabled: false,
+        }));
+    },
+
+    async setCloudMode(enabled) {
+        return this.request('/api/settings/cloud/mode', {
+            method: 'PUT',
+            body: JSON.stringify({ enabled }),
+        });
+    },
+
+    async setCloudCredentials(credentials) {
+        return this.request('/api/settings/cloud/credentials', {
+            method: 'POST',
+            body: JSON.stringify(credentials),
+        });
+    },
+
+    async clearCloudCredentials() {
+        return this.request('/api/settings/cloud/credentials', {
+            method: 'DELETE',
+        });
+    },
+
+    // One-click cloud trial (device flow). Raw fetch instead of request():
+    // error bodies carry {detail: {error, message}} and the UI needs the
+    // machine-readable `error` code (e.g. trial_unavailable) to pick a
+    // fallback, which request()'s string-only Error would flatten away.
+    async _trialCall(endpoint, body) {
+        const resp = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {}),
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+            const detail = (data && typeof data.detail === 'object') ? data.detail : {};
+            const err = new Error(detail.message || data.detail || `HTTP ${resp.status}`);
+            err.code = detail.error || `http_${resp.status}`;
+            throw err;
+        }
+        return data;
+    },
+
+    async startCloudTrial() {
+        return this._trialCall('/api/settings/cloud/trial/start');
+    },
+
+    async pollCloudTrial(deviceCode) {
+        return this._trialCall('/api/settings/cloud/trial/poll', { device_code: deviceCode });
+    },
+
+    // ==================== Tool Permissions ====================
+
+    async getEssentialTools() {
+        return this.request('/api/tool-permissions/essential').catch(() => ({
+            tools: [],
+            total: 0,
+        }));
+    },
+
+    async getToolOverrides() {
+        return this.request('/api/tool-permissions/overrides').catch(() => ({
+            overrides: [],
+            total: 0,
+        }));
+    },
+
+    async setToolOverride(toolId, action, runtimeKind = null) {
+        const body = { action };
+        // null/undefined → omit (global, all runtimes); a slug scopes the rule.
+        if (runtimeKind) body.runtime_kind = runtimeKind;
+        return this.request(`/api/tool-permissions/overrides/${encodeURIComponent(toolId)}`, {
+            method: 'PUT',
+            body: JSON.stringify(body),
+        });
+    },
+
+    async updateEssentialToolRateLimit(toolId, maxCalls, windowSeconds) {
+        return this.request(`/api/tool-permissions/overrides/${encodeURIComponent(toolId)}/rate-limit`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                max_calls: maxCalls || null,
+                window_seconds: windowSeconds || null,
+            }),
+        });
+    },
+
+    async deleteToolOverride(toolId) {
+        return this.request(`/api/tool-permissions/overrides/${encodeURIComponent(toolId)}`, {
+            method: 'DELETE',
+        });
+    },
+
+    // ==================== JIT Access (requests + grants) ====================
+
+    // Per-run decision token. Approve/deny/revoke are human-only actions:
+    // the server requires this token, which only the web UI fetches. Cached
+    // for the page's lifetime; refetched transparently after a server restart.
+    _jitToken: null,
+    async _getJitToken() {
+        if (!this._jitToken) {
+            const r = await this.request('/api/jit/ui-token');
+            this._jitToken = r.token;
+        }
+        return this._jitToken;
+    },
+    async _jitDecision(endpoint, body) {
+        // NB: request() replaces the whole headers object when options.headers
+        // is set (the ...options spread wins), so Content-Type must be
+        // restated here or FastAPI 422s on an unparseable body.
+        const call = async () => this.request(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-SV-UI-Token': await this._getJitToken(),
+            },
+            body: JSON.stringify(body || {}),
+        });
+        try {
+            return await call();
+        } catch (e) {
+            // Retry once ONLY for a stale token (app restarted since the
+            // token was cached) — any other failure surfaces immediately.
+            if (!/UI token/i.test(String(e && e.message))) throw e;
+            this._jitToken = null;
+            return call();
+        }
+    },
+
+    async getJitRequests(status = null) {
+        const q = status ? `?status=${encodeURIComponent(status)}` : '';
+        return this.request(`/api/jit/requests${q}`).catch(() => ({ items: [], pending: 0 }));
+    },
+
+    async getJitGrants() {
+        return this.request('/api/jit/grants').catch(() => ({ items: [], active: [] }));
+    },
+
+    async approveJitRequest(id, duration) {
+        return this._jitDecision(`/api/jit/requests/${encodeURIComponent(id)}/approve`, { duration });
+    },
+
+    async denyJitRequest(id, reason = null) {
+        return this._jitDecision(`/api/jit/requests/${encodeURIComponent(id)}/deny`, { reason });
+    },
+
+    async revokeJitGrant(id) {
+        return this._jitDecision(`/api/jit/grants/${encodeURIComponent(id)}/revoke`, {});
+    },
+
+    // ==================== Custom Tools ====================
+
+    async getCustomTools() {
+        return this.request('/api/tool-permissions/custom').catch(() => ({
+            tools: [],
+            total: 0,
+        }));
+    },
+
+    async createCustomTool(toolData) {
+        return this.request('/api/tool-permissions/custom', {
+            method: 'POST',
+            body: JSON.stringify(toolData),
+        });
+    },
+
+    /** Update a custom tool's label fields (name / description / risk).
+     *
+     * Separate from updateCustomToolPermission: renaming a tool must never be
+     * able to change what it is allowed to do. Partial body, so omitted
+     * fields keep their current values. */
+    async updateCustomTool(toolId, fields) {
+        return this.request(`/api/tool-permissions/custom/${encodeURIComponent(toolId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify(fields),
+        });
+    },
+
+    async updateCustomToolPermission(toolId, defaultPermission) {
+        return this.request(`/api/tool-permissions/custom/${encodeURIComponent(toolId)}`, {
+            method: 'PUT',
+            body: JSON.stringify({ default_permission: defaultPermission }),
+        });
+    },
+
+    async updateCustomToolRateLimit(toolId, maxCalls, windowSeconds) {
+        return this.request(`/api/tool-permissions/custom/${encodeURIComponent(toolId)}/rate-limit`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                max_calls: maxCalls || null,
+                window_seconds: windowSeconds || null,
+            }),
+        });
+    },
+
+    async deleteCustomTool(toolId) {
+        return this.request(`/api/tool-permissions/custom/${encodeURIComponent(toolId)}`, {
+            method: 'DELETE',
+        });
+    },
+
+    // ==================== Tool Call Audit Log ====================
+
+    async getToolCallAudit(limit = 50, action = null, offset = 0) {
+        const params = new URLSearchParams({ limit, offset });
+        if (action) params.set('action', action);
+        return this.request(`/api/tool-permissions/call-audit?${params}`).catch(() => ({
+            entries: [],
+            total: 0,
+        }));
+    },
+
+    async getToolCallAuditDaily(days = 7) {
+        return this.request(`/api/tool-permissions/call-audit/daily?days=${days}`).catch(() => ({ days: [] }));
+    },
+
+    async getToolCallAuditStats() {
+        return this.request('/api/tool-permissions/call-audit/stats').catch(() => ({
+            total: 0, blocked: 0, allowed: 0, log_only: 0,
+        }));
+    },
+
+    async getToolCallAuditIntegrity() {
+        return this.request('/api/tool-permissions/call-audit/integrity').catch(() => ({
+            ok: null, total: 0, tampered_at: null, tampered_id: null, reason: null, last_verified_at: null,
+        }));
+    },
+
+    async getBillOfTools(windowDays = 7) {
+        return this.request(`/api/tool-permissions/bill-of-tools?window_days=${windowDays}`).catch(() => ({
+            window_days: windowDays, row_count: 0, rows: [],
+        }));
+    },
+
+    async getRedactions(windowDays = 7, { direction = null, secretType = null, runtimeKind = null, limit = 1000 } = {}) {
+        const params = new URLSearchParams({ window_days: String(windowDays), limit: String(limit) });
+        if (direction) params.set('direction', direction);
+        if (secretType) params.set('secret_type', secretType);
+        if (runtimeKind) params.set('runtime_kind', runtimeKind);
+        return this.request(`/api/redactions?${params}`).catch(() => ({
+            summary: { window_days: windowDays, total: 0, distinct_tools: 0, by_direction: {}, by_secret_type: {}, by_runtime: {} },
+            events: [],
+        }));
+    },
+
+    async getDeviceId() {
+        return this.request('/api/system/device-id').catch(() => ({ device_id: null }));
+    },
+
+    async deleteToolCallAuditEntries(ids) {
+        return this.request('/api/tool-permissions/call-audit', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids }),
+        });
+    },
+
+    async deleteRule(ruleId) {
+        return this.request(`/api/rules/custom/${encodeURIComponent(ruleId)}`, {
+            method: 'DELETE',
+        });
+    },
+
+    async getProxyStatus() {
+        return this.request('/api/proxy/status');
+    },
+
+    // ==================== LLM Settings ====================
+
+    async getLLMSettings() {
+        return this.request('/api/settings/llm').catch(() => ({
+            enabled: false,
+            provider: 'ollama',
+            model: 'llama3',
+            endpoint: 'http://localhost:11434',
+            api_key_configured: false,
+        }));
+    },
+
+    async updateLLMSettings(settings) {
+        return this.request('/api/settings/llm', {
+            method: 'PUT',
+            body: JSON.stringify(settings),
+        });
+    },
+
+    async testLLMConnection() {
+        return this.request('/api/settings/llm/test', {
+            method: 'POST',
+        });
+    },
+
+    async getLLMProviders() {
+        return this.request('/api/llm/providers').catch(() => ({
+            providers: [
+                { id: 'ollama', name: 'Ollama', endpoint: 'http://localhost:11434', models: ['llama3', 'mistral'], requires_api_key: false },
+                { id: 'openai', name: 'OpenAI', endpoint: 'https://api.openai.com', models: ['gpt-4o', 'gpt-4o-mini'], requires_api_key: true },
+                { id: 'anthropic', name: 'Anthropic', endpoint: 'https://api.anthropic.com', models: ['claude-3-5-sonnet-20241022'], requires_api_key: true },
+            ],
+        }));
+    },
+
+    // ==================== Costs ====================
+
+    async getCostSummary(params = {}) {
+        const qs = new URLSearchParams();
+        if (params.start) qs.set('start', params.start);
+        if (params.end) qs.set('end', params.end);
+        if (params.limit) qs.set('limit', params.limit);
+        const query = qs.toString() ? `?${qs}` : '';
+        return this.request(`/api/costs/summary${query}`);
+    },
+
+    async getDashboardCostSummary() {
+        return this.request('/api/costs/dashboard-summary').catch(() => ({
+            today_cost_usd: 0,
+            today_requests: 0,
+            top_agent: null,
+            top_model: null,
+            cost_tracking_enabled: true,
+            has_unknown_pricing: false,
+        }));
+    },
+
+    async getMonthlyCostChart(params = {}) {
+        const qs = new URLSearchParams();
+        if (params.year) qs.set('year', params.year);
+        if (params.month) qs.set('month', params.month);
+        if (params.start) qs.set('start', params.start);
+        if (params.end) qs.set('end', params.end);
+        const query = qs.toString() ? `?${qs}` : '';
+        return this.request(`/api/costs/monthly-chart${query}`);
+    },
+
+    async getCostRecords(params = {}) {
+        const qs = new URLSearchParams();
+        if (params.agent_id) qs.set('agent_id', params.agent_id);
+        if (params.provider) qs.set('provider', params.provider);
+        if (params.start) qs.set('start', params.start);
+        if (params.end) qs.set('end', params.end);
+        if (params.page) qs.set('page', params.page);
+        if (params.page_size) qs.set('page_size', params.page_size);
+        const query = qs.toString() ? `?${qs}` : '';
+        return this.request(`/api/costs/records${query}`);
+    },
+
+    async getModelPricing(provider) {
+        const query = provider ? `?provider=${encodeURIComponent(provider)}` : '';
+        return this.request(`/api/costs/pricing${query}`);
+    },
+
+    async updateModelPricing(provider, modelId, data) {
+        return this.request(`/api/costs/pricing/${encodeURIComponent(provider)}/${encodeURIComponent(modelId)}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    },
+
+    async syncPricing() {
+        return this.request('/api/costs/pricing/sync', { method: 'POST' });
+    },
+
+    getCostExportUrl(params = {}) {
+        const qs = new URLSearchParams();
+        if (params.agent_id) qs.set('agent_id', params.agent_id);
+        if (params.provider) qs.set('provider', params.provider);
+        if (params.start) qs.set('start', params.start);
+        if (params.end) qs.set('end', params.end);
+        const query = qs.toString() ? `?${qs}` : '';
+        return `/api/costs/export${query}`;
+    },
+
+    // Budget API
+    async getGlobalBudget() {
+        return this.request('/api/costs/budget');
+    },
+    async setGlobalBudget(data) {
+        const result = await this.request('/api/costs/budget', { method: 'PUT', body: JSON.stringify(data) });
+        if (window.Toast) Toast.info('aegis.yml updated');
+        else if (window.UI && UI.showNotification) UI.showNotification('aegis.yml updated', 'info');
+        return result;
+    },
+    async listAgentBudgets() {
+        return this.request('/api/costs/budget/agents');
+    },
+    async setAgentBudget(agentId, data) {
+        return this.request(`/api/costs/budget/agents/${encodeURIComponent(agentId)}`, {
+            method: 'PUT', body: JSON.stringify(data),
+        });
+    },
+    async deleteAgentBudget(agentId) {
+        return this.request(`/api/costs/budget/agents/${encodeURIComponent(agentId)}`, { method: 'DELETE' });
+    },
+    async deleteCostRecords(agentId = null, ids = null) {
+        const query = agentId ? `?agent_id=${encodeURIComponent(agentId)}` : '';
+        const options = { method: 'DELETE' };
+        if (ids && ids.length > 0) {
+            options.body = JSON.stringify({ ids });
+        }
+        return this.request(`/api/costs/records${query}`, options);
+    },
+
+    async getBudgetGuardian() {
+        return this.request('/api/costs/budget/guardian').catch(() => null);
+    },
+
+    // ---------------------------------------------------------- egress ---
+    // Read paths degrade to null so a missing policy or an unrun proof
+    // renders as an honest empty state rather than a page-level error. The
+    // write paths (proof, replay, promote) deliberately do NOT swallow: the
+    // operator asked for something and needs to know it did not happen.
+
+    async getEgressPolicy() {
+        return this.request('/api/egress/policy').catch(() => null);
+    },
+    async getEgressPresets() {
+        return this.request('/api/egress/presets').catch(() => null);
+    },
+    async patchEgressPolicy(patch) {
+        return this.request('/api/egress/policy', {
+            method: 'PATCH', body: JSON.stringify(patch || {}),
+        });
+    },
+    async promoteEgressHost(host) {
+        return this.request('/api/egress/promote', {
+            method: 'POST', body: JSON.stringify({ host }),
+        });
+    },
+    async getEgressBlastRadius(days = 30) {
+        return this.request(`/api/egress/blast-radius?days=${days}`).catch(() => null);
+    },
+    async getEgressDestinations(days = 30) {
+        return this.request(`/api/egress/destinations?days=${days}`)
+            .catch(() => ({ destinations: [], distinct_hosts: 0 }));
+    },
+    async getEgressScope(days = 7) {
+        return this.request(`/api/egress/scope?days=${days}`).catch(() => null);
+    },
+    async getEgressPolicyHealth(days = 30) {
+        return this.request(`/api/egress/policy-health?days=${days}`).catch(() => null);
+    },
+    async getEgressAudit(limit = 100, action = null) {
+        const q = new URLSearchParams({ limit });
+        if (action) q.set('action', action);
+        return this.request(`/api/egress/audit?${q}`).catch(() => ({ rows: [] }));
+    },
+    async replayEgressPolicy(body) {
+        return this.request('/api/egress/replay', {
+            method: 'POST', body: JSON.stringify(body || {}),
+        });
+    },
+    async getContainmentPreflight() {
+        return this.request('/api/egress/proof/preflight').catch(() => null);
+    },
+    async runContainmentProof(trigger = 'manual') {
+        return this.request(`/api/egress/proof?trigger=${trigger}`, { method: 'POST' });
+    },
+    async getLatestContainmentProof() {
+        return this.request('/api/egress/proof/latest').catch(() => null);
+    },
+    async getContainmentDrift() {
+        return this.request('/api/egress/proof/drift').catch(() => null);
+    },
+    async getContainmentProofHistory(limit = 20) {
+        return this.request(`/api/egress/proof/history?limit=${limit}`)
+            .catch(() => ({ proofs: [] }));
+    },
+};
+
+// Make API globally available
+window.API = API;

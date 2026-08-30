@@ -1,0 +1,2124 @@
+/**
+ * Sidebar Navigation Component
+ * Note: All content is static/hardcoded, no user input is rendered
+ */
+
+const Sidebar = {
+    navItems: [
+        { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+        // The single triage surface. Blocked Actions and Secret Detections are
+        // facets of this page, not rails of their own — three destinations for
+        // one question ("what did Aegis catch or stop?") was the main
+        // source of "where do I look?". Old ids stay aliases so deep links and
+        // bookmarks keep this row highlighted.
+        // One triage surface, three lenses — same shape as Agent Observability
+        // below. The facets stay visible in the rail so they remain scannable;
+        // hiding them behind the page made them undiscoverable to anyone who
+        // never clicked in. Clicking a child opens that facet directly.
+        // The parent is a GROUP id, not a route — same shape as
+        // 'agent-activity' below. It used to be `threats`, which made the
+        // Threats facet unreachable from the rail: the group ships expanded,
+        // so the first click only collapsed it, and the click that did
+        // navigate went to subItems[0] (Blocked). Listing all three facets as
+        // children fixes reachability and puts the word "Threats" back in the
+        // rail, where it had disappeared behind the group label.
+        { id: 'threat-monitor', label: 'Threat Monitor', icon: 'shield', collapsible: true,
+          defaultExpanded: true, navigable: true,
+          tooltip: 'Threats, blocked actions and secret detections — one triage surface',
+          subItems: [
+              { id: 'threats',        label: 'Threats', tooltip: 'Prompt-injection, jailbreak and exfiltration attempts detected in agent traffic' },
+              { id: 'blocked-ledger', label: 'Blocked Actions', tooltip: 'What Aegis prevented: blocked tool calls grouped by the policy that fired' },
+              { id: 'redactions',     label: 'Secret Detections' },
+          ]},
+        // conversion-ux — the download hook: opt-in retroactive scan of the
+        // agent history already on disk. Sits beside Threat Monitor: past vs live.
+        { id: 'instant-audit', label: 'Instant Audit', icon: 'scan', tooltip: 'What your agents already did: a local, opt-in scan of past Claude Code / Codex sessions' },
+        // Agent Replay umbrella — collapsible parent grouping the three
+        // observability views that share the same per-agent lens. Top-level
+        // 'replay' route still works as a deep-link (the Timeline sub-item
+        // lands on it), and Tool Activity / Cost & Tokens get prominent
+        // visibility under the agent-observability story instead of being
+        // buried under Configure.
+        { id: 'agent-activity', label: 'Agent Observability', icon: 'history', collapsible: true, defaultExpanded: true, navigable: true, subItems: [
+            // One destination, three lenses (Sessions / Traces / Map tabs via
+            // ObsTabs). Lands on Sessions — the complete-trace workhorse view
+            // (Default flip: LangSmith/Langfuse-style, traces first; the
+            // Map is the overview lens one tab away). `aliases` keep this
+            // item highlighted while the user switches tabs (separate page ids).
+            // Label stays "Sessions" (not "Agent Sessions" — redundant under
+            // the Observability parent; not "Agent Traces" — a trace is ONE
+            // turn/request, i.e. the Traces tab; Sessions is the level above,
+            // matching Langfuse/Phoenix vocabulary). Tooltip carries the def.
+            { id: 'agent-runs',     label: 'Traces', aliases: ['storylines', 'agent-map', 'agent-timeline'], tooltip: 'One trace per agent session. Open a trace to see its runs (each LLM call and tool call) with the enforcement verdict, tokens and cost on each. Replay it, or open the Map.' },
+            // Activity log + inventory (SBOM) are two lenses on the same
+            // tool_call_audit data — one destination, two tabs on the page.
+            // 'bill-of-tools' stays as an alias so deep links keep this row lit.
+            { id: 'tool-activity',  label: 'Tool Activity & Inventory', aliases: ['bill-of-tools'] },
+            // Blocked Actions and Secret Detections moved up into Threat Monitor
+            // as facets — see the note on that entry above.
+            { id: 'costs',          label: 'Cost & Tokens' },
+        ]},
+        // ---- Govern (IA) ----
+        // Everything below until Connect is a control the human sets: what
+        // agents may do, which rules fire, what ML runs, what budgets cap.
+        // 2026-07-20 persona review (nav clutter): the four local-control
+        // singles fold into one collapsible group. Page ids are untouched, so
+        // every deep link (Governance gap cards, guides, palette) still lands.
+        // MCP Policies stays OUTSIDE this group on purpose — it's the
+        // CLOUD_TIER org-managed surface (#151), not a local control.
+        // Guardian ML still has no nav row — it's the header sentinel-robot
+        // control (Header.createGuardianControl); the 'guardian-ml' route
+        // stays alive for deep links.
+        { id: 'policies-controls', label: 'Policies & Controls', icon: 'lock', collapsible: true, defaultExpanded: true, subItems: [
+            { id: 'tool-permissions', label: 'Tool Permissions', tooltip: 'Allow / block / log-only tool calls. The Activity log is under Observability.' },
+            { id: 'rules', label: 'Rules', tooltip: 'Auto-block or alert on threats that match custom criteria' },
+            // Tool Permissions governs WHETHER a tool runs; egress governs WHERE
+            // it may reach. A tool allowed by name can still be denied its
+            // destination, so the two sit side by side rather than nested.
+            { id: 'egress', label: 'Agent Egress', tooltip: 'Where agents may reach, and the policy that governs it.' },
+            // Skills + Tools entries cover their primary "configure" surfaces
+            // (the Permissions / Policy tabs); the Activity / Tracking tabs
+            // are surfaced under Observability above.
+            { id: 'skill-scanner', label: 'Skills Scanner', tooltip: 'Skill scanner + skill policy management (tabs on the page)' },
+            { id: 'cost-settings', label: 'Cost Settings', tooltip: 'Budgets + pricing. The per-agent spend dashboard is under Observability.' },
+        ]},
+        // ---- Cloud section (#151) ----
+        // The cloud-account surfaces get their own labelled section
+        // (SECTION_BEFORE maps 'mcp-policies' → 'Cloud') so enrolled-device
+        // features don't blend into the local Configure items.
+        // MCP Policies — read-only viewer of cloud-synced policy bundles.
+        // Kept distinct from Tool Permissions: the trust artifact (what's
+        // pushed to me, by whom) vs the operational surface.
+        // Governance leads the Cloud section — always-visible local posture
+        // (the funnel), so it is NOT in CLOUD_TIER and stays clickable.
+        { id: 'governance', label: 'Agent Governance', icon: 'gauge', tooltip: 'This device’s local protection posture: which Aegis controls are on. Operational, not legal/compliance.' },
+        { id: 'mcp-policies', label: 'MCP Policies', icon: 'shield-check', tooltip: 'Org-managed tool rules: one change, applied to every enrolled device.' },
+        // Connect an agent — the QUICK path: pick an agent, copy a couple of
+        // commands, done. It sits directly above Integrations, which is the
+        // DETAILED per-agent reference (install/verify/uninstall, self-host,
+        // troubleshooting). Quick first, detailed second.
+        // IA simplification: "Connect Wizard" is no longer a separate nav
+        // row — having Wizard + Connect Agents + Integrations read as three
+        // near-identical "connect" entries confused people (persona review:
+        // the novice "froze deciding" between them). Connect Agents is now the
+        // single door: it shows live coverage (detected · protected · not
+        // covered) AND offers the guided one-click setup (the old wizard flow)
+        // as a CTA on the page. The 'connect-wizard' route still exists for
+        // that guided flow and deep links; it's just reached from here now.
+        { id: 'guide-connect-agents', label: 'Connect Agents', icon: 'plug', tooltip: 'Connect your agents and see coverage: which runtimes are detected, how many sessions are protected, and what is not yet covered. Guided one-click setup and manual commands both live here.' },
+        { id: 'integrations', label: 'Integrations', icon: 'integrations', collapsible: true, tooltip: 'Deep per-agent reference (install, verify, troubleshoot, self-host/auth) plus proxy-only tools (n8n, Ollama). Connect Agents is the quick path; this is the detail.', subItems: [
+            // Grouped by integration mechanism so users pick the right install
+            // path at a glance. "Plugins" = native host hooks (no proxy, no env
+            // vars): Claude Code + Codex are plugin-only; OpenClaw is primarily
+            // the plugin but its page also exposes a block-mode proxy.
+            // "Frameworks" = agent frameworks (LangChain/LangGraph/CrewAI) whose
+            // primary path is now the Aegis SDK (tool-call layer); each
+            // page keeps an optional legacy base-URL proxy. "Proxy" = the
+            // remaining tools you point at the local proxy's base URL (n8n,
+            // Ollama). The left-nav labels stay framework-named (not "SDK").
+            // (Page ids keep their historical `proxy-` prefix to avoid breaking
+            // routes.)
+            { header: 'Plugins' },
+            { id: 'proxy-claude-code', label: 'Claude Code' },
+            { id: 'proxy-codex', label: 'Codex' },
+            { id: 'proxy-copilot-cli', label: 'GitHub Copilot CLI' },
+            { id: 'proxy-cursor', label: 'Cursor' },
+            { id: 'proxy-openclaw', label: 'OpenClaw/ClawdBot' },
+            { header: 'Frameworks' },
+            { id: 'proxy-langchain', label: 'LangChain' },
+            { id: 'proxy-langgraph', label: 'LangGraph' },
+            { id: 'proxy-crewai', label: 'CrewAI' },
+            { id: 'proxy-hermes', label: 'Hermes' },
+            { header: 'Proxy' },
+            { id: 'proxy-n8n', label: 'n8n' },
+            { id: 'proxy-ollama', label: 'Ollama' },
+        ]},
+        // SIEM Forwarder + Cloud Activity are OUTBOUND pipes (data leaving this
+        // device), not "connect an agent" — lumping them under Connect bloated
+        // that section. They get their own "Cloud & Export" group so Connect
+        // stays just the two agent-connection entries.
+        { id: 'siem-export', label: 'SIEM Forwarder', icon: 'costs', tooltip: 'Forward threats and tool-call audits to Splunk, Datadog, Sentinel, QRadar, Chronicle, OTLP, or any HTTPS webhook' },
+        // Cloud Activity — full in/out visibility for the cloud↔device pipe.
+        // In CLOUD_TIER below: always shown, but dimmed/"locked" on personal-mode
+        // installs (clicking lands on its enroll-CTA empty state).
+        { id: 'cloud-activity', label: 'Cloud Activity', icon: 'history', tooltip: 'Everything flowing in and out of this device since enrollment: synced policies down, metadata-only audit up.' },
+        { id: 'guide', label: 'Guide', icon: 'book', collapsible: true, subItems: [
+            // "Connect Your Agents" is promoted to a top-level nav item (see
+            // above) so it is always visible on every viewport; it is therefore
+            // intentionally NOT duplicated here under Guide.
+            // Harness plugin guides grouped under one header — one section per
+            // harness that ships a native plugin (Claude Code, Codex, GitHub
+            // Copilot CLI, OpenClaw).
+            { header: 'Plugin setup' },
+            { id: 'guide-claude-code', label: 'Claude Code' },
+            { id: 'guide-codex', label: 'Codex' },
+            { id: 'guide-copilot-cli', label: 'GitHub Copilot CLI' },
+            { id: 'guide-cursor', label: 'Cursor' },
+            { id: 'guide-openclaw', label: 'OpenClaw / ClawdBot' },
+            { header: 'Framework SDKs' },
+            { id: 'guide-frameworks', label: 'LangChain · LangGraph · CrewAI · Hermes' },
+            { header: 'Reading the data' },
+            { id: 'gs-read-map', label: 'Reading the Map', section: 'section-read-map' },
+            { id: 'gs-read-runs', label: 'Reading Traces', section: 'section-read-runs' },
+            { header: 'Reference' },
+            { id: 'gs-tool-inventory', label: 'Tool Inventory', section: 'section-tool-inventory' },
+            { id: 'gs-secret-detections', label: 'Secret Detections', section: 'section-secret-detections' },
+            { id: 'gs-mcp-policies', label: 'MCP Policies', section: 'section-mcp-policies' },
+            { id: 'gs-siem-forwarder', label: 'SIEM Forwarder', section: 'section-siem-forwarder' },
+            { id: 'gs-skill-scanner', label: 'Skill Scanner', section: 'section-skill-scanner' },
+            { id: 'gs-api', label: 'API Reference', section: 'section-api' },
+            { id: 'gs-troubleshoot', label: 'Troubleshooting', section: 'section-troubleshooting' },
+        ]},
+        { id: 'settings', label: 'Settings', icon: 'settings' },
+    ],
+
+    currentPage: 'dashboard',
+
+    collapsed: false,
+
+    // Min/max bounds for the resize handle. Stays narrower than the CSS
+    // default of 240px on the low end so power users can squeeze, and wide
+    // enough on the high end to avoid letting the rail eat the page.
+    SIDEBAR_MIN_PX: 180,
+    SIDEBAR_MAX_PX: 380,
+
+    _applySavedSidebarWidth() {
+        const saved = parseInt(localStorage.getItem('sidebar-width') || '', 10);
+        if (Number.isFinite(saved) && saved >= this.SIDEBAR_MIN_PX && saved <= this.SIDEBAR_MAX_PX) {
+            document.documentElement.style.setProperty('--sidebar-width', saved + 'px');
+        }
+    },
+
+    // Enrollment state cache for the CLOUD_TIER lock treatment. null = not yet
+    // probed; true/false once /policy-sync/status answers.
+    _enrolled: null,
+    _enrollmentProbed: false,
+
+    /**
+     * Probe enrollment once per page load so enrolled-only nav items (Cloud
+     * Activity) can reveal themselves. Cheap idempotent GET. On resolution,
+     * if the answer flips the cached value, re-render the sidebar so the item
+     * appears/disappears without a full reload. Fails closed (hidden) on any
+     * error — a transient API hiccup never leaks an empty page into the rail.
+     */
+    _probeEnrollment() {
+        if (this._enrollmentProbed) return;
+        this._enrollmentProbed = true;
+        fetch('/api/v1/policy-sync/status')
+            .then(r => (r.ok ? r.json() : null))
+            .then(data => {
+                const enrolled = !!(data && data.enrolled);
+                if (enrolled !== this._enrolled) {
+                    this._enrolled = enrolled;
+                    // Only a re-render is needed; render() guards its own
+                    // one-time defaults so this is safe to call again.
+                    this.render();
+                }
+            })
+            .catch(() => { /* fail closed — cloud rows stay dimmed/locked */ });
+    },
+
+    render() {
+        const container = document.getElementById('sidebar');
+        if (!container) return;
+
+        // Check saved collapsed state
+        this.collapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+        if (this.collapsed) container.classList.add('collapsed');
+
+        // Restore the user's last sidebar width before rendering so the
+        // expanded rail comes up at the right size on first paint.
+        this._applySavedSidebarWidth();
+
+        // Clean default on every app load: only "Observability" opens
+        // automatically. Integrations + Guide always start collapsed even if
+        // the user expanded them in a prior session (navigating into a
+        // sub-item persists `nav-<id>-expanded=true`, which otherwise leaks
+        // an expanded section onto the next launch). Run once per page load —
+        // guarded so mid-session re-renders (e.g. theme toggle) don't fight a
+        // section the user just opened.
+        if (!Sidebar._loadDefaultsApplied) {
+            Sidebar._loadDefaultsApplied = true;
+            ['integrations', 'guide'].forEach(id => localStorage.removeItem(`nav-${id}-expanded`));
+        }
+
+        // Clear container
+        container.textContent = '';
+
+        // Create header with favicon logo (clickable)
+        const header = document.createElement('div');
+        header.className = 'sidebar-header';
+
+        const logoLink = document.createElement('div');
+        logoLink.className = 'sidebar-logo-link';
+        logoLink.style.cursor = 'pointer';
+        logoLink.addEventListener('click', () => this.navigate('dashboard'));
+
+        // Favicon logo
+        const logoImg = document.createElement('img');
+        logoImg.src = '/images/favicon.png';
+        logoImg.alt = 'Aegis';
+        logoImg.className = 'sidebar-logo-img';
+        logoLink.appendChild(logoImg);
+
+        // Wrap the brand text + tagline in a column so the tagline sits
+        // under the wordmark without pushing the favicon around.
+        const logoTextCol = document.createElement('div');
+        logoTextCol.className = 'sidebar-logo-text';
+
+        // Wordmark + version on one row (version sits right next to the brand).
+        const brandRow = document.createElement('span');
+        brandRow.style.cssText = 'display:inline-flex;align-items:baseline;gap:7px;';
+
+        const logo = document.createElement('span');
+        logo.className = 'sidebar-logo';
+        logo.textContent = 'Aegis';
+        brandRow.appendChild(logo);
+
+        // App version badge, read from the running server rather than typed
+        // here, so the badge always matches the deployed backend. The major
+        // string stays as the pre-fetch value so the chip never renders empty
+        // or shifts width noticeably when the answer arrives.
+        const version = document.createElement('span');
+        version.className = 'sidebar-version';
+        version.textContent = 'v1';
+        fetch('/health')
+            .then(r => r.ok ? r.json() : null)
+            // Shape-check before it lands in chrome: a version is short and
+            // alphanumeric, and nothing else belongs in this slot.
+            .then(d => {
+                const v = d && d.version ? String(d.version) : '';
+                if (/^[\w.+-]{1,20}$/.test(v)) version.textContent = 'v' + v;
+            })
+            .catch(() => {});   // offline or mid-restart: the fallback stands
+        // Reserve the settled width so the chip does not jump from 'v1' to
+        // 'v1.0.0' once /health answers.
+        version.style.cssText = 'font:600 10px ui-monospace,Menlo,monospace;letter-spacing:.3px;color:var(--text-muted,#7d8590);min-width:5ch;display:inline-block;';
+        brandRow.appendChild(version);
+        logoTextCol.appendChild(brandRow);
+
+        // No tagline in the rail. A marketing positioning line belongs on the
+        // surfaces where someone is still deciding — login, README, docs — not
+        // in authenticated chrome, where the user has already adopted the
+        // product. Observability and security tools conventionally leave this
+        // slot for orientation (workspace, environment, tier, version); here
+        // the version chip beside the wordmark already fills that role.
+
+        logoLink.appendChild(logoTextCol);
+
+        header.appendChild(logoLink);
+        container.appendChild(header);
+
+        // Create nav
+        const nav = document.createElement('nav');
+        nav.className = 'sidebar-nav';
+
+        // Core features get an orange badge dot overlaid on their icon
+        const CORE_BADGE = new Set(['threat-monitor', 'tool-permissions', 'costs']);
+
+        // Features that require a Aegis cloud account — small "Cloud"
+        // pill rendered next to the label so users know up-front.
+        const CLOUD_TIER = new Set(['mcp-policies', 'cloud-activity']);
+
+        // Cloud-section items stay VISIBLE but greyed-out until the device is
+        // enrolled, rather than being hidden. Hiding them means local-only
+        // users never discover that fleet/cloud surfaces exist — the dimmed
+        // row is the cheapest in-product "this is available, not yet on"
+        // signal. Both targets already render an honest enroll-CTA empty state
+        // when opened in personal mode, so the row stays clickable and lands
+        // there. `_enrolled` is probed asynchronously once (see
+        // _probeEnrollment); until it resolves we treat enrollment as unknown
+        // (`!== true`) and keep the row dimmed, then re-render when the answer
+        // lands. CLOUD_TIER (above) is the set that gets this treatment.
+        this._probeEnrollment();
+
+        // IA — three verbs. "Visibility" (not "Observe") heads the first
+        // section: the group now contains an "Observability" destination, and
+        // "Observe → Observability" stutters. "Visibility" is the word both
+        // audiences use — SOC operators ("visibility into agent activity") and
+        // business buyers alike — and doesn't echo the child.
+        //   Visibility — what the agents are doing (dashboard, threats, observability)
+        //   Govern     — what the human controls (permissions, rules, policies)
+        //   Connect    — pipes in and out (wizard, integrations, SIEM, cloud)
+        // Page ids are untouched, so every old deep link still lands.
+        const SECTION_BEFORE = {
+            'dashboard':          'Visibility',
+            'policies-controls':  'Govern',
+            'guide-connect-agents': 'Connect',
+            'siem-export':        'Cloud & Forwarders',
+            'guide':              'Help & Settings',
+        };
+
+        // Items that get a divider before them — the IA section boundaries.
+        const DIVIDER_BEFORE = new Set(['policies-controls', 'guide-connect-agents', 'siem-export', 'guide']);
+
+        // Section groups — each Observe/Govern/Connect header is a toggle
+        // that collapses every row in its group. Rows register into the
+        // current section as they render; the tail (Guide + Settings) is
+        // deliberately ungrouped and always visible.
+        const sections = [];
+        let currentSection = null;
+
+        this.navItems.forEach(item => {
+
+            // Cloud-locked = a CLOUD_TIER surface on a device that isn't known
+            // to be enrolled. The row still renders (discoverability) but gets
+            // a dimmed, "locked" treatment below instead of being hidden.
+            const isCloudLocked = CLOUD_TIER.has(item.id) && this._enrolled !== true;
+
+            // Section label — a clickable group header. Clicking collapses /
+            // expands every row in the section (wired after the loop, once
+            // the group's rows are known); state persists per section.
+            if (SECTION_BEFORE[item.id]) {
+                const name = SECTION_BEFORE[item.id];
+                const sectionLbl = document.createElement('button');
+                sectionLbl.type = 'button';
+                sectionLbl.className = 'nav-section-label nav-section-toggle';
+                const lblText = document.createElement('span');
+                lblText.textContent = name;
+                lblText.style.cssText = 'text-align: left;';
+                sectionLbl.appendChild(lblText);
+                // Real SVG chevron (the old 9px "▾" read as a stray dot, so a
+                // collapsed section looked like an empty header, not a door).
+                const chev = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                chev.setAttribute('viewBox', '0 0 24 24');
+                chev.setAttribute('fill', 'none');
+                chev.setAttribute('stroke', 'currentColor');
+                chev.setAttribute('stroke-width', '2.4');
+                chev.setAttribute('aria-hidden', 'true');
+                // The only chevron on the rail: top-level rows dropped theirs,
+                // so this header hint (firms up on hover) is the sole
+                // collapse affordance glyph.
+                chev.style.cssText = 'width: 10px; height: 10px; flex-shrink: 0; opacity: 0.4; transition: transform 0.15s, opacity 0.15s;';
+                const chevPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                chevPath.setAttribute('d', 'M6 9l6 6 6-6');
+                chev.appendChild(chevPath);
+                sectionLbl.appendChild(chev);
+                nav.appendChild(sectionLbl);
+                currentSection = {
+                    name,
+                    key: `nav-sec-${name.toLowerCase()}-collapsed`,
+                    btn: sectionLbl,
+                    chev,
+                    els: [],
+                    containsActive: false,
+                };
+                sections.push(currentSection);
+            }
+
+            // Divider
+            if (DIVIDER_BEFORE.has(item.id)) {
+                const divider = document.createElement('div');
+                divider.className = 'nav-section-divider';
+                nav.appendChild(divider);
+                if (currentSection) currentSection.els.push(divider);
+            }
+            const navItem = document.createElement('div');
+            const hasSubItems = item.subItems && item.subItems.length > 0;
+            // Collapsible parents (like Docs) stay active on their page
+            // Top-level rows honour `aliases` too. Sub-items already did (see the
+            // subItem branch below), but top-level never needed it until Threat
+            // Monitor absorbed the blocked/secrets ledgers — without this the row
+            // goes unlit on those routes and the user cannot tell where they are.
+            const matchesSelf = item.id === this.currentPage ||
+                (item.aliases && item.aliases.includes(this.currentPage));
+            const isActive = matchesSelf && (!hasSubItems || item.collapsible);
+            navItem.className = 'nav-item' + (isActive ? ' active' : '') + (isCloudLocked ? ' nav-item-locked' : '');
+            navItem.dataset.page = item.id;
+            if (item.collapsible) navItem.dataset.collapsible = 'true';
+            // A locked cloud row gets an explicit "needs a cloud account"
+            // tooltip; otherwise fall back to the item's own tooltip.
+            if (isCloudLocked) {
+                navItem.title = 'Requires a Aegis cloud account: enroll this device to turn this on.';
+            } else if (item.tooltip) {
+                navItem.title = item.tooltip;
+            }
+
+            // Add icon (SVG) — core features get an orange badge dot overlaid
+            // on the icon. (The Guardian ML sentinel robot that used to render
+            // here moved to the header — Header.createGuardianControl.)
+            const iconSvg = this.createIcon(item.icon);
+            if (CORE_BADGE.has(item.id)) {
+                const iconWrap = document.createElement('div');
+                iconWrap.style.cssText = 'position: relative; width: 20px; height: 20px; flex-shrink: 0;';
+                iconWrap.appendChild(iconSvg);
+                const iconDot = document.createElement('div');
+                iconDot.style.cssText = 'position: absolute; top: -3px; right: -3px; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; border: 1.5px solid var(--bg-secondary);';
+                iconDot.title = 'Core feature';
+                iconDot.dataset.coreDot = item.id;
+                // Hide permanently if already visited
+                if (localStorage.getItem('sv-visited-core-' + item.id)) iconDot.style.display = 'none';
+                iconWrap.appendChild(iconDot);
+                navItem.appendChild(iconWrap);
+            } else {
+                navItem.appendChild(iconSvg);
+            }
+
+            // Add label
+            const label = document.createElement('span');
+            label.textContent = item.label;
+            label.style.cssText = 'white-space: nowrap; font-size: 12.5px; flex: 1; min-width: 0;';
+            navItem.appendChild(label);
+
+            // Add badge for rules count
+            if (item.id === 'rules') {
+                const badge = document.createElement('span');
+                badge.className = 'nav-badge';
+                badge.id = 'rules-count-badge';
+                badge.textContent = '...';
+                navItem.appendChild(badge);
+            }
+
+            // Tier pill — features that require a Aegis account get a
+            // small "Cloud" marker so users know up-front before they click.
+            // When the device isn't enrolled the pill shows a tiny lock glyph
+            // so the dimmed row reads as "locked, available" rather than broken.
+            if (CLOUD_TIER.has(item.id)) {
+                const tier = document.createElement('span');
+                tier.textContent = isCloudLocked ? '🔒 Cloud' : 'Cloud';
+                tier.style.cssText = 'flex-shrink: 0; margin-left: 6px; padding: 1px 6px; font-size: 9px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; border-radius: 999px; background: rgba(6, 182, 212, 0.14); color: var(--cyan-600, #0891b2); border: 1px solid rgba(6, 182, 212, 0.32); line-height: 1.4;';
+                navItem.appendChild(tier);
+            }
+
+            // NEW badge — persistent for Rules, session-only (30s auto-dismiss) for Skill Scanner & Skill Policy.
+            // Guardian ML deliberately omitted: it gets the animated "sentinel"
+            // robot below instead of a NEW badge.
+            const persistNewItems = ['rules', 'governance'];
+            // Session-only NEW badges: first-view highlight that auto-dismisses
+            // after 30s so the sidebar doesn't stay permanently shouty.
+            const sessionNewItems = [];
+            const isPersist = persistNewItems.includes(item.id);
+            const isSession = sessionNewItems.includes(item.id);
+            const shouldShow = isPersist
+                ? !localStorage.getItem('sv-new-dismissed-' + item.id)
+                : isSession && !sessionStorage.getItem('sv-new-seen-' + item.id);
+            if (shouldShow) {
+                const newBadge = document.createElement('span');
+                newBadge.style.cssText = 'display: inline-flex; align-items: center; gap: 2px; font-size: 8px; font-weight: 700; padding: 1px 3px 1px 4px; border-radius: 3px; background: rgba(180,83,9,0.2); color: #d97706; letter-spacing: 0.3px; line-height: 1; flex-shrink: 0;';
+                const newText = document.createTextNode('NEW');
+                newBadge.appendChild(newText);
+                const dismissBadge = () => {
+                    if (isPersist) localStorage.setItem('sv-new-dismissed-' + item.id, '1');
+                    else sessionStorage.setItem('sv-new-seen-' + item.id, '1');
+                    newBadge.remove();
+                };
+                if (isPersist) {
+                    const closeX = document.createElement('span');
+                    closeX.textContent = '×';
+                    closeX.title = 'Dismiss';
+                    closeX.style.cssText = 'font-size: 10px; line-height: 1; cursor: pointer; opacity: 0.85; margin-left: 1px;';
+                    closeX.addEventListener('click', (e) => { e.stopPropagation(); dismissBadge(); });
+                    newBadge.appendChild(closeX);
+                }
+                navItem.appendChild(newBadge);
+                setTimeout(dismissBadge, 30000);
+            }
+
+
+
+            // Collapsible parents carry a right-edge chevron: without it a
+            // collapsed row is indistinguishable from a leaf, so users never
+            // learn there are sub-items. Points right when collapsed, down
+            // when expanded — the same glyph + rotation grammar as the
+            // section headers. Appended last so expandSection()'s
+            // `svg:last-child` lookup finds it.
+            let rowChev = null;
+            if (item.collapsible && hasSubItems) {
+                const stored = localStorage.getItem(`nav-${item.id}-expanded`);
+                const startsExpanded = stored !== null ? stored === 'true' : !!item.defaultExpanded;
+                rowChev = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                rowChev.setAttribute('viewBox', '0 0 24 24');
+                rowChev.setAttribute('fill', 'none');
+                rowChev.setAttribute('stroke', 'currentColor');
+                rowChev.setAttribute('stroke-width', '2.4');
+                rowChev.setAttribute('aria-hidden', 'true');
+                rowChev.style.cssText = 'width: 10px; height: 10px; flex-shrink: 0; opacity: 0.45; transition: transform 0.15s;';
+                rowChev.style.transform = startsExpanded ? 'rotate(0deg)' : 'rotate(-90deg)';
+                const rowChevPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                rowChevPath.setAttribute('d', 'M6 9l6 6 6-6');
+                rowChev.appendChild(rowChevPath);
+                navItem.appendChild(rowChev);
+            }
+
+            // Click handler — collapsible rows toggle on any click; others navigate.
+            // If the parent is `navigable`, an EXPAND click also navigates to
+            // the first sub-item, so e.g. clicking "Agent Replay" lands the
+            // user on the Timeline and shows the sub-list. A second click
+            // (collapse) just hides the sub-list without changing the page.
+            navItem.addEventListener('click', (e) => {
+                if (item.collapsible && hasSubItems) {
+                    const subNav = nav.querySelector(`[data-sub-for="${item.id}"]`);
+                    if (subNav) {
+                        const isVisible = subNav.style.display !== 'none';
+                        const willExpand = !isVisible;
+                        subNav.style.display = willExpand ? 'block' : 'none';
+                        if (rowChev) rowChev.style.transform = willExpand ? 'rotate(0deg)' : 'rotate(-90deg)';
+                        localStorage.setItem(`nav-${item.id}-expanded`, String(willExpand));
+                        if (willExpand && item.navigable && item.subItems[0]) {
+                            this.navigate(item.subItems[0].id);
+                        }
+                    }
+                    return;
+                }
+                this.navigate(item.id);
+            });
+
+            nav.appendChild(navItem);
+            if (currentSection) {
+                currentSection.els.push(navItem);
+                // A section holding the active page must never start
+                // collapsed — a hidden "where am I" is worse than a stale
+                // collapse preference.
+                const activeHere = item.id === this.currentPage ||
+                    (item.aliases && item.aliases.includes(this.currentPage)) ||
+                    (item.subItems || []).some(s => s.id === this.currentPage ||
+                        (s.aliases && s.aliases.includes(this.currentPage)));
+                if (activeHere) currentSection.containsActive = true;
+            }
+
+            // Sub-items
+            if (hasSubItems) {
+                const subNav = document.createElement('div');
+                subNav.className = 'nav-sub-items';
+                // Guide line ties children to their parent — plain indentation
+                // read as a second flat list.
+                // Guide line sits on the PARENT ICON'S CENTRE (row left 12 +
+                // nav-item padding 16 + half of the 20px icon = 38, i.e.
+                // margin-left 26 from the nav container). The children's text
+                // then lands 4px to the RIGHT of the parent's label instead of
+                // 3px to its left, which is where it used to sit: the rows
+                // were indented but the text — the thing you actually read —
+                // was not, so nesting read backwards. Child text x now works
+                // out to 26 + 1 border + 4 pad + 21 item-pad = 52 vs the
+                // parent label's 48.
+                subNav.style.cssText = 'margin-left: 26px; padding-left: 4px; font-size: 12px; border-left: 1px solid var(--border-default);';
+
+                if (item.collapsible) {
+                    subNav.dataset.subFor = item.id;
+                    // Same resolution as the chevron above.
+                    const stored = localStorage.getItem(`nav-${item.id}-expanded`);
+                    const isExpanded = stored !== null ? stored === 'true' : !!item.defaultExpanded;
+                    subNav.style.display = isExpanded ? 'block' : 'none';
+                }
+
+                // Sub-items eligible for a session-only NEW badge — first-view
+                // highlight that auto-dismisses after 30s so the sidebar
+                // doesn't stay permanently shouty. Mirror of the top-level
+                // session-NEW list above; kept separate because sub-items
+                // render in a different branch and the keys aren't shared
+                // with the top-level item IDs.
+                const subNewItems = ['proxy-codex', 'bill-of-tools'];
+
+                item.subItems.forEach(subItem => {
+                    // Non-clickable section header (groups the integration list
+                    // by mechanism). Rendered as a small muted uppercase label.
+                    if (subItem.header) {
+                        const hdr = document.createElement('div');
+                        hdr.textContent = subItem.header;
+                        hdr.style.cssText = 'padding: 8px 12px 2px; font-size: 9px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--text-muted); opacity: 0.7; pointer-events: none;';
+                        subNav.appendChild(hdr);
+                        return;
+                    }
+
+                    const subNavItem = document.createElement('div');
+                    const subActive = subItem.id === this.currentPage ||
+                        (subItem.aliases && subItem.aliases.includes(this.currentPage));
+                    subNavItem.className = 'nav-item nav-sub-item' + (subActive ? ' active' : '');
+                    subNavItem.dataset.page = subItem.id;
+                    if (subItem.aliases) subNavItem.dataset.aliases = subItem.aliases.join(',');
+                    // No `opacity` here: dimming already means "cloud-locked"
+                    // on this rail (nav-item-locked, 0.5), so reusing it at
+                    // 0.85 to mean "child" put two different states on one
+                    // device. Children recede via colour instead — see
+                    // `.nav-item.nav-sub-item` in styles.css.
+                    subNavItem.style.cssText = 'padding: 6px 12px 6px 21px; display: flex; align-items: center; gap: 6px;';
+
+                    const subLabel = document.createElement('span');
+                    subLabel.textContent = subItem.label;
+                    subLabel.style.cssText = 'flex: 1; min-width: 0;';
+                    subNavItem.appendChild(subLabel);
+
+                    // Pending JIT requests — an agent is waiting on a human
+                    // decision, the one genuinely time-sensitive signal on
+                    // Tool Permissions. Without this badge a request is only
+                    // visible on the page itself, so an agent could sit
+                    // blocked for hours. Filled by loadJitPendingCount().
+                    if (subItem.id === 'tool-permissions') {
+                        const jitBadge = document.createElement('span');
+                        jitBadge.id = 'jit-pending-badge';
+                        jitBadge.style.cssText = 'display: none; flex-shrink: 0; font-size: 9.5px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: rgba(245,158,11,0.18); color: #f59e0b; line-height: 1.5;';
+                        subNavItem.appendChild(jitBadge);
+                    }
+
+                    if (subNewItems.includes(subItem.id) && !sessionStorage.getItem('sv-new-seen-' + subItem.id)) {
+                        const newBadge = document.createElement('span');
+                        newBadge.style.cssText = 'display: inline-flex; align-items: center; font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 3px; background: rgba(180,83,9,0.2); color: #d97706; letter-spacing: 0.3px; line-height: 1; flex-shrink: 0;';
+                        newBadge.textContent = 'NEW';
+                        const dismiss = () => {
+                            sessionStorage.setItem('sv-new-seen-' + subItem.id, '1');
+                            newBadge.remove();
+                        };
+                        subNavItem.appendChild(newBadge);
+                        setTimeout(dismiss, 30000);
+                    }
+
+                    subNavItem.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (subItem.section) {
+                            this.navigateToSection(item.id, subItem.section, subItem.id);
+                        } else {
+                            this.navigate(subItem.id);
+                        }
+                    });
+
+                    subNav.appendChild(subNavItem);
+                });
+
+                nav.appendChild(subNav);
+                if (currentSection) currentSection.els.push(subNav);
+            }
+        });
+
+        // Wire the Observe / Govern / Connect section toggles. Collapse hides
+        // rows via a class (not inline display) so each row's own inline
+        // display state — sub-nav expand/collapse, banner visibility — is
+        // preserved intact when the section reopens.
+        sections.forEach(sec => {
+            const apply = (collapsed) => {
+                sec.collapsed = collapsed;
+                sec.els.forEach(el => el.classList.toggle('nav-sec-hidden', collapsed));
+                sec.chev.style.transform = collapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+                sec.btn.setAttribute('aria-expanded', String(!collapsed));
+                sec.btn.title = (collapsed ? 'Expand ' : 'Collapse ') + sec.name;
+            };
+            sec.apply = apply;
+            apply(localStorage.getItem(sec.key) === '1' && !sec.containsActive);
+            sec.btn.addEventListener('click', () => {
+                const next = !sec.collapsed;
+                try { localStorage.setItem(sec.key, next ? '1' : '0'); } catch (_) { /* private mode */ }
+                apply(next);
+            });
+        });
+        // navigate() uses this to re-open a collapsed section when the user
+        // lands on a page inside it — the active row must never be hidden.
+        this._sections = sections;
+
+        // Fetch rules count
+        this.loadRulesCount();
+
+        // JIT pending-request badge: load now, then poll. Guarded so repeated
+        // render() calls (every navigation) never stack intervals — the timer
+        // survives re-renders because the badge element is recreated with the
+        // same id each time.
+        this.loadJitPendingCount();
+        if (!this._jitBadgeTimer) {
+            this._jitBadgeTimer = setInterval(() => this.loadJitPendingCount(), 30000);
+        }
+
+        container.appendChild(nav);
+
+        // Collapse toggle button (at menu level)
+        const collapseBtn = document.createElement('button');
+        collapseBtn.className = 'sidebar-collapse-btn';
+        collapseBtn.setAttribute('aria-label', 'Toggle sidebar');
+
+        const collapseIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        collapseIcon.setAttribute('viewBox', '0 0 24 24');
+        collapseIcon.setAttribute('fill', 'none');
+        collapseIcon.setAttribute('stroke', 'currentColor');
+        collapseIcon.setAttribute('stroke-width', '2');
+        const collapsePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        collapsePath.setAttribute('d', this.collapsed ? 'M9 18l6-6-6-6' : 'M15 18l-6-6 6-6');
+        collapseIcon.appendChild(collapsePath);
+        collapseBtn.appendChild(collapseIcon);
+
+        collapseBtn.addEventListener('click', () => this.toggleCollapse());
+        container.appendChild(collapseBtn);
+
+        // Drag-to-resize handle on the right edge of the sidebar. Disabled
+        // (display:none via CSS) while the rail is in collapsed state.
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'sidebar-resize-handle';
+        resizeHandle.title = 'Drag to resize';
+        resizeHandle.addEventListener('mousedown', (downEv) => {
+            if (this.collapsed) return;
+            downEv.preventDefault();
+            const startX = downEv.clientX;
+            const startWidth = container.getBoundingClientRect().width;
+            container.classList.add('resizing');
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'col-resize';
+
+            const onMove = (moveEv) => {
+                const next = Math.max(
+                    this.SIDEBAR_MIN_PX,
+                    Math.min(this.SIDEBAR_MAX_PX, startWidth + (moveEv.clientX - startX))
+                );
+                document.documentElement.style.setProperty('--sidebar-width', next + 'px');
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                container.classList.remove('resizing');
+                document.body.style.userSelect = '';
+                document.body.style.cursor = '';
+                const finalWidth = parseInt(
+                    getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width'),
+                    10
+                );
+                if (Number.isFinite(finalWidth)) {
+                    localStorage.setItem('sidebar-width', String(finalWidth));
+                }
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+        container.appendChild(resizeHandle);
+
+        // Bottom section - proxy status, try it, uninstall, server status
+        const bottomSection = document.createElement('div');
+        bottomSection.className = 'sidebar-bottom';
+
+        // Collapsible status stack — the proxy / plugin / SIEM banners live
+        // in one foldable group (the user asked to be able to put them away).
+        // The header row renders only when at least one banner is visible,
+        // shows a live count, and the collapsed state persists across loads.
+        const statusToggle = document.createElement('button');
+        statusToggle.type = 'button';
+        statusToggle.id = 'sidebar-status-toggle';
+        statusToggle.setAttribute('aria-controls', 'sidebar-status-stack');
+        statusToggle.style.cssText = 'display: none; align-items: center; gap: 6px; margin: 10px 12px 2px; padding: 6px 10px; min-height: 26px; line-height: 1.4; background: transparent; border: none; border-radius: 6px; cursor: pointer; font: inherit; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); width: calc(100% - 24px); text-align: left; overflow: visible;';
+        const statusChevron = document.createElement('span');
+        statusChevron.setAttribute('aria-hidden', 'true');
+        statusChevron.style.cssText = 'font-size: 11px; flex-shrink: 0; line-height: 1;';
+        statusToggle.appendChild(statusChevron);
+        const statusLabel = document.createElement('span');
+        statusLabel.textContent = 'Active plugins';
+        statusToggle.appendChild(statusLabel);
+        const statusCount = document.createElement('span');
+        statusCount.style.cssText = 'margin-left: auto; padding: 0 6px; border-radius: 999px; background: var(--bg-tertiary); color: var(--text-secondary); font-size: 9px; line-height: 16px;';
+        statusToggle.appendChild(statusCount);
+        statusToggle.addEventListener('mouseenter', () => { statusToggle.style.color = 'var(--text-secondary)'; });
+        statusToggle.addEventListener('mouseleave', () => { statusToggle.style.color = 'var(--text-muted)'; });
+        bottomSection.appendChild(statusToggle);
+
+        const statusStack = document.createElement('div');
+        statusStack.id = 'sidebar-status-stack';
+        // Bottom inset so the last banner doesn't sit flush on the rail edge.
+        statusStack.style.cssText = 'padding-bottom: 10px;';
+        bottomSection.appendChild(statusStack);
+
+        const STATUS_COLLAPSE_KEY = 'sv-status-stack-collapsed';
+        const applyStatusCollapsed = (collapsed) => {
+            statusStack.style.display = collapsed ? 'none' : 'block';
+            statusChevron.textContent = collapsed ? '\u25b8' : '\u25be';
+            statusToggle.setAttribute('aria-expanded', String(!collapsed));
+            statusToggle.title = collapsed ? 'Show plugin status' : 'Hide plugin status';
+        };
+        statusToggle.addEventListener('click', () => {
+            const nowCollapsed = statusStack.style.display !== 'none';
+            try { localStorage.setItem(STATUS_COLLAPSE_KEY, nowCollapsed ? '1' : '0'); } catch (_) { /* private mode */ }
+            applyStatusCollapsed(nowCollapsed);
+        });
+        applyStatusCollapsed(localStorage.getItem(STATUS_COLLAPSE_KEY) === '1');
+        // Header visibility + count track the banners' own show/hide (each
+        // poller flips its banner's inline display) — observe instead of
+        // threading a callback through all five pollers.
+        const updateStatusToggle = () => {
+            const visible = Array.from(statusStack.children).filter(el => el.style.display !== 'none').length;
+            statusToggle.style.display = visible ? 'flex' : 'none';
+            statusCount.textContent = String(visible);
+        };
+        new MutationObserver(updateStatusToggle).observe(statusStack, { attributes: true, attributeFilter: ['style'], childList: true, subtree: true });
+        updateStatusToggle();
+
+        // Guardian ML lives in the header (Header.createGuardianControl) —
+        // it's a global on/off, not a sidebar destination. Keeping it out of
+        // the bottom zone lets the proxy/plugin/SIEM status banners (which
+        // hide when inactive) read as a clean, single-purpose status stack.
+
+        // Integration proxy status indicator — compact single line, anchored in bottom section
+        const proxyBanner = document.createElement('div');
+        proxyBanner.id = 'integration-proxy-banner';
+        proxyBanner.className = 'proxy-banner-pulse';
+        proxyBanner.style.cssText = 'display: none; margin: 8px 12px 0; padding: 4px 10px; border-radius: 6px; cursor: pointer; background: transparent; border: 1px solid rgba(94,173,184,0.35); align-items: center; gap: 6px; transition: background 0.15s;';
+        proxyBanner.addEventListener('mouseenter', () => { proxyBanner.style.background = 'rgba(94,173,184,0.06)'; });
+        proxyBanner.addEventListener('mouseleave', () => { proxyBanner.style.background = 'transparent'; });
+
+        const bannerDot = document.createElement('span');
+        bannerDot.style.cssText = 'width: 6px; height: 6px; border-radius: 50%; background: var(--accent-primary); flex-shrink: 0;';
+        proxyBanner.appendChild(bannerDot);
+
+        const bannerText = document.createElement('span');
+        bannerText.id = 'integration-banner-text';
+        bannerText.style.cssText = 'font-size: 11px; font-weight: 500; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+        proxyBanner.appendChild(bannerText);
+        statusStack.appendChild(proxyBanner);
+
+        // Claude Code plugin indicator — same compact pattern as the
+        // proxy/SIEM banners. Visible only when the plugin is staged
+        // (or auto-installed on Claude Code) so it doesn't shout when
+        // nothing is in flight. Neutral dot (runtimes are labels) — see
+        // Claude Code category color on Tool Permissions.
+        // Use a real <button> so keyboard users can Tab into it and
+        // Enter/Space activates the same handler — replaces the prior
+        // clickable <div> pattern (fails WCAG 2.1 SC 2.1.1 and 4.1.2).
+        // aria-live="polite" announces state transitions to screen
+        // readers when the banner becomes visible / changes copy.
+        // Real <button> for keyboard reach + WCAG 2.1 SC 2.1.1/4.1.2.
+        // aria-label uses neutral verb ("Open Claude Code plugin
+        // settings") so it doesn't exclude keyboard/touch users with
+        // "click to manage" phrasing.
+        // Note: aria-live is placed on the INNER text span only —
+        // SRs skip live-region announcements on display:none parents,
+        // and we want state transitions ("staged" → "active") to be
+        // heard. The wrapper button stays hidden until needed; the
+        // inner span is the live region that gets repopulated.
+        const ccPluginBanner = document.createElement('button');
+        ccPluginBanner.type = 'button';
+        ccPluginBanner.id = 'cc-plugin-active-banner';
+        ccPluginBanner.className = 'proxy-banner-pulse';
+        ccPluginBanner.setAttribute('aria-label', 'Open Claude Code plugin settings');
+        // Padding + margin match the OpenClaw / SIEM banners exactly
+        // (4px 10px / 8px 12px 0) so the three stack as equal-height
+        // rows. `min-height` is dropped — letting the row size to its
+        // content keeps it the same height as the sibling banners.
+        // `width: calc(100% - 24px)` is still needed because <button>
+        // doesn't auto-fill the way <div> does.
+        // neutral border, runtime colour on the DOT (a label, like the
+        // Traces card dots) — coloured borders made the footer read as four
+        // competing alerts.
+        ccPluginBanner.style.cssText = 'display: none; margin: 8px 12px 0; padding: 4px 10px; border-radius: 6px; cursor: pointer; background: transparent; border: 1px solid var(--border-default); align-items: center; gap: 6px; transition: background 0.15s; font: inherit; text-align: left; color: inherit; width: calc(100% - 24px);';
+        ccPluginBanner.addEventListener('mouseenter', () => { ccPluginBanner.style.background = 'var(--bg-hover)'; });
+        ccPluginBanner.addEventListener('mouseleave', () => { ccPluginBanner.style.background = 'transparent'; });
+        const ccDot = document.createElement('span');
+        ccDot.style.cssText = 'width: 6px; height: 6px; border-radius: 50%; background: #8b5cf6; flex-shrink: 0;';
+        ccDot.setAttribute('aria-hidden', 'true');
+        ccPluginBanner.appendChild(ccDot);
+        const ccText = document.createElement('span');
+        ccText.id = 'cc-plugin-banner-text';
+        // aria-live on the text-bearing inner span so SRs announce
+        // state changes regardless of parent display state.
+        ccText.setAttribute('aria-live', 'polite');
+        ccText.setAttribute('aria-atomic', 'true');
+        ccText.style.cssText = 'font-size: 11px; font-weight: 500; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+        ccPluginBanner.appendChild(ccText);
+        ccPluginBanner.addEventListener('click', () => this.navigate('proxy-claude-code'));
+        statusStack.appendChild(ccPluginBanner);
+
+        // Codex plugin indicator — same compact pattern as the CC banner.
+        // Visible only when the plugin is staged (or auto-installed in
+        // ~/.codex) so it doesn't shout when nothing is in flight.
+        //
+        // Neutral dot (runtimes are labels, not statuses) — see the Codex
+        // plugin manifest's brandColor (cyan #5EADB8): cyan collides
+        // with this same sidebar's integration-proxy banner border
+        // (also #5EADB8 / rgba(94,173,184,*)). Two cyan single-line
+        // banners stacked together are visually indistinguishable.
+        // Coral picks a distinct fourth hue so the bottom-section now
+        // reads: CC purple · Codex coral · proxy cyan · SIEM green.
+        // Padding + margin match the CC banner exactly (`8px 12px 0`)
+        // so the four banners stack as equal-rhythm rows; hover alpha
+        // matches CC's `0.06`.
+        const codexPluginBanner = document.createElement('button');
+        codexPluginBanner.type = 'button';
+        codexPluginBanner.id = 'codex-plugin-active-banner';
+        codexPluginBanner.className = 'proxy-banner-pulse';
+        codexPluginBanner.setAttribute('aria-label', 'Open Codex plugin settings');
+        codexPluginBanner.style.cssText = 'display: none; margin: 8px 12px 0; padding: 4px 10px; border-radius: 6px; cursor: pointer; background: transparent; border: 1px solid var(--border-default); align-items: center; gap: 6px; transition: background 0.15s; font: inherit; text-align: left; color: inherit; width: calc(100% - 24px);';
+        codexPluginBanner.addEventListener('mouseenter', () => { codexPluginBanner.style.background = 'var(--bg-hover)'; });
+        codexPluginBanner.addEventListener('mouseleave', () => { codexPluginBanner.style.background = 'transparent'; });
+        const codexDot = document.createElement('span');
+        codexDot.style.cssText = 'width: 6px; height: 6px; border-radius: 50%; background: #c0655e; flex-shrink: 0;';
+        codexDot.setAttribute('aria-hidden', 'true');
+        codexPluginBanner.appendChild(codexDot);
+        const codexText = document.createElement('span');
+        codexText.id = 'codex-plugin-banner-text';
+        codexText.setAttribute('aria-live', 'polite');
+        codexText.setAttribute('aria-atomic', 'true');
+        codexText.style.cssText = 'font-size: 11px; font-weight: 500; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+        codexPluginBanner.appendChild(codexText);
+        codexPluginBanner.addEventListener('click', () => this.navigate('proxy-codex'));
+        statusStack.appendChild(codexPluginBanner);
+
+        // Copilot CLI plugin indicator — same compact pattern as the CC and
+        // Codex banners; polls /api/hooks/copilot-cli/status.
+        //
+        // Neutral dot — the bottom-section plugin rows all share:
+        // CC purple · Codex coral · Copilot blue · proxy cyan · SIEM green.
+        // GitHub's Copilot brand purple would collide with the CC banner,
+        // so blue (GitHub's own link/accent family) keeps the row
+        // distinguishable at a glance when several stack together.
+        const copilotPluginBanner = document.createElement('button');
+        copilotPluginBanner.type = 'button';
+        copilotPluginBanner.id = 'copilot-plugin-active-banner';
+        copilotPluginBanner.className = 'proxy-banner-pulse';
+        copilotPluginBanner.setAttribute('aria-label', 'Open Copilot CLI plugin settings');
+        copilotPluginBanner.style.cssText = 'display: none; margin: 8px 12px 0; padding: 4px 10px; border-radius: 6px; cursor: pointer; background: transparent; border: 1px solid var(--border-default); align-items: center; gap: 6px; transition: background 0.15s; font: inherit; text-align: left; color: inherit; width: calc(100% - 24px);';
+        copilotPluginBanner.addEventListener('mouseenter', () => { copilotPluginBanner.style.background = 'var(--bg-hover)'; });
+        copilotPluginBanner.addEventListener('mouseleave', () => { copilotPluginBanner.style.background = 'transparent'; });
+        const copilotDot = document.createElement('span');
+        copilotDot.style.cssText = 'width: 6px; height: 6px; border-radius: 50%; background: #4a8fe7; flex-shrink: 0;';
+        copilotDot.setAttribute('aria-hidden', 'true');
+        copilotPluginBanner.appendChild(copilotDot);
+        const copilotText = document.createElement('span');
+        copilotText.id = 'copilot-plugin-banner-text';
+        copilotText.setAttribute('aria-live', 'polite');
+        copilotText.setAttribute('aria-atomic', 'true');
+        copilotText.style.cssText = 'font-size: 11px; font-weight: 500; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+        copilotPluginBanner.appendChild(copilotText);
+        copilotPluginBanner.addEventListener('click', () => this.navigate('proxy-copilot-cli'));
+        statusStack.appendChild(copilotPluginBanner);
+
+        // SIEM Forwarder active indicator — mirrors the proxy banner
+        // styling so both stack cleanly when on together. Visible only
+        // when the master toggle is enabled AND at least one destination
+        // is configured (no point showing "active" if nothing receives).
+        const siemBanner = document.createElement('div');
+        siemBanner.id = 'siem-active-banner';
+        siemBanner.className = 'proxy-banner-pulse';
+        // Green accent (10b981) — different from the cyan proxy banner
+        // so operators can tell them apart at a glance when stacked.
+        siemBanner.style.cssText = 'display: none; margin: 6px 12px 0; padding: 4px 10px; border-radius: 6px; cursor: pointer; background: transparent; border: 1px solid var(--border-default); align-items: center; gap: 6px; transition: background 0.15s;';
+        siemBanner.addEventListener('mouseenter', () => { siemBanner.style.background = 'var(--bg-hover)'; });
+        siemBanner.addEventListener('mouseleave', () => { siemBanner.style.background = 'transparent'; });
+        const siemDot = document.createElement('span');
+        siemDot.style.cssText = 'width: 6px; height: 6px; border-radius: 50%; background: #10b981; flex-shrink: 0;';
+        siemBanner.appendChild(siemDot);
+        const siemText = document.createElement('span');
+        siemText.id = 'siem-banner-text';
+        siemText.style.cssText = 'font-size: 11px; font-weight: 500; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
+        siemBanner.appendChild(siemText);
+        siemBanner.addEventListener('click', () => this.navigate('siem-export'));
+        statusStack.appendChild(siemBanner);
+
+        // Resume polling when the document becomes visible again. The
+        // poll loops self-terminate when visibilityState !== 'visible'
+        // (to save background CPU), so without this listener a window
+        // that was briefly backgrounded — e.g., during a backend
+        // restart — would silently stop refreshing the indicators and
+        // never restart them. Idempotent because each `check*` checks
+        // for its own DOM node before re-scheduling, so calling them
+        // when already polling is a no-op.
+        if (!this._visibilityHookInstalled) {
+            this._visibilityHookInstalled = true;
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    this.checkProxyStatus();
+                    this.checkSiemStatus();
+                    this.checkClaudeCodePluginStatus();
+                    this.checkCodexPluginStatus();
+                    this.checkCopilotPluginStatus();
+                }
+            });
+        }
+
+        // Theme toggle — pinned to the foot of the rail (design). It used to sit in
+        // the header, where a once-a-session display preference competed for
+        // width with Guardian ML, Connect Agents and Cloud Connect, and where
+        // it was part of what pushed Cloud Connect off-screen on a narrowed
+        // window. `.sidebar-bottom` is already `margin-top: auto` under a
+        // `flex: 1; overflow-y: auto` nav, so this stays put while the nav
+        // list scrolls — genuinely fixed to the bottom, not merely last.
+        bottomSection.appendChild(this.createThemeFooter());
+
+        container.appendChild(bottomSection);
+
+        // Check all five indicators — AFTER the bottom section is attached.
+        // The pollers look themselves up via document.getElementById and exit
+        // (without rescheduling) when the node isn't in the document yet;
+        // kicking them off before appendChild meant every banner stayed
+        // hidden until a visibilitychange happened to restart them.
+        this.checkProxyStatus();
+        this.checkSiemStatus();
+        this.checkClaudeCodePluginStatus();
+        this.checkCodexPluginStatus();
+        this.checkCopilotPluginStatus();
+    },
+
+    toggleCollapse() {
+        const container = document.getElementById('sidebar');
+        this.collapsed = !this.collapsed;
+        localStorage.setItem('sidebar-collapsed', this.collapsed);
+
+        if (this.collapsed) {
+            container.classList.add('collapsed');
+        } else {
+            container.classList.remove('collapsed');
+        }
+
+        // Update icon
+        const collapseBtn = container.querySelector('.sidebar-collapse-btn');
+        if (collapseBtn) {
+            const path = collapseBtn.querySelector('path');
+            if (path) {
+                path.setAttribute('d', this.collapsed ? 'M9 18l6-6-6-6' : 'M15 18l-6-6 6-6');
+            }
+        }
+    },
+
+    createThemeIcon() {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+
+        if (isDark) {
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', '12');
+            circle.setAttribute('cy', '12');
+            circle.setAttribute('r', '5');
+            svg.appendChild(circle);
+            const rays = ['M12 1v2', 'M12 21v2', 'M4.22 4.22l1.42 1.42', 'M18.36 18.36l1.42 1.42', 'M1 12h2', 'M21 12h2', 'M4.22 19.78l1.42-1.42', 'M18.36 5.64l1.42-1.42'];
+            rays.forEach(d => {
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                line.setAttribute('d', d);
+                svg.appendChild(line);
+            });
+        } else {
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z');
+            svg.appendChild(path);
+        }
+        return svg;
+    },
+
+    // Theme picker at the rail foot. Started as a dark/light circle; it is a
+    // swatch row now because two options was not much of a choice. Each swatch
+    // is painted in that theme's own page and card colours, so the control
+    // previews rather than describes. Only the shell changes between themes —
+    // see the variant blocks in styles.css for why the accent is fixed.
+    // `page` and `edge` are each theme's darkest and lightest shell tones. The
+    // swatch runs one into the other rather than showing a single flat fill:
+    // three dark themes painted only in their page colour are three
+    // indistinguishable black dots at 18px, and the widest tonal span each
+    // theme actually contains is what separates them by eye.
+    THEMES: [
+        { id: 'dark',  label: 'Dark',  page: '#090b0f', edge: '#1a2029' },
+        { id: 'black', label: 'Black', page: '#000000', edge: '#16181c' },
+        { id: 'slate', label: 'Slate', page: '#151a23', edge: '#2a3340' },
+        { id: 'azure', label: 'Azure', page: '#071019', edge: '#1b3149' },
+        { id: 'ember', label: 'Ember', page: '#100c09', edge: '#2d2019' },
+        { id: 'light', label: 'Light', page: '#ffffff', edge: '#dfe5ec' },
+    ],
+
+    currentTheme() {
+        const t = document.documentElement.getAttribute('data-theme') || 'dark';
+        return this.THEMES.some(x => x.id === t) ? t : 'dark';
+    },
+
+    _swatchFill(t) {
+        return `linear-gradient(135deg, ${t.page} 0 50%, ${t.edge} 50% 100%)`;
+    },
+
+    createThemeFooter() {
+        const active = this.currentTheme();
+        const cur = this.THEMES.find(t => t.id === active) || this.THEMES[0];
+
+        const row = document.createElement('div');
+        row.className = 'sidebar-theme-fixed';
+
+        // Collapsed to a single row showing only the CURRENT theme; the full
+        // palette lives in a menu that opens on hover or focus. Six swatches
+        // sitting in the rail permanently spent the footer's whole width on a
+        // control that gets touched about once, and three of them were
+        // near-identical dark dots without their labels to tell them apart.
+        // The menu gives every option its name back.
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'sidebar-theme-trigger';
+        trigger.setAttribute('aria-haspopup', 'true');
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.title = `Theme: ${cur.label}`;
+
+        // No swatch on the closed row. A lone dark circle sitting under the
+        // nav read as a stray control rather than a setting, and at rail size
+        // it could not show which of the dark themes was active anyway. The
+        // row states the theme by NAME; the colours appear in the menu, where
+        // they are being compared and actually mean something.
+        const label = document.createElement('span');
+        label.className = 'sidebar-theme-name';
+        label.textContent = 'Theme';
+        trigger.appendChild(label);
+
+        const cur_ = document.createElement('span');
+        cur_.className = 'sidebar-theme-current';
+        cur_.textContent = cur.label;
+        trigger.appendChild(cur_);
+
+        const chev = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        chev.setAttribute('viewBox', '0 0 24 24');
+        chev.setAttribute('fill', 'none');
+        chev.setAttribute('stroke', 'currentColor');
+        chev.setAttribute('stroke-width', '2');
+        chev.setAttribute('aria-hidden', 'true');
+        chev.classList.add('sidebar-theme-chev');
+        const chevPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        chevPath.setAttribute('d', 'M6 15l6-6 6 6');
+        chev.appendChild(chevPath);
+        trigger.appendChild(chev);
+
+        row.appendChild(trigger);
+
+        const menu = document.createElement('div');
+        menu.className = 'sv-theme-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', 'Colour theme');
+
+        this.THEMES.forEach(t => {
+            const opt = document.createElement('button');
+            opt.type = 'button';
+            opt.className = 'sv-theme-opt' + (t.id === active ? ' on' : '');
+            opt.setAttribute('role', 'menuitemradio');
+            opt.setAttribute('aria-checked', t.id === active ? 'true' : 'false');
+            opt.dataset.theme = t.id;
+
+            const sw = document.createElement('span');
+            sw.className = 'sv-swatch';
+            sw.style.background = this._swatchFill(t);
+            opt.appendChild(sw);
+
+            const nm = document.createElement('span');
+            nm.className = 'sv-theme-opt-name';
+            nm.textContent = t.label;
+            opt.appendChild(nm);
+
+            opt.addEventListener('click', () => this.setTheme(t.id));
+            menu.appendChild(opt);
+        });
+
+        row.appendChild(menu);
+
+        // Open on hover AND on click/focus. Hover alone would leave the
+        // control unreachable by keyboard and unusable by touch, and a
+        // hover-only menu on the very bottom row of the window is easy to
+        // open by accident on the way to somewhere else.
+        let closeTimer = null;
+        const open = () => {
+            if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+            menu.classList.add('open');
+            trigger.setAttribute('aria-expanded', 'true');
+        };
+        const close = () => {
+            menu.classList.remove('open');
+            trigger.setAttribute('aria-expanded', 'false');
+        };
+        // Small grace period so crossing the gap between row and menu, or
+        // clipping a corner, does not snap it shut mid-reach.
+        const closeSoon = () => {
+            if (closeTimer) clearTimeout(closeTimer);
+            closeTimer = setTimeout(close, 220);
+        };
+
+        row.addEventListener('mouseenter', open);
+        row.addEventListener('mouseleave', closeSoon);
+        row.addEventListener('focusin', open);
+        row.addEventListener('focusout', (e) => {
+            if (!row.contains(e.relatedTarget)) close();
+        });
+        trigger.addEventListener('click', () => {
+            menu.classList.contains('open') ? close() : open();
+        });
+        row.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') { close(); trigger.focus(); }
+        });
+
+        return row;
+    },
+
+    setTheme(id) {
+        if (!this.THEMES.some(t => t.id === id)) return;
+        if (this.currentTheme() === id) return;
+        document.documentElement.setAttribute('data-theme', id);
+        try { localStorage.setItem('theme', id); } catch (_) { /* private mode */ }
+        this.render();
+        if (window.Header) Header.render();
+    },
+
+    showUninstallModal() {
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        const closeModal = () => {
+            overlay.classList.remove('active');
+            setTimeout(() => overlay.remove(), 150);
+        };
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeModal();
+        });
+
+        const modal = document.createElement('div');
+        modal.className = 'modal uninstall-modal';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'modal-header';
+
+        const title = document.createElement('h2');
+        title.textContent = 'Uninstall Aegis';
+        header.appendChild(title);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'modal-close';
+        closeBtn.textContent = '\u00D7';
+        closeBtn.addEventListener('click', closeModal);
+        header.appendChild(closeBtn);
+
+        modal.appendChild(header);
+
+        // Content (scrollable)
+        const content = document.createElement('div');
+        content.className = 'modal-content';
+        content.style.cssText = 'overflow-y: auto; max-height: 60vh;';
+
+        // Windows section
+        const winSection = document.createElement('div');
+        winSection.className = 'uninstall-section';
+        const winTitle = document.createElement('h3');
+        winTitle.textContent = 'Windows';
+        winSection.appendChild(winTitle);
+
+        const winDesc = document.createElement('p');
+        winDesc.textContent = 'Use the Windows uninstaller:';
+        winSection.appendChild(winDesc);
+
+        const winSteps = document.createElement('ol');
+        const step1 = document.createElement('li');
+        step1.textContent = 'Open Settings > Apps > Installed apps';
+        winSteps.appendChild(step1);
+        const step2 = document.createElement('li');
+        step2.textContent = 'Search for Aegis';
+        winSteps.appendChild(step2);
+        const step3 = document.createElement('li');
+        step3.textContent = 'Click Uninstall';
+        winSteps.appendChild(step3);
+        winSection.appendChild(winSteps);
+
+        const winAlt = document.createElement('p');
+        winAlt.textContent = 'Or run from command line:';
+        winSection.appendChild(winAlt);
+        const winCmd = document.createElement('code');
+        winCmd.textContent = 'pip uninstall aegis';
+        winSection.appendChild(winCmd);
+        content.appendChild(winSection);
+
+        // macOS/Linux section
+        const macSection = document.createElement('div');
+        macSection.className = 'uninstall-section';
+        const macTitle = document.createElement('h3');
+        macTitle.textContent = 'macOS / Linux';
+        macSection.appendChild(macTitle);
+
+        const macDesc = document.createElement('p');
+        macDesc.textContent = 'Run from terminal:';
+        macSection.appendChild(macDesc);
+        const macCmd = document.createElement('code');
+        macCmd.textContent = 'pip uninstall aegis';
+        macSection.appendChild(macCmd);
+        content.appendChild(macSection);
+
+        // Remove data section
+        const dataSection = document.createElement('div');
+        dataSection.className = 'uninstall-section';
+        const dataTitle = document.createElement('h3');
+        dataTitle.textContent = 'Remove Data (Optional)';
+        dataSection.appendChild(dataTitle);
+
+        const dataDesc = document.createElement('p');
+        dataDesc.textContent = 'To also remove the database and settings:';
+        dataSection.appendChild(dataDesc);
+        const dataCmd = document.createElement('code');
+        dataCmd.textContent = 'rm -rf ~/.aegis';
+        dataSection.appendChild(dataCmd);
+
+        const dataNote = document.createElement('p');
+        dataNote.className = 'muted';
+        dataNote.textContent = 'This will delete all threat analytics history and custom rules.';
+        dataSection.appendChild(dataNote);
+        content.appendChild(dataSection);
+
+        // Warning
+        const warning = document.createElement('div');
+        warning.className = 'uninstall-warning';
+        const warningBold = document.createElement('strong');
+        warningBold.textContent = 'Note: ';
+        warning.appendChild(warningBold);
+        warning.appendChild(document.createTextNode('Running the pip uninstall command will remove the application. Make sure to close Aegis before uninstalling.'));
+        content.appendChild(warning);
+
+        modal.appendChild(content);
+
+        // Footer
+        const footer = document.createElement('div');
+        footer.className = 'modal-footer';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-secondary';
+        cancelBtn.textContent = 'Close';
+        cancelBtn.addEventListener('click', closeModal);
+        footer.appendChild(cancelBtn);
+
+        modal.appendChild(footer);
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        // Trigger animation after DOM insertion
+        requestAnimationFrame(() => {
+            overlay.classList.add('active');
+        });
+    },
+
+    async loadJitPendingCount() {
+        try {
+            const r = await API.getJitRequests('pending');
+            const n = (r && typeof r.pending === 'number') ? r.pending
+                : ((r && r.items) ? r.items.length : 0);
+            const badge = document.getElementById('jit-pending-badge');
+            if (badge) {
+                badge.textContent = n === 1 ? '1 waiting' : n + ' waiting';
+                badge.style.display = n > 0 ? 'inline-flex' : 'none';
+            }
+        } catch (_) { /* fail-quiet: badge just stays hidden */ }
+    },
+
+    async loadRulesCount() {
+        try {
+            const rules = await API.getRules();
+            const count = rules.total || (rules.items ? rules.items.length : 0);
+            const badge = document.getElementById('rules-count-badge');
+            if (badge) {
+                badge.textContent = count;
+            }
+        } catch (e) {
+            const badge = document.getElementById('rules-count-badge');
+            if (badge) {
+                badge.textContent = '0';
+            }
+        }
+    },
+
+    // Integration configurations for banner display
+    integrationConfigs: {
+        openclaw: { icon: '🦎', label: 'OPENCLAW PROXY', color: 'linear-gradient(135deg, #f59e0b, #d97706)', page: 'proxy-openclaw' },
+        ollama: { icon: '🦙', label: 'OLLAMA PROXY', color: 'linear-gradient(135deg, #6366f1, #4f46e5)', page: 'proxy-ollama' },
+        langchain: { icon: '🔗', label: 'LANGCHAIN PROXY', color: 'linear-gradient(135deg, #10b981, #059669)', page: 'proxy-langchain' },
+        langgraph: { icon: '📊', label: 'LANGGRAPH PROXY', color: 'linear-gradient(135deg, #10b981, #059669)', page: 'proxy-langgraph' },
+        crewai: { icon: '👥', label: 'CREWAI PROXY', color: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', page: 'proxy-crewai' },
+        hermes: { icon: '🪽', label: 'HERMES PROXY', color: 'linear-gradient(135deg, #f59e0b, #d97706)', page: 'proxy-hermes' },
+        n8n: { icon: '⚡', label: 'N8N PROXY', color: 'linear-gradient(135deg, #ef4444, #dc2626)', page: 'proxy-n8n' },
+        default: { icon: '', label: 'PROXY', color: 'linear-gradient(135deg, #5eadb8, #c0655e)', page: 'integrations' },
+    },
+
+    async checkProxyStatus() {
+        try {
+            const response = await fetch('/api/proxy/status');
+            if (response.ok) {
+                const data = await response.json();
+                const banner = document.getElementById('integration-proxy-banner');
+                const textEl = document.getElementById('integration-banner-text');
+
+                if (banner) {
+                    if (data.running) {
+                        // Get integration config
+                        const integration = data.integration || (data.openclaw ? 'openclaw' : 'default');
+                        const config = this.integrationConfigs[integration] || this.integrationConfigs.default;
+
+                        banner.style.display = 'flex';
+                        banner.onclick = () => this.navigate(config.page);
+
+                        if (textEl) {
+                            // Always label as Aegis proxy to avoid conflating
+                            // with the user's OpenClaw gateway. The integration is
+                            // shown in parens for context (what agent started it).
+                            const friendlyNames = {
+                                openclaw: 'OpenClaw', ollama: 'Ollama', langchain: 'LangChain',
+                                langgraph: 'LangGraph', crewai: 'CrewAI', hermes: 'Hermes', n8n: 'n8n',
+                            };
+                            const name = friendlyNames[integration];
+                            const modeTag = data.multi ? 'multi-provider' : (data.provider || 'single');
+                            const integrationTag = name ? ` for ${name}` : '';
+                            textEl.textContent = `Aegis proxy running (${modeTag})${integrationTag}`;
+                        }
+
+                        // Store state for proxy pages to use
+                        window._proxyActive = true;
+                        window._proxyIntegration = integration;
+                        window._openclawProxyActive = data.openclaw || false;
+                    } else {
+                        banner.style.display = 'none';
+                        window._proxyActive = false;
+                        window._proxyIntegration = null;
+                        window._openclawProxyActive = false;
+                    }
+                }
+            }
+        } catch (e) {
+            // Ignore errors
+        }
+        // Refresh every 5 seconds
+        setTimeout(() => this.checkProxyStatus(), 5000);
+    },
+
+    async checkSiemStatus() {
+        // Sidebar "SIEM active" indicator. Visible only when:
+        //   (a) master toggle is enabled (siem-forwarders/global-settings)
+        //   (b) at least one destination is configured + enabled
+        // Otherwise the banner hides — we don't mislead operators into
+        // thinking something's flowing when the pipe is paused or empty.
+        try {
+            const [global, list] = await Promise.all([
+                fetch('/api/siem-forwarders/global-settings').then(r => r.ok ? r.json() : null).catch(() => null),
+                fetch('/api/siem-forwarders').then(r => r.ok ? r.json() : null).catch(() => null),
+            ]);
+            const banner = document.getElementById('siem-active-banner');
+            const textEl = document.getElementById('siem-banner-text');
+            if (banner && textEl) {
+                const enabled = !!(global && global.enabled);
+                const items = (list && Array.isArray(list.items)) ? list.items : [];
+                const activeCount = items.filter(f => f.enabled).length;
+                if (enabled && activeCount > 0) {
+                    banner.style.display = 'flex';
+                    textEl.textContent = `SIEM Forwarder active (${activeCount} destination${activeCount === 1 ? '' : 's'})`;
+                } else {
+                    banner.style.display = 'none';
+                }
+            }
+        } catch (_) { /* ignore */ }
+        setTimeout(() => this.checkSiemStatus(), 5000);
+    },
+
+    async checkClaudeCodePluginStatus() {
+        // Sidebar "Claude Code plugin" indicator. Visible whenever the
+        // Aegis Guard plugin is staged (files on disk) — wording
+        // varies by deployment state. Wording is now consistent with
+        // the integrations page's three states (Active / Installed,
+        // not enabled / Staged) so users see the same labels in both
+        // surfaces.
+        const banner = document.getElementById('cc-plugin-active-banner');
+        const textEl = document.getElementById('cc-plugin-banner-text');
+        // If the sidebar was torn down (page navigation, SPA re-render),
+        // both lookups return null. Stop polling — don't leak a timer.
+        if (!banner || !textEl) return;
+        try {
+            const res = await fetch('/api/hooks/claude-code/status');
+            const status = res.ok ? await res.json() : null;
+            if (!status || !status.installed) {
+                banner.style.display = 'none';
+            } else if (status.auto_installed && status.enabled) {
+                banner.style.display = 'flex';
+                textEl.textContent = 'Claude Code plugin · Active';
+            } else if (status.auto_installed) {
+                banner.style.display = 'flex';
+                textEl.textContent = 'Claude Code plugin · Installed, not enabled';
+            } else {
+                banner.style.display = 'flex';
+                textEl.textContent = 'Claude Code plugin · Staged';
+            }
+        } catch (_) { /* ignore */ }
+        // Only re-schedule when the document is visible and the banner
+        // is still mounted — saves CPU when the tab is in background.
+        // Cadence: if the banner is currently HIDDEN (plugin not yet
+        // installed, or initial fetch raced an install), poll every
+        // 2s so the banner appears quickly after install completes.
+        // Once visible, drop to a 10s cadence — the state is settled.
+        if (document.visibilityState === 'visible'
+            && document.getElementById('cc-plugin-active-banner')) {
+            const visible = banner.style.display !== 'none';
+            const delay = visible ? 10000 : 2000;
+            setTimeout(() => this.checkClaudeCodePluginStatus(), delay);
+        }
+    },
+
+    async checkCopilotPluginStatus() {
+        // Sidebar "Copilot CLI plugin" indicator. Mirrors the CC/Codex
+        // pollers — same three states (Active / Installed, not enabled /
+        // Staged), same cadence (2s while hidden, 10s once visible). The
+        // Copilot /status route reports installed/enabled from
+        // ~/.copilot/config.json's installedPlugins registration.
+        const banner = document.getElementById('copilot-plugin-active-banner');
+        const textEl = document.getElementById('copilot-plugin-banner-text');
+        if (!banner || !textEl) return;
+        try {
+            const res = await fetch('/api/hooks/copilot-cli/status');
+            const status = res.ok ? await res.json() : null;
+            if (!status || !status.installed) {
+                banner.style.display = 'none';
+            } else if (status.auto_installed && status.enabled) {
+                banner.style.display = 'flex';
+                textEl.textContent = 'Copilot CLI plugin · Active';
+            } else if (status.auto_installed) {
+                banner.style.display = 'flex';
+                textEl.textContent = 'Copilot CLI plugin · Installed, not enabled';
+            } else {
+                banner.style.display = 'flex';
+                textEl.textContent = 'Copilot CLI plugin · Staged';
+            }
+        } catch (_) { /* ignore */ }
+        if (document.visibilityState === 'visible'
+            && document.getElementById('copilot-plugin-active-banner')) {
+            const visible = banner.style.display !== 'none';
+            const delay = visible ? 10000 : 2000;
+            setTimeout(() => this.checkCopilotPluginStatus(), delay);
+        }
+    },
+
+    async checkCodexPluginStatus() {
+        // Sidebar "Codex plugin" indicator. Mirrors the CC poller — same
+        // three states (Active / Installed, not enabled / Staged), same
+        // cadence (2s while hidden, 10s once visible). The Codex /status
+        // route uses `codex_install_path` instead of `claude_install_path`
+        // and `enabled` reflects the [plugins."..."] section in
+        // ~/.codex/config.toml.
+        const banner = document.getElementById('codex-plugin-active-banner');
+        const textEl = document.getElementById('codex-plugin-banner-text');
+        if (!banner || !textEl) return;
+        try {
+            const res = await fetch('/api/hooks/codex/status');
+            const status = res.ok ? await res.json() : null;
+            if (!status || !status.installed) {
+                banner.style.display = 'none';
+            } else if (status.auto_installed && status.enabled) {
+                banner.style.display = 'flex';
+                textEl.textContent = 'Codex plugin · Active';
+            } else if (status.auto_installed) {
+                banner.style.display = 'flex';
+                textEl.textContent = 'Codex plugin · Installed, not enabled';
+            } else {
+                banner.style.display = 'flex';
+                textEl.textContent = 'Codex plugin · Staged';
+            }
+        } catch (_) { /* ignore */ }
+        if (document.visibilityState === 'visible'
+            && document.getElementById('codex-plugin-active-banner')) {
+            const visible = banner.style.display !== 'none';
+            const delay = visible ? 10000 : 2000;
+            setTimeout(() => this.checkCodexPluginStatus(), delay);
+        }
+    },
+
+    createIcon(name) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+
+        const paths = {
+            dashboard: [
+                { tag: 'rect', attrs: { x: '3', y: '3', width: '7', height: '7', rx: '1' } },
+                { tag: 'rect', attrs: { x: '14', y: '3', width: '7', height: '7', rx: '1' } },
+                { tag: 'rect', attrs: { x: '3', y: '14', width: '7', height: '7', rx: '1' } },
+                { tag: 'rect', attrs: { x: '14', y: '14', width: '7', height: '7', rx: '1' } },
+            ],
+            shield: [
+                { tag: 'path', attrs: { d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' } },
+            ],
+            // Guardian ML — a CPU/chip glyph signals "local ML model", keeping
+            // it visually distinct from the two shields (Threats / MCP Policies)
+            // so the nav doesn't read as a triplicated shield.
+            guardian: [
+                { tag: 'rect', attrs: { x: '4', y: '4', width: '16', height: '16', rx: '2' } },
+                { tag: 'rect', attrs: { x: '9', y: '9', width: '6', height: '6' } },
+                { tag: 'line', attrs: { x1: '9', y1: '1', x2: '9', y2: '4' } },
+                { tag: 'line', attrs: { x1: '15', y1: '1', x2: '15', y2: '4' } },
+                { tag: 'line', attrs: { x1: '9', y1: '20', x2: '9', y2: '23' } },
+                { tag: 'line', attrs: { x1: '15', y1: '20', x2: '15', y2: '23' } },
+                { tag: 'line', attrs: { x1: '20', y1: '9', x2: '23', y2: '9' } },
+                { tag: 'line', attrs: { x1: '20', y1: '14', x2: '23', y2: '14' } },
+                { tag: 'line', attrs: { x1: '1', y1: '9', x2: '4', y2: '9' } },
+                { tag: 'line', attrs: { x1: '1', y1: '14', x2: '4', y2: '14' } },
+            ],
+            rules: [
+                { tag: 'path', attrs: { d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' } },
+                { tag: 'polyline', attrs: { points: '14 2 14 8 20 8' } },
+                { tag: 'line', attrs: { x1: '16', y1: '13', x2: '8', y2: '13' } },
+                { tag: 'line', attrs: { x1: '16', y1: '17', x2: '8', y2: '17' } },
+            ],
+            settings: [
+                { tag: 'circle', attrs: { cx: '12', cy: '12', r: '3' } },
+                { tag: 'path', attrs: { d: 'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z' } },
+            ],
+            chat: [
+                { tag: 'path', attrs: { d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' } },
+            ],
+            proxy: [
+                { tag: 'path', attrs: { d: 'M12 2L2 7l10 5 10-5-10-5z' } },
+                { tag: 'path', attrs: { d: 'M2 17l10 5 10-5' } },
+                { tag: 'path', attrs: { d: 'M2 12l10 5 10-5' } },
+            ],
+            integrations: [
+                { tag: 'rect', attrs: { x: '3', y: '11', width: '18', height: '10', rx: '2' } },
+                { tag: 'circle', attrs: { cx: '12', cy: '5', r: '2' } },
+                { tag: 'path', attrs: { d: 'M12 7v4' } },
+                { tag: 'circle', attrs: { cx: '8', cy: '16', r: '1', fill: 'currentColor' } },
+                { tag: 'circle', attrs: { cx: '16', cy: '16', r: '1', fill: 'currentColor' } },
+            ],
+            rocket: [
+                { tag: 'path', attrs: { d: 'M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z' } },
+                { tag: 'path', attrs: { d: 'M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z' } },
+                { tag: 'path', attrs: { d: 'M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0' } },
+                { tag: 'path', attrs: { d: 'M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5' } },
+            ],
+            book: [
+                { tag: 'path', attrs: { d: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20' } },
+                { tag: 'path', attrs: { d: 'M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z' } },
+            ],
+            lock: [
+                { tag: 'rect', attrs: { x: '3', y: '11', width: '18', height: '11', rx: '2', ry: '2' } },
+                { tag: 'path', attrs: { d: 'M7 11V7a5 5 0 0 1 10 0v4' } },
+            ],
+            // Speedometer dial (needle + arc) — reads as a posture "level",
+            // matching the Agent Governance band (Minimal / Partial / Strong)
+            // and keeping it distinct from the MCP Policies shield-check.
+            gauge: [
+                { tag: 'path', attrs: { d: 'm12 14 4-4' } },
+                { tag: 'path', attrs: { d: 'M3.34 19a10 10 0 1 1 17.32 0' } },
+            ],
+            // Shield with a checkmark inside — distinguishes MCP Policies
+            // (cloud-pushed verified rules) from the bare 'shield' (Threat
+            // Monitor) and 'lock' (local Tool Permissions).
+            'shield-check': [
+                { tag: 'path', attrs: { d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' } },
+                { tag: 'polyline', attrs: { points: '8 12 11 15 16 9' } },
+            ],
+            uninstall: [
+                { tag: 'path', attrs: { d: 'M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' } },
+                { tag: 'line', attrs: { x1: '10', y1: '11', x2: '10', y2: '17' } },
+                { tag: 'line', attrs: { x1: '14', y1: '11', x2: '14', y2: '17' } },
+            ],
+            costs: [
+                { tag: 'circle', attrs: { cx: '12', cy: '12', r: '10' } },
+                { tag: 'path', attrs: { d: 'M12 6v2m0 8v2M8.5 9.5a3.5 3.5 0 0 1 7 0c0 2-3.5 3-3.5 5m0 1h.01' } },
+            ],
+            history: [
+                { tag: 'circle', attrs: { cx: '12', cy: '12', r: '10' } },
+                { tag: 'polyline', attrs: { points: '12 6 12 12 16 14' } },
+            ],
+            // Document with horizontal bar lines — read as "report" without
+            // colliding with the 'rules' icon (which also looks document-y).
+            report: [
+                { tag: 'path', attrs: { d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' } },
+                { tag: 'polyline', attrs: { points: '14 2 14 8 20 8' } },
+                { tag: 'line', attrs: { x1: '8', y1: '13', x2: '14', y2: '13' } },
+                { tag: 'line', attrs: { x1: '8', y1: '17', x2: '16', y2: '17' } },
+            ],
+            scan: [
+                { tag: 'circle', attrs: { cx: '11', cy: '11', r: '8' } },
+                { tag: 'line', attrs: { x1: '21', y1: '21', x2: '16.65', y2: '16.65' } },
+                { tag: 'line', attrs: { x1: '11', y1: '8', x2: '11', y2: '14' } },
+                { tag: 'line', attrs: { x1: '8', y1: '11', x2: '14', y2: '11' } },
+            ],
+            sliders: [
+                { tag: 'line', attrs: { x1: '4', y1: '21', x2: '4', y2: '14' } },
+                { tag: 'line', attrs: { x1: '4', y1: '10', x2: '4', y2: '3' } },
+                { tag: 'line', attrs: { x1: '12', y1: '21', x2: '12', y2: '12' } },
+                { tag: 'line', attrs: { x1: '12', y1: '8', x2: '12', y2: '3' } },
+                { tag: 'line', attrs: { x1: '20', y1: '21', x2: '20', y2: '16' } },
+                { tag: 'line', attrs: { x1: '20', y1: '12', x2: '20', y2: '3' } },
+                { tag: 'line', attrs: { x1: '1', y1: '14', x2: '7', y2: '14' } },
+                { tag: 'line', attrs: { x1: '9', y1: '8', x2: '15', y2: '8' } },
+                { tag: 'line', attrs: { x1: '17', y1: '16', x2: '23', y2: '16' } },
+            ],
+            // Plug — "connect your agents". Mirrors the header Connect Agents
+            // button glyph so the two entry points read as the same action.
+            plug: [
+                { tag: 'path', attrs: { d: 'M9 2v6' } },
+                { tag: 'path', attrs: { d: 'M15 2v6' } },
+                { tag: 'path', attrs: { d: 'M7 8h10v3a5 5 0 0 1-10 0V8z' } },
+                { tag: 'path', attrs: { d: 'M12 16v6' } },
+            ],
+        };
+
+        (paths[name] || []).forEach(({ tag, attrs }) => {
+            const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+            Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+            svg.appendChild(el);
+        });
+
+        return svg;
+    },
+
+    expandSection(sectionId) {
+        const subNav = document.querySelector(`[data-sub-for="${sectionId}"]`);
+        if (subNav) {
+            subNav.style.display = 'block';
+            localStorage.setItem(`nav-${sectionId}-expanded`, 'true');
+            // Update chevron
+            const navItem = document.querySelector(`.nav-item[data-page="${sectionId}"]`);
+            if (navItem) {
+                const chevron = navItem.querySelector('svg:last-child');
+                if (chevron) chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+    },
+
+    navigate(page) {
+        // Auto-expand parent section when navigating to a sub-item
+        for (const item of this.navItems) {
+            if (item.collapsible && item.subItems && item.subItems.some(sub => sub.id === page)) {
+                this.expandSection(item.id);
+                break;
+            }
+        }
+
+        this.currentPage = page;
+
+        // Remove core icon badge dot on first visit
+        const coreDot = document.querySelector(`[data-core-dot="${page}"]`);
+        if (coreDot && !localStorage.getItem('sv-visited-core-' + page)) {
+            localStorage.setItem('sv-visited-core-' + page, '1');
+            coreDot.style.transition = 'opacity 0.3s';
+            coreDot.style.opacity = '0';
+            setTimeout(() => coreDot.remove(), 300);
+        }
+
+        // Update active state
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.toggle('active', item.dataset.page === page);
+        });
+
+        // Landing on a page whose section is collapsed would hide the active
+        // row ("where am I?") — re-open that section. The render-time guard
+        // only covers page load; this covers in-app navigation.
+        const activeEl = document.querySelector(`.nav-item.active[data-page="${page}"]`);
+        if (activeEl && (activeEl.classList.contains('nav-sec-hidden') || activeEl.closest('.nav-sec-hidden'))) {
+            const sec = (this._sections || []).find(s => s.els.includes(activeEl)
+                || s.els.some(el => el.contains && el.contains(activeEl)));
+            if (sec && sec.collapsed && sec.apply) {
+                try { localStorage.setItem(sec.key, '0'); } catch (_) { /* private mode */ }
+                sec.apply(false);
+            }
+        }
+
+        // Trigger page load
+        if (window.App) {
+            App.loadPage(page);
+        }
+    },
+
+    navigateToSection(page, sectionId, subItemId) {
+        const alreadyOnPage = this.currentPage === page;
+        this.currentPage = page;
+
+        // Highlight parent and clicked sub-item
+        document.querySelectorAll('.nav-item').forEach(item => {
+            const matchesParent = item.dataset.page === page && !item.classList.contains('nav-sub-item');
+            const matchesSub = item.dataset.page === subItemId;
+            item.classList.toggle('active', matchesParent || matchesSub);
+        });
+
+        if (alreadyOnPage) {
+            const el = document.getElementById(sectionId);
+            if (el) {
+                // Expand the collapsed card body before scrolling so the
+                // section content is visible at the scroll target — without
+                // this, clicking a sub-item while already on /guide just
+                // scrolls to a closed header and the user sees "nothing".
+                const body = el.querySelector('.gs-card-body');
+                const indicator = el.querySelector('.gs-toggle-indicator');
+                if (body && body.style.display === 'none') {
+                    body.style.display = 'block';
+                    if (indicator) indicator.textContent = '−';
+                }
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        } else {
+            this._pendingScroll = sectionId;
+            if (window.App) App.loadPage(page);
+        }
+    },
+
+    setActive(page) {
+        this.currentPage = page;
+        document.querySelectorAll('.nav-item').forEach(item => {
+            const isSubItem = item.classList.contains('nav-sub-item');
+            const matchesPage = item.dataset.page === page ||
+                (item.dataset.aliases || '').split(',').includes(page);
+            if (isSubItem) {
+                item.classList.toggle('active', matchesPage);
+            } else {
+                const hasSubItems = item.nextElementSibling && item.nextElementSibling.classList.contains('nav-sub-items');
+                const isCollapsible = item.dataset.collapsible === 'true';
+                // Collapsible parents (like Docs) stay active when on their page
+                item.classList.toggle('active', matchesPage && (!hasSubItems || isCollapsible));
+            }
+        });
+    },
+};
+
+
+/**
+ * Side Drawer Component
+ */
+const SideDrawer = {
+    isOpen: false,
+
+    show(options = {}) {
+        this.close(); // Close any existing drawer
+
+        const overlay = document.createElement('div');
+        overlay.className = 'side-drawer-overlay';
+        overlay.addEventListener('click', () => this.close());
+
+        const drawer = document.createElement('div');
+        drawer.className = 'side-drawer';
+        drawer.id = 'side-drawer';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'side-drawer-header';
+
+        const title = document.createElement('h3');
+        title.textContent = options.title || 'Details';
+        header.appendChild(title);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'side-drawer-close';
+        closeBtn.textContent = '\u00D7';
+        closeBtn.addEventListener('click', () => this.close());
+        header.appendChild(closeBtn);
+
+        drawer.appendChild(header);
+
+        // Content
+        const content = document.createElement('div');
+        content.className = 'side-drawer-content';
+        if (options.content) {
+            if (typeof options.content === 'string') {
+                content.textContent = options.content;
+            } else {
+                content.appendChild(options.content);
+            }
+        }
+        drawer.appendChild(content);
+
+        document.body.appendChild(overlay);
+        document.body.appendChild(drawer);
+
+        // Trigger animation
+        requestAnimationFrame(() => {
+            overlay.classList.add('open');
+            drawer.classList.add('open');
+        });
+
+        this.isOpen = true;
+    },
+
+    close() {
+        const overlay = document.querySelector('.side-drawer-overlay');
+        const drawer = document.getElementById('side-drawer');
+
+        if (overlay) {
+            overlay.classList.remove('open');
+            setTimeout(() => overlay.remove(), 300);
+        }
+        if (drawer) {
+            drawer.classList.remove('open');
+            setTimeout(() => drawer.remove(), 300);
+        }
+
+        this.isOpen = false;
+    },
+};
+
+window.Sidebar = Sidebar;
+window.SideDrawer = SideDrawer;
+
+/**
+ * TryItChat — floating chat window for testing prompt analysis
+ */
+const TryItChat = {
+    panel: null,
+
+    open() {
+        if (!this.panel) this._build();
+        this.panel.classList.add('open');
+        this._focusInput();
+    },
+
+    close() {
+        if (this.panel) this.panel.classList.remove('open');
+    },
+
+    _focusInput() {
+        if (!this.panel) return;
+        const ta = this.panel.querySelector('.tryit-chat-input');
+        if (ta) setTimeout(() => ta.focus(), 60);
+    },
+
+    _build() {
+        const panel = document.createElement('div');
+        panel.className = 'tryit-chat-panel';
+
+        // ── Header ──────────────────────────────
+        const header = document.createElement('div');
+        header.className = 'tryit-chat-header';
+
+        const headerLeft = document.createElement('div');
+        headerLeft.style.cssText = 'display:flex; align-items:center; gap:8px;';
+
+        const shieldIcon = document.createElement('img');
+        shieldIcon.src = '/images/favicon.png';
+        shieldIcon.style.cssText = 'width:18px; height:18px; object-fit:contain; flex-shrink:0;';
+        headerLeft.appendChild(shieldIcon);
+
+        const headerTitle = document.createElement('div');
+        const titleLine = document.createElement('div');
+        titleLine.style.cssText = 'font-weight:700; font-size:13px; color:var(--text-primary);';
+        titleLine.textContent = 'Try Aegis';
+        const subtitleLine = document.createElement('div');
+        subtitleLine.style.cssText = 'font-size:10.5px; color:var(--text-muted);';
+        subtitleLine.textContent = 'Test any prompt for threats';
+        headerTitle.appendChild(titleLine);
+        headerTitle.appendChild(subtitleLine);
+        headerLeft.appendChild(headerTitle);
+        header.appendChild(headerLeft);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'tryit-chat-close';
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', () => this.close());
+        header.appendChild(closeBtn);
+
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'tryit-chat-clear';
+        clearBtn.title = 'Clear chat';
+        clearBtn.textContent = '🗑';
+        clearBtn.style.cssText = 'background:none; border:none; font-size:13px; cursor:pointer; color:var(--text-muted); padding:2px 6px; border-radius:4px; transition:color 0.15s;';
+        clearBtn.addEventListener('click', () => {
+            const feed = panel.querySelector('.tryit-chat-feed');
+            if (feed) { feed.textContent = ''; this._addWelcome(feed); }
+        });
+        header.appendChild(clearBtn);
+
+        panel.appendChild(header);
+
+        // ── Message feed ─────────────────────────
+        const feed = document.createElement('div');
+        feed.className = 'tryit-chat-feed';
+        this._addWelcome(feed);
+        panel.appendChild(feed);
+
+        // ── Input row ────────────────────────────
+        const inputRow = document.createElement('div');
+        inputRow.className = 'tryit-chat-input-row';
+
+        const textarea = document.createElement('textarea');
+        textarea.className = 'tryit-chat-input';
+        textarea.placeholder = 'Type a prompt to test… (Enter to send)';
+        textarea.rows = 1;
+        textarea.addEventListener('input', () => {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 96) + 'px';
+        });
+        textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendBtn.click();
+            }
+        });
+        inputRow.appendChild(textarea);
+
+        const sendBtn = document.createElement('button');
+        sendBtn.className = 'tryit-chat-send';
+        sendBtn.textContent = '→';
+        sendBtn.addEventListener('click', () => this._send(textarea, feed));
+        inputRow.appendChild(sendBtn);
+
+        panel.appendChild(inputRow);
+
+        document.body.appendChild(panel);
+        this.panel = panel;
+    },
+
+    _addWelcome(feed) {
+        const welcome = document.createElement('div');
+        welcome.className = 'tryit-msg tryit-msg-system';
+        welcome.textContent = 'Send any prompt: Aegis will scan it for injection, jailbreaks, data leaks, and 300+ threat patterns.';
+        feed.appendChild(welcome);
+    },
+
+    async _send(textarea, feed) {
+        const text = textarea.value.trim();
+        if (!text) return;
+
+        textarea.value = '';
+        textarea.style.height = 'auto';
+
+        // User bubble
+        const userBubble = document.createElement('div');
+        userBubble.className = 'tryit-msg tryit-msg-user';
+        userBubble.textContent = text;
+        feed.appendChild(userBubble);
+        feed.scrollTop = feed.scrollHeight;
+
+        // Thinking bubble
+        const thinking = document.createElement('div');
+        thinking.className = 'tryit-msg tryit-msg-thinking';
+        thinking.textContent = 'Scanning…';
+        feed.appendChild(thinking);
+        feed.scrollTop = feed.scrollHeight;
+
+        try {
+            const res = await API.analyze(text);
+            thinking.remove();
+
+            const isThreat = res.is_threat;
+            const score = res.risk_score || 0;
+            const type = res.threat_type || '';
+            const rules = res.matched_rules || [];
+
+            const resultBubble = document.createElement('div');
+            resultBubble.className = 'tryit-msg tryit-msg-result ' + (isThreat ? 'threat' : 'safe');
+
+            const topRow = document.createElement('div');
+            topRow.style.cssText = 'display:flex; align-items:center; gap:8px; margin-bottom:6px;';
+
+            const badge = document.createElement('span');
+            badge.className = 'tryit-result-badge';
+            badge.textContent = isThreat ? '⚠ Threat Detected' : '✓ Safe';
+            topRow.appendChild(badge);
+
+            const scoreChip = document.createElement('span');
+            scoreChip.className = 'tryit-result-score';
+            scoreChip.textContent = score + '% risk';
+            topRow.appendChild(scoreChip);
+
+            resultBubble.appendChild(topRow);
+
+            if (isThreat && type) {
+                const typeRow = document.createElement('div');
+                typeRow.style.cssText = 'font-size:11.5px; color:var(--text-secondary); margin-bottom:4px;';
+                typeRow.textContent = 'Type: ' + type;
+                resultBubble.appendChild(typeRow);
+            }
+
+            if (rules.length > 0) {
+                const rulesRow = document.createElement('div');
+                rulesRow.style.cssText = 'display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;';
+                rules.slice(0, 4).forEach(r => {
+                    const chip = document.createElement('span');
+                    chip.style.cssText = 'font-size:10px; padding:1px 6px; border-radius:3px; background:var(--bg-tertiary); color:var(--text-muted);';
+                    chip.textContent = r;
+                    rulesRow.appendChild(chip);
+                });
+                resultBubble.appendChild(rulesRow);
+            }
+
+            feed.appendChild(resultBubble);
+        } catch (e) {
+            thinking.remove();
+            const errBubble = document.createElement('div');
+            errBubble.className = 'tryit-msg tryit-msg-result threat';
+            errBubble.textContent = 'Error: ' + (e.message || 'Request failed');
+            feed.appendChild(errBubble);
+        }
+
+        feed.scrollTop = feed.scrollHeight;
+    },
+};
+
+window.TryItChat = TryItChat;

@@ -1,0 +1,545 @@
+rules:
+- category: prompt_injection
+  description: Detects process injection attempts through prompt manipulation
+  id: sv_attack_001_process_injection
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    mitre_attack_ids:
+    - T1055
+    references:
+    - description: Community-developed detection patterns for injection attacks
+      title: Aegis Process Injection Analysis
+      url: https://github.com/Wanshanghao/ai-aegis/tree/master/src/aegis/rules/community
+    source: aegis_community
+    tags:
+    - injection
+    - evasion
+    version: 1.0.0
+  name: 'Aegis Attack-001: Process Injection via Prompt'
+  severity: high
+  tier: community
+  pattern_type: regex
+  patterns:
+  - "\\binject\\s+(?:\\S+\\s+){0,4}process\\b"
+  - "\\bdll\\s+(?:\\S+\\s+){0,4}injection\\b"
+  - "\\bprocess\\s+(?:\\S+\\s+){0,4}hollowing\\b"
+  - "\\bcode\\s+(?:\\S+\\s+){0,4}cave\\b"
+  - "\\bthread\\s+(?:\\S+\\s+){0,4}hijacking\\b"
+  detection_logic: .*(inject.*process|dll.*injection|process.*hollowing|code.*cave|thread.*hijacking).*
+  pattern_definitions:
+    pattern_1:
+      regex: inject.*process
+      description: Detection pattern for inject.*process...
+    pattern_2:
+      regex: dll.*injection
+      description: Detection pattern for dll.*injection...
+    pattern_3:
+      regex: process.*hollowing
+      description: Detection pattern for process.*hollowing...
+    pattern_4:
+      regex: code.*cave
+      description: Detection pattern for code.*cave...
+    pattern_5:
+      regex: thread.*hijacking
+      description: Detection pattern for thread.*hijacking...
+- category: sensitive_data_exposure
+  description: Detects data exfiltration attempts through AI model
+  id: sv_attack_002_exfiltration
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    mitre_attack_ids:
+    - T1041
+    references:
+    - description: Community-developed patterns for data theft attempts
+      title: Aegis Data Exfiltration Analysis
+      url: https://github.com/Wanshanghao/ai-aegis/tree/master/src/aegis/rules/community
+    source: aegis_community
+    tags:
+    - exfiltration
+    - data_theft
+    version: 1.0.0
+  name: 'Aegis Attack-002: Data Exfiltration Detection'
+  severity: critical
+  tier: community
+  pattern_type: regex
+  patterns:
+  - "\\b(send|transmit|upload)\\s+(?:\\S+\\s+){0,4}data\\s+(?:\\S+\\s+){0,4}to\\s+(?:\\S+\\s+){0,4}server\\b"
+  - "\\b(exfiltrate|steal|leak)\\s+(?:\\S+\\s+){0,4}information\\b"
+  - "\\b(copy|download)\\s+(?:\\S+\\s+){0,4}sensitive\\s+(?:\\S+\\s+){0,4}files\\b"
+  - "\\bcovert\\s+(?:\\S+\\s+){0,4}channel\\b"
+  - "\\bdata\\s+(?:\\S+\\s+){0,4}extraction\\s+(?:\\S+\\s+){0,4}protocol\\b"
+  detection_logic: .*((send|transmit|upload).*data.*to.*server|(exfiltrate|steal|leak).*information|(copy|download).*sensitive.*files|covert.*channel|data.*extraction.*protocol).*
+  pattern_definitions:
+    pattern_1:
+      regex: (send|transmit|upload).*data.*to.*server
+      description: Detection pattern for (send|transmit|upload).*data.*to.*server...
+    pattern_2:
+      regex: (exfiltrate|steal|leak).*information
+      description: Detection pattern for (exfiltrate|steal|leak).*information...
+    pattern_3:
+      regex: (copy|download).*sensitive.*files
+      description: Detection pattern for (copy|download).*sensitive.*files...
+    pattern_4:
+      regex: covert.*channel
+      description: Detection pattern for covert.*channel...
+    pattern_5:
+      regex: data.*extraction.*protocol
+      description: Detection pattern for data.*extraction.*protocol...
+- category: sensitive_data_exposure
+  description: Detects attempts to access unsecured credentials
+  id: sv_attack_003_credentials
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    mitre_attack_ids:
+    - T1552
+    references:
+    - description: Community-developed patterns for detecting credential access attempts
+      title: Aegis Credential Security Analysis
+      url: https://github.com/Wanshanghao/ai-aegis/tree/master/src/aegis/rules/community
+    source: aegis_community
+    tags:
+    - credentials
+    - discovery
+    version: 1.0.0
+  name: 'Aegis Attack-003: Credential Discovery'
+  severity: high
+  tier: community
+  pattern_type: regex
+  patterns:
+  - "\\b(find|search|locate)\\s+(?:\\S+\\s+){0,4}credentials\\b"
+  - "\\b(username|password)\\s+(?:\\S+\\s+){0,4}file\\b"
+  - "\\bconfig\\s+(?:\\S+\\s+){0,4}file\\s+(?:\\S+\\s+){0,4}password\\b"
+  - "\\benvironment\\s+(?:\\S+\\s+){0,4}variable\\s+(?:\\S+\\s+){0,4}secret\\b"
+  - "\\bregistry\\s+(?:\\S+\\s+){0,4}password\\b"
+  - "\\bbash\\s+(?:\\S+\\s+){0,4}history\\s+(?:\\S+\\s+){0,4}password\\b"
+  detection_logic: .*((find|search|locate).*credentials|(username|password).*file|config.*file.*password|environment.*variable.*secret|registry.*password|bash.*history.*password).*
+  pattern_definitions:
+    pattern_1:
+      regex: (find|search|locate).*credentials
+      description: Detection pattern for (find|search|locate).*cred...
+    pattern_2:
+      regex: (username|password).*file
+      description: Detection pattern for (username|password).*file...
+    pattern_3:
+      regex: config.*file.*password
+      description: Detection pattern for config.*file.*password...
+    pattern_4:
+      regex: environment.*variable.*secret
+      description: Detection pattern for environment.*variable.*sec...
+    pattern_5:
+      regex: registry.*password
+      description: Detection pattern for registry.*password...
+    pattern_6:
+      regex: bash.*history.*password
+      description: Detection pattern for bash.*history.*password...
+- category: adversarial_attack
+  description: Detects communication over standard application protocols
+  id: sv_attack_004_application_protocol
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    mitre_attack_ids:
+    - T1071
+    references:
+    - description: Community-based detection of covert communication channels
+      title: Aegis Protocol Security Analysis
+      url: https://github.com/Wanshanghao/ai-aegis/tree/master/src/aegis/rules/community
+    source: aegis_community
+    tags:
+    - communication
+    - covert_channel
+    version: 1.0.0
+  name: 'Aegis Attack-004: Application Protocol Analysis'
+  severity: medium
+  tier: community
+  pattern_type: regex
+  patterns:
+  - "\\b(http|https|ftp|smtp|dns)\\s+(?:\\S+\\s+){0,4}communication\\b"
+  - "\\bsteganography\\s+(?:\\S+\\s+){0,4}protocol\\b"
+  - "\\bcovert\\s+(?:\\S+\\s+){0,4}http\\s+(?:\\S+\\s+){0,4}channel\\b"
+  - "\\bdns\\s+(?:\\S+\\s+){0,4}tunneling\\b"
+  - "\\bapplication\\s+(?:\\S+\\s+){0,4}layer\\s+(?:\\S+\\s+){0,4}hiding\\b"
+  detection_logic: .*((http|https|ftp|smtp|dns).*communication|steganography.*protocol|covert.*http.*channel|dns.*tunneling|application.*layer.*hiding).*
+  pattern_definitions:
+    pattern_1:
+      regex: (http|https|ftp|smtp|dns).*communication
+      description: Detection pattern for (http|https|ftp|smtp|dns)....
+    pattern_2:
+      regex: steganography.*protocol
+      description: Detection pattern for steganography.*protocol...
+    pattern_3:
+      regex: covert.*http.*channel
+      description: Detection pattern for covert.*http.*channel...
+    pattern_4:
+      regex: dns.*tunneling
+      description: Detection pattern for dns.*tunneling...
+    pattern_5:
+      regex: application.*layer.*hiding
+      description: Detection pattern for application.*layer.*hiding...
+- category: sensitive_data_exposure
+  description: Detects account enumeration attempts
+  id: sv_attack_005_account_discovery
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    mitre_attack_ids:
+    - T1087
+    references:
+    - description: Detection patterns for account discovery attempts
+      title: Aegis Account Security Analysis
+      url: https://github.com/Wanshanghao/ai-aegis/tree/master/src/aegis/rules/community
+    source: aegis_community
+    tags:
+    - discovery
+    - enumeration
+    version: 1.0.0
+  name: 'Aegis Attack-005: Account Enumeration'
+  severity: medium
+  tier: community
+  pattern_type: regex
+  patterns:
+  - "\\b(list|enumerate|discover)\\s+(?:\\S+\\s+){0,4}accounts\\b"
+  - "\\b(find|search)\\s+(?:\\S+\\s+){0,4}users\\b"
+  - "\\baccount\\s+(?:\\S+\\s+){0,4}enumeration\\b"
+  - "\\buser\\s+(?:\\S+\\s+){0,4}discovery\\b"
+  - "\\bwhoami\\s+(?:\\S+\\s+){0,4}command\\b"
+  detection_logic: .*((list|enumerate|discover).*accounts|(find|search).*users|account.*enumeration|user.*discovery|whoami.*command).*
+  pattern_definitions:
+    pattern_1:
+      regex: (list|enumerate|discover).*accounts
+      description: Detection pattern for (list|enumerate|discover)....
+    pattern_2:
+      regex: (find|search).*users
+      description: Detection pattern for (find|search).*users...
+    pattern_3:
+      regex: account.*enumeration
+      description: Detection pattern for account.*enumeration...
+    pattern_4:
+      regex: user.*discovery
+      description: Detection pattern for user.*discovery...
+    pattern_5:
+      regex: whoami.*command
+      description: Detection pattern for whoami.*command...
+- category: malicious_code_generation
+  description: Detects command execution attempts through AI model
+  id: sv_attack_006_command_execution
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    direction: outgoing
+    mitre_attack_ids:
+    - T1059
+    references:
+    - description: Community patterns for detecting command execution attempts
+      title: Aegis Command Security Analysis
+      url: https://github.com/Wanshanghao/ai-aegis/tree/master/src/aegis/rules/community
+    source: aegis_community
+    tags:
+    - execution
+    - command_injection
+    version: 1.0.0
+  name: 'Aegis Attack-006: Command Injection Detection'
+  severity: critical
+  tier: community
+  pattern_type: regex
+  patterns:
+  # Lookbehind excludes a preceding letter OR '.' so "sh" does not match inside
+  # "fish | source" or a script name "deploy.sh | tee" (both false positives).
+  - (?<![A-Za-z.])(?:cmd|powershell|pwsh|bash|zsh|ksh|sh)\s*[;&|]
+  # NB: natural-language patterns ("run … command", "shell … access",
+  # "terminal … command") were removed 2026-06-06 — they matched benign
+  # requests like "run the command: date" with no execution signal (top FP
+  # source for the OpenClaw plugin). Command-injection is carried by the
+  # STRUCTURAL patterns below (shell metachar chaining, pipe-to-interpreter,
+  # dangerous exec arguments), not by the English phrasing.
+  # Dynamic-exec call WITH a dangerous argument only. A bare os.system('ls') /
+  # eval('2+2') is benign and extremely common in code; the malicious signal is
+  # the ARGUMENT (destructive command, remote fetch, credential path), not the
+  # call. Matching the bare call at `critical` was the top FP source (2026-06-04).
+  - '(?<!\w)(?:os\.system|system|popen|exec|eval|subprocess\.\w+)\s*\([^)]*(?:rm\s+-rf|--no-preserve-root|mkfs|dd\s+if=|/etc/(?:passwd|shadow)|\bcurl\b|\bwget\b|\bnc\s|bash\s+-c|sh\s+-c|chmod\s+[0-7]*7{2,3}|>\s*/dev/sd|~?/?\.ssh/|\.aws/credentials|pickle\.loads|marshal\.loads|__import__|yaml\.load\b)'
+  # Decode-and-execute: piping decoded/obfuscated content straight into an
+  # interpreter (echo … | base64 -d | bash). The pipe-to-interpreter is the
+  # malicious signal; a bare base64 blob on its own is intentionally not flagged.
+  - '(?i)(?:base64\s+(?:-d|-D|--decode)|xxd\s+-r|openssl\s+enc\s+-d|gunzip)\s*\|\s*(?:bash|sh|zsh|python[23]?|perl|node|ruby)\b'
+  # Remote-fetch piped straight to an interpreter (curl … | sh) — a classic
+  # one-line drive-by install/exec. Requires the pipe-to-shell, not a bare curl.
+  # Restricted to SHELLS only — "curl … | python -m json.tool" pretty-prints
+  # JSON and is benign; piping a fetched script into a shell is the attack.
+  - '(?i)(?:curl|wget)\s+[^\n|]*\|\s*(?:bash|sh|zsh|ksh)\b'
+  detection_logic: .*((cmd|powershell|bash|sh)\s*[;&|]|(execute|run).*command|(system|exec|eval)\s*\(|shell.*access|terminal.*command).*
+  pattern_definitions:
+    pattern_1:
+      regex: (cmd|powershell|bash|sh)\s*[;&|]
+      description: Detection pattern for (cmd|powershell|bash|sh)\s...
+    pattern_2:
+      regex: (execute|run).*command
+      description: Detection pattern for (execute|run).*command...
+    pattern_3:
+      regex: (system|exec|eval)\s*\(
+      description: Detection pattern for (system|exec|eval)\s*\(...
+    pattern_4:
+      regex: shell.*access
+      description: Detection pattern for shell.*access...
+    pattern_5:
+      regex: terminal.*command
+      description: Detection pattern for terminal.*command...
+- category: social_engineering
+  description: Detects phishing content generation attempts
+  id: sv_attack_007_phishing
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    mitre_attack_ids:
+    - T1566
+    references:
+    - description: Community-based detection of phishing and social engineering attempts
+      title: Aegis Social Engineering Analysis
+      url: https://github.com/Wanshanghao/ai-aegis/tree/master/src/aegis/rules/community
+    source: aegis_community
+    tags:
+    - phishing
+    - social_engineering
+    version: 1.0.0
+  name: 'Aegis Attack-007: Social Engineering Detection'
+  severity: high
+  tier: community
+  pattern_type: regex
+  patterns:
+  - "\\b(create|generate|write)\\s+(?:\\S+\\s+){0,4}phishing\\s+(?:\\S+\\s+){0,4}email\\b"
+  - "\\b(fake|spoofed)\\s+(?:\\S+\\s+){0,4}login\\s+(?:\\S+\\s+){0,4}page\\b"
+  - "\\b(urgent|immediate)\\s+(?:\\S+\\s+){0,4}action\\s+(?:\\S+\\s+){0,4}required\\b"
+  - "\\b(verify|confirm)\\s+(?:\\S+\\s+){0,4}account\\s+(?:\\S+\\s+){0,4}information\\b"
+  - "\\b(click|download)\\s+(?:\\S+\\s+){0,4}attachment\\s+(?:\\S+\\s+){0,4}immediately\\b"
+  detection_logic: .*((create|generate|write).*phishing.*email|(fake|spoofed).*login.*page|(urgent|immediate).*action.*required|(verify|confirm).*account.*information|(click|download).*attachment.*immediately).*
+  pattern_definitions:
+    pattern_1:
+      regex: (create|generate|write).*phishing.*email
+      description: Detection pattern for (create|generate|write).*p...
+    pattern_2:
+      regex: (fake|spoofed).*login.*page
+      description: Detection pattern for (fake|spoofed).*login.*pag...
+    pattern_3:
+      regex: (urgent|immediate).*action.*required
+      description: Detection pattern for (urgent|immediate).*action...
+    pattern_4:
+      regex: (verify|confirm).*account.*information
+      description: Detection pattern for (verify|confirm).*account....
+    pattern_5:
+      regex: (click|download).*attachment.*immediately
+      description: Detection pattern for (click|download).*attachme...
+- category: evasion_attack
+  description: Detects attempts to masquerade malicious content
+  id: sv_attack_008_masquerading
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    mitre_attack_ids:
+    - T1036
+    references:
+    - description: Detection patterns for content disguise and impersonation
+      title: Aegis Masquerading Analysis
+      url: https://github.com/Wanshanghao/ai-aegis/tree/master/src/aegis/rules/community
+    source: aegis_community
+    tags:
+    - masquerading
+    - evasion
+    version: 1.0.0
+  name: 'Aegis Attack-008: Content Masquerading'
+  severity: medium
+  tier: community
+  pattern_type: regex
+  patterns:
+  - "\\b(disguise|mask|hide)\\s+(?:\\S+\\s+){0,4}malicious\\b"
+  - "\\b(legitimate|trusted)\\s+(?:\\S+\\s+){0,4}appearance\\b"
+  - "\\b(spoof|fake)\\s+(?:\\S+\\s+){0,4}identity\\b"
+  - "\\b(mimick|imitate)\\s+(?:\\S+\\s+){0,4}system\\b"
+  - "\\bsocial\\s+(?:\\S+\\s+){0,4}engineering\\s+(?:\\S+\\s+){0,4}persona\\b"
+  detection_logic: .*((disguise|mask|hide).*malicious|(legitimate|trusted).*appearance|(spoof|fake).*identity|(mimick|imitate).*system|social.*engineering.*persona).*
+  pattern_definitions:
+    pattern_1:
+      regex: (disguise|mask|hide).*malicious
+      description: Detection pattern for (disguise|mask|hide).*mali...
+    pattern_2:
+      regex: (legitimate|trusted).*appearance
+      description: Detection pattern for (legitimate|trusted).*appe...
+    pattern_3:
+      regex: (spoof|fake).*identity
+      description: Detection pattern for (spoof|fake).*identity...
+    pattern_4:
+      regex: (mimick|imitate).*system
+      description: Detection pattern for (mimick|imitate).*system...
+    pattern_5:
+      regex: social.*engineering.*persona
+      description: Detection pattern for social.*engineering.*perso...
+- category: adversarial_attack
+  description: Detects adversarial example generation attempts
+  id: sv_ml_001_adversarial_examples
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    direction: outgoing
+    source: aegis_community
+    tags:
+    - adversarial_ml
+    - evasion
+    version: 1.0.0
+  name: 'Aegis ML-001: Adversarial Example Detection'
+  severity: high
+  tier: community
+  pattern_type: regex
+  patterns:
+  - "\\badversarial\\s+(?:\\S+\\s+){0,4}example\\b"
+  - "\\b(fgsm|pgd|c&w)\\s+(?:\\S+\\s+){0,4}attack\\b"
+  - "\\bgradient\\s+(?:\\S+\\s+){0,4}based\\s+(?:\\S+\\s+){0,4}attack\\b"
+  - "\\bperturbation\\s+(?:\\S+\\s+){0,4}input\\b"
+  - "\\bfooling\\s+(?:\\S+\\s+){0,4}classifier\\b"
+  detection_logic: .*(adversarial.*example|(fgsm|pgd|c&w).*attack|gradient.*based.*attack|perturbation.*input|fooling.*classifier).*
+  pattern_definitions:
+    pattern_1:
+      regex: adversarial.*example
+      description: Detection pattern for adversarial.*example...
+    pattern_2:
+      regex: (fgsm|pgd|c&w).*attack
+      description: Detection pattern for (fgsm|pgd|c&w).*attack...
+    pattern_3:
+      regex: gradient.*based.*attack
+      description: Detection pattern for gradient.*based.*attack...
+    pattern_4:
+      regex: perturbation.*input
+      description: Detection pattern for perturbation.*input...
+    pattern_5:
+      regex: fooling.*classifier
+      description: Detection pattern for fooling.*classifier...
+- category: model_inversion
+  description: Detects model inversion attack attempts
+  id: sv_ml_002_model_inversion
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    direction: outgoing
+    source: aegis_community
+    tags:
+    - privacy_attack
+    - model_extraction
+    version: 1.0.0
+  name: 'Aegis ML-002: Model Inversion Detection'
+  severity: high
+  tier: community
+  pattern_type: regex
+  patterns:
+  - "\\bmodel\\s+(?:\\S+\\s+){0,4}inversion\\b"
+  - "\\breconstruct\\s+(?:\\S+\\s+){0,4}training\\s+(?:\\S+\\s+){0,4}data\\b"
+  - "\\breverse\\s+(?:\\S+\\s+){0,4}engineer\\s+(?:\\S+\\s+){0,4}model\\b"
+  - "\\bextract\\s+(?:\\S+\\s+){0,4}features\\s+(?:\\S+\\s+){0,4}from\\s+(?:\\S+\\s+){0,4}model\\b"
+  - "\\bprivacy\\s+(?:\\S+\\s+){0,4}attack\\s+(?:\\S+\\s+){0,4}ml\\b"
+  detection_logic: .*(model.*inversion|reconstruct.*training.*data|reverse.*engineer.*model|extract.*features.*from.*model|privacy.*attack.*ml).*
+  pattern_definitions:
+    pattern_1:
+      regex: model.*inversion
+      description: Detection pattern for model.*inversion...
+    pattern_2:
+      regex: reconstruct.*training.*data
+      description: Detection pattern for reconstruct.*training.*dat...
+    pattern_3:
+      regex: reverse.*engineer.*model
+      description: Detection pattern for reverse.*engineer.*model...
+    pattern_4:
+      regex: extract.*features.*from.*model
+      description: Detection pattern for extract.*features.*from.*m...
+    pattern_5:
+      regex: privacy.*attack.*ml
+      description: Detection pattern for privacy.*attack.*ml...
+- category: membership_inference
+  description: Detects membership inference attack attempts
+  id: sv_ml_003_membership_inference
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    direction: outgoing
+    kill_chain_phase:
+    - reconnaissance
+    - exploitation
+    source: aegis_community
+    tags:
+    - privacy_attack
+    - inference_attack
+    version: 1.0.0
+  name: 'Aegis ML-003: Membership Inference Detection'
+  severity: medium
+  tier: community
+  pattern_type: behavioral_analysis
+  patterns:
+  - behavioral_indicators
+  - query_patterns
+  detection_logic:
+    behavioral_indicators:
+      confidence_probing: true
+      repeated_similar_queries: 10
+      statistical_analysis_requests: true
+    query_patterns:
+    - "\\bmembership\\s+(?:\\S+\\s+){0,4}inference\\b"
+    - "\\btraining\\s+(?:\\S+\\s+){0,4}data\\s+(?:\\S+\\s+){0,4}membership\\b"
+    - "\\bdetermine\\s+(?:\\S+\\s+){0,4}if\\s+(?:\\S+\\s+){0,4}data\\s+(?:\\S+\\s+){0,4}was\\s+(?:\\S+\\s+){0,4}used\\b"
+    - "\\bprivacy\\s+(?:\\S+\\s+){0,4}leak\\s+(?:\\S+\\s+){0,4}detection\\b"
+  threshold: 0.75
+- category: data_poisoning
+  description: Detects data poisoning attack indicators
+  id: sv_ml_004_data_poisoning
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    direction: outgoing
+    kill_chain_phase:
+    - weaponization
+    - delivery
+    source: aegis_community
+    tags:
+    - poisoning
+    - backdoor
+    - training_compromise
+    threat_actor: Advanced Persistent Threat
+    version: 1.0.0
+  name: 'Aegis ML-004: Data Poisoning Detection'
+  severity: critical
+  tier: community
+  pattern_type: statistical_anomaly
+  patterns:
+  - anomaly_types
+  - detection_methods
+  detection_logic: .*(anomaly_types|detection_methods).*
+- category: model_extraction
+  description: Detects model extraction through API abuse
+  id: sv_ml_005_model_extraction
+  metadata:
+    author: AI Security Community
+    created_at: '2024-01-15T00:00:00Z'
+    direction: outgoing
+    kill_chain_phase:
+    - reconnaissance
+    - actions_objectives
+    source: aegis_community
+    tags:
+    - model_theft
+    - api_abuse
+    - intellectual_property
+    version: 1.0.0
+  name: 'Aegis ML-005: API-based Model Extraction'
+  severity: high
+  tier: community
+  pattern_type: behavioral_analysis
+  patterns:
+  - api_abuse_indicators
+  - thresholds
+  detection_logic:
+    api_abuse_indicators:
+    - high_frequency_queries
+    - systematic_input_probing
+    - gradient_estimation_attempts
+    - model_distillation_patterns
+    thresholds:
+      parameter_probing_score: 0.8
+      queries_per_minute: 100
+      unique_input_ratio: 0.9

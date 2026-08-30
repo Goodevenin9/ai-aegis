@@ -1,0 +1,259 @@
+# Getting Started with Aegis
+
+Security & Observability for AI Agents. Scans inputs for prompt injection, outputs for data leaks. 100% local by default.
+
+## Prerequisites
+
+- **Python 3.9+** (MCP integration requires 3.10+)
+- **pip** package manager
+
+## Installation
+
+```bash
+# Full app — dashboard, LLM proxy, self-hosted (~60MB)
+pip install ai-aegis[app]
+
+# Lightweight SDK — API only (~18MB)
+pip install ai-aegis
+
+# MCP server — Claude Desktop, Cursor (~38MB)
+pip install ai-aegis[mcp]
+```
+
+Binary installers: [Windows](https://github.com/Wanshanghao/ai-aegis/releases/latest) | [macOS](https://github.com/Wanshanghao/ai-aegis/releases/latest) | [Linux](https://github.com/Wanshanghao/ai-aegis/releases/latest)
+
+---
+
+## Getting Started
+
+No code changes required. Start the proxy, set an environment variable, done.
+
+### Step 1: Go to Integrations
+
+Open the dashboard and click **Integrations** in the sidebar.
+
+```bash
+aegis-app --web
+```
+
+### Step 2: Select Your Integration
+
+Choose your AI agent framework (LangChain, CrewAI, Ollama, OpenClaw) and select your LLM provider.
+
+### Step 3: Start Proxy & Configure Your App
+
+Click **Start Proxy** on the integration page. The proxy launches on port `8742`. Then follow the on-screen instructions to configure your client app.
+
+Each integration page shows the environment variable to set. For example:
+
+```bash
+# OpenAI
+export OPENAI_BASE_URL=http://localhost:8742/openai/v1
+
+# Anthropic
+export ANTHROPIC_BASE_URL=http://localhost:8742/anthropic
+
+# Ollama
+export OPENAI_BASE_URL=http://localhost:8742/ollama/v1
+```
+
+Your API key passes through — Aegis never stores it. All LLM traffic is now scanned.
+
+### Examples
+
+**OpenClaw / ClawdBot (Monitor Mode — no proxy needed)**
+
+The Aegis Guard plugin runs inside OpenClaw natively. It scans prompts, audits tool calls, tracks costs, and logs everything to the dashboard — with zero latency and no proxy.
+
+```bash
+# Terminal 1: Start Aegis
+aegis-app --web
+
+# Install the plugin from the Integrations tab, or:
+curl -X POST http://localhost:8741/api/hooks/install
+
+# Terminal 2: Start OpenClaw — the plugin loads automatically
+openclaw gateway
+```
+
+Flow: `Telegram → OpenClaw (Aegis plugin scans inline) → LLM Provider`
+
+**OpenClaw (Block Mode — proxy intercepts threats)**
+
+Enable block mode from the dashboard to actively block threats before they reach the LLM. The proxy starts automatically.
+
+```bash
+# 1. Enable block mode from the dashboard toggle
+# 2. Restart OpenClaw with proxy env vars:
+
+# Linux / macOS
+OPENAI_BASE_URL=http://localhost:8742/openai/v1 openclaw gateway
+
+# Windows (PowerShell)
+$env:OPENAI_BASE_URL="http://localhost:8742/openai/v1"; openclaw gateway
+```
+
+Flow: `Telegram → OpenClaw (plugin monitors) → Aegis proxy (blocks threats) → LLM Provider`
+
+> When you disable block mode, unset the env vars and restart OpenClaw. The plugin continues monitoring without the proxy.
+
+**Ollama + Open WebUI**
+
+You run Ollama locally and chat through Open WebUI. Point Open WebUI at the Aegis proxy instead of Ollama directly — every chat message is scanned before reaching your model.
+
+```bash
+# Terminal 1: Start Aegis proxy
+aegis-app --proxy --provider ollama --web
+
+# Open WebUI: Settings → Connections
+# Set Ollama URL to: http://localhost:8742/ollama
+```
+
+Flow: `Open WebUI → Aegis (scans) → Ollama`
+
+---
+
+## How Scanning Works
+
+Aegis scans traffic in both directions. Input scanning runs on every request by default. Output scanning is optional and can be toggled from the header.
+
+### Input Scanning (User → LLM)
+
+Scans the last user message **before** it reaches the LLM. Always active when the proxy is running.
+
+Detects:
+- Prompt injection (instruction override, role manipulation)
+- Jailbreak attempts (DAN, hypothetical scenarios)
+- Data exfiltration requests (credential seeking, system info gathering)
+- Social engineering and manipulation tactics
+- System override attempts
+
+### Output Scanning (LLM → User)
+
+Scans LLM responses **before** they reach the client. Toggle with the **Output** button in the header. Sensitive data is automatically redacted when stored.
+
+Detects:
+- Credential leakage (API keys, tokens, passwords, SSH keys)
+- System prompt exposure (LLM revealing its own instructions)
+- PII disclosure (SSN, credit card numbers)
+- Jailbreak success indicators (signs the LLM was compromised)
+- Encoded or obfuscated malicious content
+
+---
+
+## Threat Modes
+
+Control what happens when a threat is detected. Toggle **Block Mode** from the header bar.
+
+### Block Mode (Default)
+
+Threats are actively **blocked**:
+- **Input threats**: Stopped before reaching the LLM
+- **Output threats**: Stopped before reaching the client
+- All threats are still logged to the dashboard
+
+### Log Mode
+
+Threats are detected and recorded in the dashboard. Traffic is **not** interrupted. Use this to monitor your AI agent's traffic and understand threat patterns.
+
+---
+
+## AI Analysis (Optional)
+
+Aegis uses a two-stage detection pipeline.
+
+### Stage 1: Pattern Matching (Default)
+
+- Always active — no configuration needed
+- Regex-based community rules + your custom rules
+- Processing time: **< 5ms** per scan
+- No external dependencies
+- Covers 90-97% of known attack patterns
+
+### Stage 2: AI Analysis (Optional)
+
+- Uses a secondary LLM to evaluate flagged input
+- Provides semantic understanding beyond regex patterns
+- **Runs on input scans only** — output scanning always uses fast regex
+- Adds **1-3 seconds** of latency per scan (depends on model and provider)
+- Reduces false positives by combining regex confidence (40%) with LLM confidence (60%)
+
+### When to Enable AI Analysis
+
+| Scenario | Recommendation |
+|----------|---------------|
+| Maximum throughput, minimal latency | Use pattern matching alone |
+| Need to reduce false positives | Enable AI Analysis |
+| Running Ollama locally | Good option — keeps everything local |
+| Can't tolerate added latency | Stay with pattern matching |
+| High-security environment | Enable both AI Analysis and Block Mode |
+
+### How to Enable
+
+1. Click **AI Analysis** in the header bar
+2. Select a provider (Ollama for fully local, or OpenAI/Anthropic)
+3. Click **Test Connection**, then **Save**
+
+---
+
+## Cloud Mode (Optional)
+
+Optionally connect to Aegis Cloud for multi-stage ML-powered analysis designed to minimize false positives through proprietary threat intelligence. When enabled, scans are routed to the cloud API and results appear in a centralized dashboard in your account.
+
+**What Cloud Mode adds:**
+- **Advanced ML-powered threat detection beyond regex**
+- Centralized dashboard at [app.aegis.example](https://app.aegis.example)
+- **Industry-specific rule creation**
+- **Notification system for webhook and email alerts**
+- Replaces local AI Analysis when active
+- Falls back to local analysis if cloud is unreachable
+
+### Setup
+
+1. **Create Account** — Sign up at [app.aegis.example](https://app.aegis.example) (free tier available)
+2. **Get API Key** — Go to Access Management, accept the Terms of Service and Privacy Policy, then create a new API key
+3. **Add Key** — Go to `localhost/settings` and add the key you just created on app.aegis.example
+4. **Connect** — Click **Cloud Connect** in the header
+
+When connected, scans are routed to `scan.aegis.example` and results appear in both the local dashboard and the cloud dashboard.
+
+---
+
+## Agent Framework Integrations
+
+Aegis has dedicated integration pages for popular AI agent frameworks. Go to **Integrations** in the sidebar:
+
+| Framework | Description |
+|-----------|-------------|
+| **LangChain** | Python LLM framework — proxy integration |
+| **LangGraph** | Stateful multi-agent workflows — proxy integration |
+| **CrewAI** | Agent orchestration — proxy integration |
+| **n8n** | Workflow automation — published [n8n community node](https://www.npmjs.com/package/n8n-nodes-aegis) |
+| **Ollama** | Local LLMs — proxy with OpenAI-compatible API |
+| **OpenClaw** | AI gateway agent — native plugin (monitor mode) + optional proxy (block mode) |
+
+Each integration page shows how to set up the proxy and configure your app.
+
+---
+
+## API Reference
+
+Aegis exposes a full REST API with interactive documentation:
+
+- **OpenAPI Spec (Swagger)**: `http://localhost:8741/docs` — interactive API explorer with all endpoints, request/response schemas, and try-it-out functionality
+- **Analyze endpoint**: `POST /analyze` — scan any text for threats
+- **Threat Intel**: `GET /api/threat-intel` — list detected threats
+- **Rules**: `GET /api/rules` — list all detection rules
+- **Health**: `GET /health` — server status check
+
+---
+
+## Further Reading
+
+- [OpenClaw Setup](OPENCLAW.md) — Plugin install, monitor mode, block mode
+- [API Specification](API_SPECIFICATION.md) — Full REST API reference with schemas
+- [Use Cases & Examples](USECASES.md) — Real-world integration examples
+- [MCP Server Guide](MCP_GUIDE.md) — Claude Desktop and Cursor setup
+- [Installation Guide](INSTALLATION.md) — Binary installers, service setup
+- [SDK Usage](SDK_USAGE.md) — Python SDK reference
+- Interactive API docs: `http://localhost:8741/docs`

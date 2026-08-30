@@ -1,0 +1,950 @@
+"""
+Costs API endpoints for LLM cost tracking.
+
+GET  /api/costs/summary          - Per-agent cost summaries
+GET  /api/costs/records          - Paginated cost records
+GET  /api/costs/pricing          - Model pricing reference
+PUT  /api/costs/pricing/{p}/{m}  - Update a model's pricing
+GET  /api/costs/export           - Export as CSV
+GET  /api/costs/dashboard-summary - Compact widget for dashboard
+POST /api/costs/pricing/sync     - On-demand sync from GitHub (bundled YAML fallback)
+"""
+
+import csv
+import io
+import logging
+from datetime import datetime, timezone
+from typing import Optional
+
+import httpx
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
+
+from aegis.app.database.connection import get_database
+from aegis.app.database.repositories.costs import CostsRepository
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter()
+
+PRICING_REMOTE_URL = (
+    "https://raw.githubusercontent.com/Wanshanghao/ai-aegis/"
+    "master/src/aegis/pricing/model_pricing.yml"
+)
+
+# --- Pydantic models ---
+
+class AgentSummaryResponse(BaseModel):
+    agent_id: str
+    total_requests: int
+    total_input_tokens: int
+    total_output_tokens: int
+    total_cost_usd: float
+    providers_used: list[str]
+    models_used: list[str]
+    first_seen: Optional[str] = None
+    last_seen: Optional[str] = None
+    has_unknown_pricing: bool = False
+
+
+class CostSummaryResponse(BaseModel):
+    agents: list[AgentSummaryResponse]
+    totals: dict
+    period: dict
+    cost_tracking_enabled: bool = True
+
+
+class CostRecordResponse(BaseModel):
+    id: str
+    agent_id: str
+    provider: str
+    model_id: str
+    input_tokens: int
+    output_tokens: int
+    input_cached_tokens: int = 0
+    input_cost_usd: float
+    output_cost_usd: float
+    total_cost_usd: float
+    pricing_known: bool
+    recorded_at: str
+
+
+class CostRecordsResponse(BaseModel):
+    items: list[CostRecordResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class ModelPricingResponse(BaseModel):
+    id: str
+    provider: str
+    model_id: str
+    display_name: str
+    input_per_million: float
+    output_per_million: float
+    effective_date: Optional[str] = None
+    verified_at: Optional[str] = None
+    source_url: Optional[str] = None
+    updated_at: str
+    is_stale: bool = False
+
+
+class PricingListResponse(BaseModel):
+    pricing: list[ModelPricingResponse]
+    total: int
+    providers: list[str]
+
+
+class UpdatePricingRequest(BaseModel):
+    input_per_million: float = Field(..., ge=0)
+    output_per_million: float = Field(..., ge=0)
+    effective_date: Optional[str] = None
+
+
+class DashboardSummaryResponse(BaseModel):
+    today_cost_usd: float
+    today_requests: int
+    top_agent: Optional[str] = None
+    top_model: Optional[str] = None
+    cost_tracking_enabled: bool = True
+    has_unknown_pricing: bool = False
+    # API-list-price value of today's LLM usage read from session TRANSCRIPTS
+    # (Claude Code / Codex). Metered `today_cost_usd` only sees the proxy path,
+    # so hook/plugin-connected agents would otherwise always read $0 while the
+    # Traces page shows per-run costs. An estimate, not billed spend — on a
+    # subscription (Claude Pro/Max) this usage is included, not invoiced.
+    today_estimate_usd: float = 0.0
+    today_estimate_runs: int = 0
+
+
+class SyncResponse(BaseModel):
+    updated: int
+    skipped: int
+    source: str
+    synced_at: str
+    changes: list[dict]
+
+
+class BudgetConfig(BaseModel):
+    daily_budget_usd: Optional[float] = None
+    budget_action: str = "warn"
+
+
+class AgentBudgetEntry(BaseModel):
+    agent_id: str
+    daily_budget_usd: float
+    budget_action: str = "warn"
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class BudgetStatusResponse(BaseModel):
+    agent_id: str
+    today_spend_usd: float
+    global_budget_usd: Optional[float]
+    agent_budget_usd: Optional[float]
+    effective_budget_usd: Optional[float]
+    budget_action: str
+    over_budget: bool
+    warning_threshold: float = 0.8
+
+
+class RecordCostRequest(BaseModel):
+    """Accept token usage from external sources (e.g. OpenClaw plugin)."""
+    agent_id: str = "openclaw-agent"
+    provider: str
+    model_id: str
+    input_tokens: int = Field(0, ge=0)
+    output_tokens: int = Field(0, ge=0)
+    input_cached_tokens: int = Field(0, ge=0)
+
+
+# --- Endpoints ---
+
+@router.post("/costs/track")
+async def record_cost(request: RecordCostRequest) -> dict:
+    """Record LLM token usage from the OpenClaw plugin (or any external source).
+
+    Looks up model pricing, calculates costs, and stores the record.
+    """
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+
+        # Look up pricing
+        pricing = await repo.get_pricing(request.provider, request.model_id)
+        pricing_known = pricing is not None
+        input_cost = 0.0
+        output_cost = 0.0
+
+        if pricing_known:
+            rate_in = pricing.input_per_million
+            rate_out = pricing.output_per_million
+            # Cache discount rates by provider
+            cache_discounts = {"openai": 0.5, "anthropic": 0.1, "gemini": 0.25}
+            cache_rate = cache_discounts.get(request.provider, 1.0)
+            uncached = max(0, request.input_tokens - request.input_cached_tokens)
+            input_cost = (uncached / 1_000_000) * rate_in
+            input_cost += (request.input_cached_tokens / 1_000_000) * rate_in * cache_rate
+            output_cost = (request.output_tokens / 1_000_000) * rate_out
+
+        total_cost = input_cost + output_cost
+
+        record = await repo.record_cost(
+            agent_id=request.agent_id,
+            provider=request.provider,
+            model_id=request.model_id,
+            input_tokens=request.input_tokens,
+            output_tokens=request.output_tokens,
+            input_cached_tokens=request.input_cached_tokens,
+            input_cost_usd=round(input_cost, 8),
+            output_cost_usd=round(output_cost, 8),
+            total_cost_usd=round(total_cost, 8),
+            rate_input=pricing.input_per_million if pricing_known else None,
+            rate_output=pricing.output_per_million if pricing_known else None,
+            pricing_known=pricing_known,
+        )
+
+        return {
+            "status": "recorded",
+            "id": record.id,
+            "total_cost_usd": round(total_cost, 8),
+            "pricing_known": pricing_known,
+        }
+    except Exception as e:
+        logger.error(f"Failed to record cost: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/costs/monthly-chart")
+async def get_monthly_chart(
+    year: Optional[int] = Query(None, ge=2020, le=2100),
+    month: Optional[int] = Query(None, ge=1, le=12),
+    start: Optional[str] = Query(None, description="Custom range start date YYYY-MM-DD"),
+    end: Optional[str] = Query(None, description="Custom range end date YYYY-MM-DD (inclusive)"),
+) -> dict:
+    """Daily cost breakdown for a calendar month or custom date range."""
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+        now = datetime.utcnow()
+
+        if start and end:
+            # Custom date range mode
+            start_dt = datetime.fromisoformat(start)
+            # end is inclusive — add 1 day for the exclusive upper bound
+            end_dt = datetime.fromisoformat(end).replace(hour=23, minute=59, second=59)
+            days = await repo.get_daily_spend_for_range(start_dt, end_dt)
+            return {"days": days, "mode": "range", "start": start, "end": end}
+
+        # Month mode
+        days = await repo.get_daily_spend_for_month(year=year, month=month)
+        return {
+            "days": days,
+            "mode": "month",
+            "year": year or now.year,
+            "month": month or now.month,
+        }
+    except Exception as e:
+        logger.error(f"Failed to get monthly chart data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Transcript-estimate cache: parsing every recent session transcript on each
+# dashboard poll is wasteful — the number only moves as sessions run.
+_EST_TTL_SECONDS = 120
+_est_cache: dict = {"at": None, "value": (0.0, 0)}
+
+
+async def _today_transcript_estimate(db) -> tuple[float, int]:
+    """Sum the API-list-price value of TODAY's LLM turns across recent Claude
+    Code / Codex sessions, read from their transcripts. "Today" is the LOCAL
+    calendar day — a UTC boundary makes evening turns count toward tomorrow,
+    so the widget would disagree with the sessions the user just watched.
+    Best-effort: any per-session failure contributes 0."""
+    now = datetime.utcnow()
+    cached_at = _est_cache["at"]
+    if cached_at is not None and (now - cached_at).total_seconds() < _EST_TTL_SECONDS:
+        return _est_cache["value"]
+
+    from aegis.app.database.repositories.custom_tools import CustomToolsRepository
+    from aegis.app.server.routes.transcript_generations import (
+        apply_cost,
+        build_generations,
+        build_generations_codex,
+    )
+
+    total = 0.0
+    runs = 0
+    try:
+        rows = await CustomToolsRepository(db).get_trace_runs(window_days=1, limit=200)
+        pricing = await CostsRepository(db).list_pricing()
+        price_map = {p.model_id: (p.input_per_million, p.output_per_million) for p in pricing}
+        today = datetime.now().astimezone().date()
+        seen_sessions: set[str] = set()
+        for r in rows:
+            kind = r.get("runtime_kind")
+            sid = r.get("session_id")
+            if kind not in ("claude-code", "codex") or not sid or sid in seen_sessions:
+                continue
+            seen_sessions.add(sid)
+            try:
+                gens = (
+                    build_generations_codex(sid, store_text=False)
+                    if kind == "codex"
+                    else build_generations(sid, store_text=False)
+                )
+                if not gens:
+                    continue
+                apply_cost(gens, price_map)
+                day_cost = 0.0
+                for g in gens:
+                    ts = (g.get("called_at") or "").replace("Z", "+00:00")
+                    try:
+                        dt = datetime.fromisoformat(ts)
+                        if dt.tzinfo is None:
+                            dt = dt.replace(tzinfo=timezone.utc)
+                        if dt.astimezone().date() != today:
+                            continue
+                    except ValueError:
+                        continue
+                    day_cost += g.get("cost") or 0
+                if day_cost:
+                    total += day_cost
+                    runs += 1
+            except Exception:  # noqa: BLE001 — one bad transcript must not zero the widget
+                continue
+    except Exception as e:  # noqa: BLE001
+        logger.debug(f"transcript estimate unavailable: {e}")
+
+    _est_cache["at"] = now
+    _est_cache["value"] = (total, runs)
+    return total, runs
+
+
+@router.get("/costs/dashboard-summary", response_model=DashboardSummaryResponse)
+async def get_dashboard_summary() -> DashboardSummaryResponse:
+    """Compact cost summary for the main dashboard widget."""
+    db = get_database()
+    try:
+        repo = CostsRepository(db)
+        summary = await repo.get_dashboard_summary()
+    except Exception as e:
+        logger.error(f"Failed to get dashboard summary: {e}")
+        summary = {"today_cost_usd": 0.0, "today_requests": 0}
+    est, est_runs = (0.0, 0)
+    try:
+        est, est_runs = await _today_transcript_estimate(db)
+    except Exception as e:  # noqa: BLE001
+        logger.debug(f"transcript estimate failed: {e}")
+    return DashboardSummaryResponse(
+        **summary,
+        cost_tracking_enabled=True,
+        today_estimate_usd=round(est, 4),
+        today_estimate_runs=est_runs,
+    )
+
+
+@router.get("/costs/summary", response_model=CostSummaryResponse)
+async def get_cost_summary(
+    start: Optional[str] = Query(None, description="ISO datetime start filter"),
+    end: Optional[str] = Query(None, description="ISO datetime end filter"),
+    limit: int = Query(50, ge=1, le=200),
+) -> CostSummaryResponse:
+    """Per-agent cost summaries."""
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+
+        start_dt = datetime.fromisoformat(start) if start else None
+        end_dt = datetime.fromisoformat(end) if end else None
+
+        agents = await repo.get_agent_summaries(start=start_dt, end=end_dt, limit=limit)
+
+        total_cost = sum(a.total_cost_usd for a in agents)
+        total_requests = sum(a.total_requests for a in agents)
+        total_input = sum(a.total_input_tokens for a in agents)
+        total_output = sum(a.total_output_tokens for a in agents)
+        today_spend = await repo.get_today_spend()
+        monthly_spend = await repo.get_monthly_spend()
+
+        now = datetime.utcnow()
+        period_start = start or now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + "Z"
+        period_end = end or now.isoformat() + "Z"
+
+        return CostSummaryResponse(
+            agents=[
+                AgentSummaryResponse(
+                    agent_id=a.agent_id,
+                    total_requests=a.total_requests,
+                    total_input_tokens=a.total_input_tokens,
+                    total_output_tokens=a.total_output_tokens,
+                    total_cost_usd=a.total_cost_usd,
+                    providers_used=a.providers_used,
+                    models_used=a.models_used,
+                    first_seen=a.first_seen,
+                    last_seen=a.last_seen,
+                    has_unknown_pricing=a.has_unknown_pricing,
+                )
+                for a in agents
+            ],
+            totals={
+                "total_requests": total_requests,
+                "total_cost_usd": round(total_cost, 4),
+                "today_spend_usd": round(today_spend, 6),
+                "monthly_cost_usd": round(monthly_spend, 4),
+                "total_input_tokens": total_input,
+                "total_output_tokens": total_output,
+            },
+            period={"start": period_start, "end": period_end},
+            cost_tracking_enabled=True,
+        )
+    except Exception as e:
+        logger.error(f"Failed to get cost summary: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/costs/records", response_model=CostRecordsResponse)
+async def list_cost_records(
+    agent_id: Optional[str] = Query(None),
+    provider: Optional[str] = Query(None),
+    start: Optional[str] = Query(None),
+    end: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+) -> CostRecordsResponse:
+    """Paginated list of individual cost records."""
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+
+        start_dt = datetime.fromisoformat(start) if start else None
+        end_dt = datetime.fromisoformat(end) if end else None
+
+        records, total = await repo.list_records(
+            agent_id=agent_id,
+            provider=provider,
+            start=start_dt,
+            end=end_dt,
+            page=page,
+            page_size=page_size,
+        )
+
+        return CostRecordsResponse(
+            items=[
+                CostRecordResponse(
+                    id=r.id,
+                    agent_id=r.agent_id,
+                    provider=r.provider,
+                    model_id=r.model_id,
+                    input_tokens=r.input_tokens,
+                    output_tokens=r.output_tokens,
+                    input_cached_tokens=r.input_cached_tokens,
+                    input_cost_usd=r.input_cost_usd,
+                    output_cost_usd=r.output_cost_usd,
+                    total_cost_usd=r.total_cost_usd,
+                    pricing_known=r.pricing_known,
+                    recorded_at=r.recorded_at.isoformat() if r.recorded_at else "",
+                )
+                for r in records
+            ],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
+    except Exception as e:
+        logger.error(f"Failed to list cost records: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/costs/pricing", response_model=PricingListResponse)
+async def list_pricing(
+    provider: Optional[str] = Query(None),
+) -> PricingListResponse:
+    """List all model pricing entries."""
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+        entries = await repo.list_pricing(provider=provider)
+
+        stale_threshold = datetime.utcnow()
+        providers = sorted({e.provider for e in entries})
+
+        return PricingListResponse(
+            pricing=[
+                ModelPricingResponse(
+                    id=e.id,
+                    provider=e.provider,
+                    model_id=e.model_id,
+                    display_name=e.display_name,
+                    input_per_million=e.input_per_million,
+                    output_per_million=e.output_per_million,
+                    effective_date=e.effective_date,
+                    verified_at=e.verified_at,
+                    source_url=e.source_url,
+                    updated_at=e.updated_at.isoformat() if e.updated_at else "",
+                    is_stale=(stale_threshold - e.updated_at).days > 30 if e.updated_at else False,
+                )
+                for e in entries
+            ],
+            total=len(entries),
+            providers=providers,
+        )
+    except Exception as e:
+        logger.error(f"Failed to list pricing: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/costs/pricing/{provider}/{model_id}", response_model=ModelPricingResponse)
+async def update_model_pricing(
+    provider: str,
+    model_id: str,
+    request: UpdatePricingRequest,
+) -> ModelPricingResponse:
+    """Update pricing rates for a specific model."""
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+
+        # Try to fetch display_name from existing entry; fall back to model_id
+        existing = await repo.get_pricing(provider, model_id)
+        display_name = existing.display_name if existing else model_id
+
+        await repo.upsert_pricing(
+            provider=provider,
+            model_id=model_id,
+            display_name=display_name,
+            input_per_million=request.input_per_million,
+            output_per_million=request.output_per_million,
+            effective_date=request.effective_date,
+            verified_at=datetime.utcnow().date().isoformat(),
+        )
+
+        updated = await repo.get_pricing(provider, model_id)
+        if updated is None:
+            raise HTTPException(status_code=500, detail=f"Failed to upsert pricing for {provider}/{model_id}")
+
+        # Refresh CostRecorder cache if available
+        try:
+            from aegis.app.services.cost_recorder import CostRecorder
+            # CostRecorder instances are per-proxy; signal cache invalidation via a marker
+            # The proxy's CostRecorder will auto-refresh on next pricing miss
+            pass
+        except Exception:
+            pass
+
+        return ModelPricingResponse(
+            id=updated.id,
+            provider=updated.provider,
+            model_id=updated.model_id,
+            display_name=updated.display_name,
+            input_per_million=updated.input_per_million,
+            output_per_million=updated.output_per_million,
+            effective_date=updated.effective_date,
+            verified_at=updated.verified_at,
+            source_url=updated.source_url,
+            updated_at=updated.updated_at.isoformat() if updated.updated_at else "",
+            is_stale=False,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update pricing: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class DeleteRecordsRequest(BaseModel):
+    ids: Optional[list] = None
+
+
+@router.delete("/costs/records")
+async def delete_cost_records(
+    agent_id: Optional[str] = Query(None, description="Delete only records for this agent ID"),
+    body: Optional[DeleteRecordsRequest] = None,
+) -> dict:
+    """
+    Delete request history records.
+    If body.ids provided, deletes specific records by ID.
+    If agent_id provided, deletes all records for that agent.
+    Otherwise clears all records.
+    """
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+        if body and body.ids:
+            deleted = await repo.delete_records_by_ids(body.ids)
+        else:
+            deleted = await repo.delete_records(agent_id=agent_id)
+        return {"deleted": deleted, "agent_id": agent_id}
+    except Exception as e:
+        logger.error(f"Failed to delete cost records: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/costs/export")
+async def export_costs_csv(
+    agent_id: Optional[str] = Query(None),
+    provider: Optional[str] = Query(None),
+    start: Optional[str] = Query(None),
+    end: Optional[str] = Query(None),
+) -> StreamingResponse:
+    """Export cost records as CSV."""
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+
+        start_dt = datetime.fromisoformat(start) if start else None
+        end_dt = datetime.fromisoformat(end) if end else None
+
+        # Fetch all (large limit for export)
+        records, _ = await repo.list_records(
+            agent_id=agent_id,
+            provider=provider,
+            start=start_dt,
+            end=end_dt,
+            page=1,
+            page_size=10000,
+        )
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            "recorded_at", "agent_id", "provider", "model_id",
+            "input_tokens", "output_tokens",
+            "input_cost_usd", "output_cost_usd", "total_cost_usd", "pricing_known",
+        ])
+        for r in records:
+            writer.writerow([
+                r.recorded_at.isoformat() if r.recorded_at else "",
+                r.agent_id, r.provider, r.model_id,
+                r.input_tokens, r.output_tokens,
+                r.input_cost_usd, r.output_cost_usd, r.total_cost_usd,
+                "yes" if r.pricing_known else "no",
+            ])
+
+        date_str = datetime.utcnow().strftime("%Y-%m-%d")
+        filename = f"sv-costs-{date_str}.csv"
+
+        output.seek(0)
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+    except Exception as e:
+        logger.error(f"Failed to export costs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/costs/pricing/sync", response_model=SyncResponse)
+async def sync_pricing_from_source(force_local: bool = False) -> SyncResponse:
+    """
+    On-demand price sync.
+
+    Fetches the latest model_pricing.yml from GitHub (primary source).
+    Falls back to the bundled YAML if the network is unavailable.
+    Pass ?force_local=true to skip GitHub and use the bundled YAML directly
+    (useful when running a local build with pricing changes not yet published).
+    All prices are source-verified from official provider pricing pages.
+    """
+    import yaml
+    from pathlib import Path
+
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+
+        existing = await repo.list_pricing()
+        existing_map = {f"{e.provider}/{e.model_id}": e for e in existing}
+
+        updated = 0
+        skipped = 0
+        changes = []
+        now_str = datetime.utcnow().date().isoformat()
+        source = "bundled"
+
+        # ── Fetch YAML: GitHub first (unless force_local), bundled file as fallback ──
+        yaml_data = None
+
+        if not force_local:
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.get(PRICING_REMOTE_URL)
+                    if resp.status_code == 200:
+                        yaml_data = yaml.safe_load(resp.text)
+                        source = "github"
+                        logger.info("Fetched pricing from GitHub")
+            except Exception as fetch_err:
+                logger.warning(f"GitHub pricing fetch failed, using bundled YAML: {fetch_err}")
+
+        if yaml_data is None:
+            pricing_paths = [
+                Path(__file__).parent.parent.parent.parent.parent / "pricing" / "model_pricing.yml",
+                Path(__file__).parent.parent.parent.parent / "pricing" / "model_pricing.yml",
+                Path(__file__).parent.parent.parent / "pricing" / "model_pricing.yml",
+            ]
+            yaml_path = next((p for p in pricing_paths if p.exists()), None)
+            if yaml_path:
+                with open(yaml_path, "r", encoding="utf-8") as f:
+                    yaml_data = yaml.safe_load(f)
+                logger.info(f"Using bundled pricing YAML: {yaml_path}")
+
+        if not yaml_data:
+            raise HTTPException(status_code=503, detail="Pricing data unavailable — no network and no bundled file found")
+
+        # ── Apply pricing data ───────────────────────────────────────────────
+        for provider_entry in yaml_data.get("providers", []):
+            provider = provider_entry.get("provider", "")
+            if not provider:
+                continue
+            for model in provider_entry.get("models", []):
+                model_id = model.get("model_id", "")
+                if not model_id:
+                    continue
+                cache_key = f"{provider}/{model_id}"
+                new_input = float(model.get("input_per_million", 0))
+                new_output = float(model.get("output_per_million", 0))
+                existing_entry = existing_map.get(cache_key)
+                old_input = existing_entry.input_per_million if existing_entry else 0.0
+                old_output = existing_entry.output_per_million if existing_entry else 0.0
+                await repo.upsert_pricing(
+                    provider=provider,
+                    model_id=model_id,
+                    display_name=model.get("display_name", model_id),
+                    input_per_million=new_input,
+                    output_per_million=new_output,
+                    effective_date=model.get("effective_date"),
+                    verified_at=model.get("verified_at", now_str),
+                    source_url=provider_entry.get("source_url"),
+                )
+                updated += 1
+                if abs(new_input - old_input) > 0.001 or abs(new_output - old_output) > 0.001:
+                    changes.append({
+                        "model_id": model_id,
+                        "provider": provider,
+                        "old_input": old_input,
+                        "new_input": new_input,
+                        "old_output": old_output,
+                        "new_output": new_output,
+                        "source": source,
+                    })
+
+        logger.info(f"Pricing sync complete: {updated} updated, {skipped} skipped, source={source}")
+
+        return SyncResponse(
+            updated=updated,
+            skipped=skipped,
+            source=source,
+            synced_at=datetime.utcnow().isoformat() + "Z",
+            changes=changes,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Pricing sync failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- Budget endpoints ---
+
+@router.get("/costs/budget", response_model=BudgetConfig)
+async def get_global_budget() -> BudgetConfig:
+    """Get global daily budget settings."""
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+        data = await repo.get_global_budget()
+        return BudgetConfig(**data)
+    except Exception as e:
+        logger.error(f"Failed to get global budget: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/costs/budget", response_model=BudgetConfig)
+async def set_global_budget(request: BudgetConfig) -> BudgetConfig:
+    """Update global daily budget settings."""
+    try:
+        if request.budget_action not in ("warn", "block"):
+            raise HTTPException(status_code=422, detail="budget_action must be 'warn' or 'block'")
+        db = get_database()
+        repo = CostsRepository(db)
+        await repo.set_global_budget(request.daily_budget_usd, request.budget_action)
+        data = await repo.get_global_budget()
+
+        # Sync to aegis.yml
+        try:
+            from aegis.app.utils.config_file import save_config
+            from aegis.app.database.repositories.settings import SettingsRepository
+            settings = await SettingsRepository(db).get()
+            save_config(
+                block_mode=settings.block_threats,
+                output_scan=settings.scan_llm_responses,
+                budget_warn=(request.budget_action == "warn"),
+                budget_block=(request.budget_action == "block"),
+                budget_daily_limit=request.daily_budget_usd,
+                tools_enforcement=settings.tool_permissions_enabled,
+            )
+        except Exception as ce:
+            logger.warning(f"Could not update aegis.yml: {ce}")
+
+        return BudgetConfig(**data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to set global budget: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/costs/budget/agents", response_model=list[AgentBudgetEntry])
+async def list_agent_budgets() -> list[AgentBudgetEntry]:
+    """List all per-agent budget overrides."""
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+        rows = await repo.list_agent_budgets()
+        return [AgentBudgetEntry(**r) for r in rows]
+    except Exception as e:
+        logger.error(f"Failed to list agent budgets: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/costs/budget/agents/{agent_id}", response_model=AgentBudgetEntry)
+async def set_agent_budget(agent_id: str, request: BudgetConfig) -> AgentBudgetEntry:
+    """Set or update budget for a specific agent."""
+    try:
+        if request.daily_budget_usd is None or request.daily_budget_usd <= 0:
+            raise HTTPException(status_code=422, detail="daily_budget_usd must be a positive number")
+        if request.budget_action not in ("warn", "block"):
+            raise HTTPException(status_code=422, detail="budget_action must be 'warn' or 'block'")
+        db = get_database()
+        repo = CostsRepository(db)
+        await repo.set_agent_budget(agent_id, request.daily_budget_usd, request.budget_action)
+        row = await repo.get_agent_budget(agent_id)
+        return AgentBudgetEntry(**row)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to set agent budget: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/costs/budget/agents/{agent_id}")
+async def delete_agent_budget(agent_id: str) -> dict:
+    """Remove per-agent budget override."""
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+        deleted = await repo.delete_agent_budget(agent_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail=f"No budget found for agent: {agent_id}")
+        return {"deleted": True, "agent_id": agent_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete agent budget: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/costs/budget-status", response_model=BudgetStatusResponse)
+async def get_budget_status(
+    agent_id: str = Query(..., description="Agent ID to check"),
+) -> BudgetStatusResponse:
+    """
+    Check whether an agent is within its budget today.
+    Used by the proxy before forwarding LLM requests.
+    """
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+
+        global_cfg = await repo.get_global_budget()
+        agent_cfg = await repo.get_agent_budget(agent_id)
+
+        if agent_cfg:
+            # Named per-agent budget: compare just this agent's own spend
+            today_spend = await repo.get_today_spend(agent_id)
+            effective_budget = agent_cfg["daily_budget_usd"]
+            budget_action = agent_cfg["budget_action"]
+        elif global_cfg["daily_budget_usd"] is not None:
+            # Global budget = total wallet cap: sum ALL agents' spend today.
+            # This handles anonymous agents whose IDs change between sessions
+            # (client:IP:PORT → different IDs per connection) by counting everything.
+            today_spend = await repo.get_today_spend()
+            effective_budget = global_cfg["daily_budget_usd"]
+            budget_action = global_cfg["budget_action"]
+        else:
+            # No budget set — always allow
+            today_spend = await repo.get_today_spend(agent_id)
+            return BudgetStatusResponse(
+                agent_id=agent_id,
+                today_spend_usd=round(today_spend, 6),
+                global_budget_usd=None,
+                agent_budget_usd=None,
+                effective_budget_usd=None,
+                budget_action="warn",
+                over_budget=False,
+            )
+
+        over_budget = today_spend >= effective_budget
+
+        return BudgetStatusResponse(
+            agent_id=agent_id,
+            today_spend_usd=round(today_spend, 6),
+            global_budget_usd=global_cfg["daily_budget_usd"],
+            agent_budget_usd=agent_cfg["daily_budget_usd"] if agent_cfg else None,
+            effective_budget_usd=effective_budget,
+            budget_action=budget_action,
+            over_budget=over_budget,
+        )
+    except Exception as e:
+        logger.error(f"Failed to get budget status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/costs/budget/guardian")
+async def get_budget_guardian() -> dict:
+    """
+    Budget guardian summary for the Cost Intelligence overview.
+    Returns global budget status + per-agent alerts for agents that have budgets set.
+    """
+    try:
+        db = get_database()
+        repo = CostsRepository(db)
+
+        global_cfg = await repo.get_global_budget()
+        agent_budgets = await repo.list_agent_budgets()
+        global_today = await repo.get_today_spend()
+
+        g_budget = global_cfg.get("daily_budget_usd")
+        g_pct = (global_today / g_budget) if g_budget and g_budget > 0 else None
+
+        agent_alerts = []
+        for ab in agent_budgets:
+            agent_today = await repo.get_today_spend(agent_id=ab["agent_id"])
+            budget = ab["daily_budget_usd"]
+            pct = agent_today / budget if budget > 0 else 0.0
+            agent_alerts.append({
+                "agent_id": ab["agent_id"],
+                "today_spend_usd": round(agent_today, 6),
+                "budget_usd": budget,
+                "budget_action": ab["budget_action"],
+                "pct_used": round(pct, 4),
+                "over_budget": pct >= 1.0,
+                "warning": 0.8 <= pct < 1.0,
+            })
+
+        return {
+            "global_budget_usd": g_budget,
+            "global_today_spend_usd": round(global_today, 6),
+            "global_budget_action": global_cfg.get("budget_action", "warn"),
+            "global_pct_used": round(g_pct, 4) if g_pct is not None else None,
+            "global_over_budget": g_pct is not None and g_pct >= 1.0,
+            "global_warning": g_pct is not None and 0.8 <= g_pct < 1.0,
+            "agent_alerts": agent_alerts,
+        }
+    except Exception as e:
+        logger.error(f"Failed to get budget guardian: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

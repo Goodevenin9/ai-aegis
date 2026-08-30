@@ -1,0 +1,320 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 960 950" width="960" height="950">
+<defs>
+  <linearGradient id="svGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#06b6d4"/>
+    <stop offset="50%" stop-color="#0ea5e9"/>
+    <stop offset="100%" stop-color="#ef4444"/>
+  </linearGradient>
+  <style>
+    .label { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; }
+    .heading { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 18px; font-weight: 700; fill: #0f172a; }
+    .heading-sm { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; font-weight: 700; fill: #0f172a; }
+    .subhead { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 11px; font-weight: 500; fill: #64748b; }
+    .item { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; font-weight: 500; fill: #334155; }
+    .arrow-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 10px; font-weight: 600; fill: #64748b; letter-spacing: 0.5px; }
+    .badge { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 10px; font-weight: 700; }
+    .section-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; font-weight: 700; }
+    .section-desc { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 11px; font-weight: 500; fill: #64748b; }
+    .env-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; font-weight: 700; fill: #0f172a; }
+    .plugin-item { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 11.5px; font-weight: 500; fill: #b91c1c; }
+    .plugin-item-cc { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 11.5px; font-weight: 500; fill: #7c2d92; }
+    .mode-label { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 11px; font-weight: 600; }
+  </style>
+</defs>
+
+<!-- Background -->
+<rect width="960" height="950" rx="16" fill="#fafbfc" stroke="#e5e7eb" stroke-width="1"/>
+
+<!-- ================================================================== -->
+<!-- SECTION 1: PROXY PATH — blue bordered box                          -->
+<!-- ================================================================== -->
+<rect x="16" y="12" width="928" height="310" rx="12" fill="#f8faff" stroke="#3b82f6" stroke-width="2" stroke-dasharray="none"/>
+
+<!-- Section header -->
+<rect x="30" y="22" width="440" height="26" rx="13" fill="#eff6ff" stroke="#93c5fd" stroke-width="1"/>
+<text x="42" y="40" class="section-title" fill="#1d4ed8">PATH 1: LLM Proxy</text>
+<text x="174" y="40" class="section-desc">LangChain, CrewAI, Ollama, n8n, and other frameworks</text>
+
+<!-- LEFT: Agents -->
+<rect x="30" y="58" width="190" height="248" rx="10" fill="#ffffff" stroke="#e0e7ef" stroke-width="1.5"/>
+<text x="125" y="84" class="label" fill="#6366f1" text-anchor="middle">YOUR APPS</text>
+<text x="125" y="104" class="heading-sm" text-anchor="middle">AI Agents</text>
+<line x1="48" y1="114" x2="202" y2="114" stroke="#f1f5f9" stroke-width="1"/>
+
+<rect x="48" y="122" width="154" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="62" cy="135" r="3" fill="#6366f1"/>
+<text x="72" y="139" class="item">LangChain</text>
+
+<rect x="48" y="152" width="154" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="62" cy="165" r="3" fill="#6366f1"/>
+<text x="72" y="169" class="item">CrewAI</text>
+
+<rect x="48" y="182" width="154" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="62" cy="195" r="3" fill="#6366f1"/>
+<text x="72" y="199" class="item">Ollama</text>
+
+<rect x="48" y="212" width="154" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="62" cy="225" r="3" fill="#6366f1"/>
+<text x="72" y="229" class="item">n8n</text>
+
+<rect x="48" y="242" width="154" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="62" cy="255" r="3" fill="#94a3b8"/>
+<text x="72" y="259" class="item">+ more</text>
+
+<!-- Arrows: Left to Center -->
+<line x1="230" y1="170" x2="310" y2="170" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4"/>
+<polygon points="308,166 316,170 308,174" fill="#94a3b8"/>
+<text x="270" y="163" class="arrow-text" text-anchor="middle">PROMPT</text>
+
+<line x1="310" y1="200" x2="230" y2="200" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4"/>
+<polygon points="232,196 224,200 232,204" fill="#94a3b8"/>
+<text x="270" y="220" class="arrow-text" text-anchor="middle">RESPONSE</text>
+
+<!-- CENTER: Aegis Proxy -->
+<rect x="326" y="58" width="250" height="248" rx="10" fill="#ffffff" stroke="#0ea5e9" stroke-width="2"/>
+<rect x="327" y="59" width="248" height="48" rx="9" fill="#f0f9ff"/>
+
+<text x="380" y="78" class="label" fill="#0891b2">AI FIREWALL</text>
+<text x="380" y="95" class="heading-sm" fill="url(#svGrad)">Aegis Proxy</text>
+
+<line x1="346" y1="110" x2="556" y2="110" stroke="#e0f2fe" stroke-width="1"/>
+
+<rect x="346" y="118" width="210" height="24" rx="7" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+<text x="362" y="134" fill="#16a34a" font-size="13" font-family="-apple-system, sans-serif">&#10003;</text>
+<text x="378" y="134" class="item" fill="#15803d">Prompt Injection Block</text>
+
+<rect x="346" y="146" width="210" height="24" rx="7" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+<text x="362" y="162" fill="#16a34a" font-size="13" font-family="-apple-system, sans-serif">&#10003;</text>
+<text x="378" y="162" class="item" fill="#15803d">Jailbreak Detection</text>
+
+<rect x="346" y="174" width="210" height="24" rx="7" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+<text x="362" y="190" fill="#16a34a" font-size="13" font-family="-apple-system, sans-serif">&#10003;</text>
+<text x="378" y="190" class="item" fill="#15803d">Data Leak Prevention</text>
+
+<rect x="346" y="202" width="210" height="24" rx="7" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+<text x="362" y="218" fill="#2563eb" font-size="13" font-family="-apple-system, sans-serif">&#10003;</text>
+<text x="378" y="218" class="item" fill="#1d4ed8">Tool Permissions</text>
+
+<rect x="346" y="230" width="210" height="24" rx="7" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+<text x="362" y="246" fill="#d97706" font-size="13" font-family="-apple-system, sans-serif">&#10003;</text>
+<text x="378" y="246" class="item" fill="#b45309">Cost Intelligence</text>
+
+<!-- Badges -->
+<rect x="346" y="262" width="66" height="20" rx="10" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1"/>
+<text x="379" y="276" class="badge" fill="#059669" text-anchor="middle">100% Local</text>
+
+<rect x="420" y="262" width="56" height="20" rx="10" fill="#fefce8" stroke="#fde68a" stroke-width="1"/>
+<text x="448" y="276" class="badge" fill="#ca8a04" text-anchor="middle">&lt; 50ms</text>
+
+<rect x="484" y="262" width="72" height="20" rx="10" fill="#fef2f2" stroke="#fecaca" stroke-width="1"/>
+<text x="520" y="276" class="badge" fill="#dc2626" text-anchor="middle">Open Source</text>
+
+<!-- Arrows: Center to Right -->
+<line x1="586" y1="170" x2="666" y2="170" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4"/>
+<polygon points="664,166 672,170 664,174" fill="#94a3b8"/>
+<text x="626" y="163" class="arrow-text" text-anchor="middle">CLEAN</text>
+
+<line x1="666" y1="200" x2="586" y2="200" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4"/>
+<polygon points="588,196 580,200 588,204" fill="#94a3b8"/>
+<text x="626" y="220" class="arrow-text" text-anchor="middle">VALIDATED</text>
+
+<!-- RIGHT: LLM Providers -->
+<rect x="682" y="58" width="246" height="248" rx="10" fill="#ffffff" stroke="#e0e7ef" stroke-width="1.5"/>
+<text x="805" y="84" class="label" fill="#f59e0b" text-anchor="middle">DESTINATION</text>
+<text x="805" y="104" class="heading-sm" text-anchor="middle">LLM Providers</text>
+<line x1="700" y1="114" x2="910" y2="114" stroke="#f1f5f9" stroke-width="1"/>
+
+<rect x="700" y="122" width="210" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="716" cy="135" r="3" fill="#10b981"/>
+<text x="726" y="139" class="item">OpenAI</text>
+
+<rect x="700" y="152" width="210" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="716" cy="165" r="3" fill="#d97706"/>
+<text x="726" y="169" class="item">Anthropic</text>
+
+<rect x="700" y="182" width="210" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="716" cy="195" r="3" fill="#6366f1"/>
+<text x="726" y="199" class="item">Gemini</text>
+
+<rect x="700" y="212" width="210" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="716" cy="225" r="3" fill="#64748b"/>
+<text x="726" y="229" class="item">Ollama</text>
+
+<rect x="700" y="242" width="210" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<circle cx="716" cy="255" r="3" fill="#94a3b8"/>
+<text x="726" y="259" class="item">8+ more</text>
+
+<!-- ================================================================== -->
+<!-- SECTION 2: NATIVE PLUGINS — red bordered box                       -->
+<!-- Houses three stacked agent boxes (OpenClaw + Claude Code + Codex)  -->
+<!-- with a tall shared Dashboard on the right that spans all three.    -->
+<!-- ================================================================== -->
+<rect x="16" y="336" width="928" height="540" rx="12" fill="#fef2f2" stroke="#ef4444" stroke-width="2"/>
+
+<!-- Section header -->
+<rect x="30" y="346" width="900" height="26" rx="13" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+<text x="42" y="364" class="section-title" fill="#dc2626">PATH 2: Native Plugins</text>
+<text x="178" y="364" class="section-desc">OpenClaw, Claude Code, and OpenAI Codex — plugin runs inside the agent. Zero proxy, allow / deny / ask enforced inline.</text>
+
+<!-- ===== OpenClaw Agent Box ===== -->
+<rect x="30" y="382" width="270" height="150" rx="10" fill="#ffffff" stroke="#ef4444" stroke-width="2"/>
+<text x="165" y="404" class="label" fill="#dc2626" text-anchor="middle">OPENCLAW / CLAWDBOT</text>
+<text x="165" y="422" class="heading-sm" text-anchor="middle">AI Agent</text>
+<line x1="48" y1="430" x2="282" y2="430" stroke="#fee2e2" stroke-width="1"/>
+
+<!-- Embedded Plugin -->
+<rect x="44" y="438" width="242" height="82" rx="7" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="165" y="455" class="mode-label" fill="#dc2626" text-anchor="middle">Aegis Plugin (built-in)</text>
+
+<circle cx="60" cy="472" r="3" fill="#ef4444"/>
+<text x="70" y="476" class="plugin-item">Input Guard</text>
+<circle cx="180" cy="472" r="3" fill="#ef4444"/>
+<text x="190" y="476" class="plugin-item">Context Guard</text>
+
+<circle cx="60" cy="492" r="3" fill="#ef4444"/>
+<text x="70" y="496" class="plugin-item">Tool Audit</text>
+<circle cx="180" cy="492" r="3" fill="#ef4444"/>
+<text x="190" y="496" class="plugin-item">Output Guard</text>
+
+<circle cx="60" cy="512" r="3" fill="#ef4444"/>
+<text x="70" y="516" class="plugin-item">Cost Tracking</text>
+
+<!-- OpenClaw arrows -->
+<line x1="310" y1="410" x2="598" y2="410" stroke="#ef4444" stroke-width="2"/>
+<polygon points="596,406 606,410 596,414" fill="#ef4444"/>
+<text x="454" y="404" class="arrow-text" text-anchor="middle" fill="#b91c1c">DIRECT TO LLM (PLUGIN MONITORS INLINE)</text>
+
+<line x1="310" y1="480" x2="598" y2="480" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="6 4"/>
+<polygon points="596,476 604,480 596,484" fill="#0ea5e9"/>
+<text x="454" y="474" class="arrow-text" text-anchor="middle" fill="#0891b2">AUDIT DATA</text>
+
+<!-- Optional proxy arrow (OpenClaw block mode) -->
+<line x1="310" y1="450" x2="420" y2="450" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/>
+<line x1="420" y1="450" x2="420" y2="326" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/>
+<polygon points="416,328 420,320 424,328" fill="#94a3b8"/>
+<text x="366" y="466" class="arrow-text" text-anchor="middle" fill="#94a3b8">OPTIONAL</text>
+<text x="366" y="478" class="arrow-text" text-anchor="middle" fill="#94a3b8">(BLOCK MODE)</text>
+
+<!-- ===== Claude Code Agent Box ===== -->
+<rect x="30" y="548" width="270" height="150" rx="10" fill="#ffffff" stroke="#a855f7" stroke-width="2"/>
+<text x="165" y="570" class="label" fill="#7c2d92" text-anchor="middle">CLAUDE CODE</text>
+<text x="165" y="588" class="heading-sm" text-anchor="middle">AI Agent</text>
+<line x1="48" y1="596" x2="282" y2="596" stroke="#f3e8ff" stroke-width="1"/>
+
+<!-- Embedded Claude Code plugin -->
+<rect x="44" y="604" width="242" height="82" rx="7" fill="#faf5ff" stroke="#d8b4fe" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="165" y="621" class="mode-label" fill="#7c2d92" text-anchor="middle">Aegis Guard (hooks)</text>
+
+<circle cx="60" cy="638" r="3" fill="#a855f7"/>
+<text x="70" y="642" class="plugin-item-cc">PreToolUse Guard</text>
+<circle cx="180" cy="638" r="3" fill="#a855f7"/>
+<text x="190" y="642" class="plugin-item-cc">PostToolUse Audit</text>
+
+<circle cx="60" cy="658" r="3" fill="#a855f7"/>
+<text x="70" y="662" class="plugin-item-cc">Prompt Scan</text>
+<circle cx="180" cy="658" r="3" fill="#a855f7"/>
+<text x="190" y="662" class="plugin-item-cc">Permission Sync</text>
+
+<circle cx="60" cy="678" r="3" fill="#a855f7"/>
+<text x="70" y="682" class="plugin-item-cc">Cost Tracking</text>
+
+<!-- Claude Code arrows -->
+<line x1="310" y1="576" x2="598" y2="576" stroke="#a855f7" stroke-width="2"/>
+<polygon points="596,572 606,576 596,580" fill="#a855f7"/>
+<text x="454" y="570" class="arrow-text" text-anchor="middle" fill="#7c2d92">DIRECT TO LLM (HOOKS MONITOR INLINE)</text>
+
+<line x1="310" y1="646" x2="598" y2="646" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="6 4"/>
+<polygon points="596,642 604,646 596,650" fill="#0ea5e9"/>
+<text x="454" y="640" class="arrow-text" text-anchor="middle" fill="#0891b2">AUDIT DATA</text>
+
+<!-- Block-mode annotation: Claude Code blocks inline via PreToolUse, no proxy needed -->
+<text x="454" y="664" class="arrow-text" text-anchor="middle" fill="#7c2d92">BLOCK MODE: INLINE VIA HOOK (NO PROXY NEEDED)</text>
+
+<!-- ===== OpenAI Codex Agent Box ===== -->
+<rect x="30" y="714" width="270" height="150" rx="10" fill="#ffffff" stroke="#5EADB8" stroke-width="2"/>
+<text x="165" y="736" class="label" fill="#1e6470" text-anchor="middle">OPENAI CODEX</text>
+<text x="165" y="754" class="heading-sm" text-anchor="middle">AI Agent</text>
+<line x1="48" y1="762" x2="282" y2="762" stroke="#d6eef2" stroke-width="1"/>
+
+<!-- Embedded Codex plugin -->
+<rect x="44" y="770" width="242" height="82" rx="7" fill="#f0f9fa" stroke="#a8d4dc" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="165" y="787" class="mode-label" fill="#1e6470" text-anchor="middle">Aegis Guard (hooks)</text>
+
+<circle cx="60" cy="804" r="3" fill="#5EADB8"/>
+<text x="70" y="808" class="plugin-item-cc" fill="#1e6470">PreToolUse Guard</text>
+<circle cx="180" cy="804" r="3" fill="#5EADB8"/>
+<text x="190" y="808" class="plugin-item-cc" fill="#1e6470">PostToolUse Audit</text>
+
+<circle cx="60" cy="824" r="3" fill="#5EADB8"/>
+<text x="70" y="828" class="plugin-item-cc" fill="#1e6470">Prompt Scan</text>
+<circle cx="180" cy="824" r="3" fill="#5EADB8"/>
+<text x="190" y="828" class="plugin-item-cc" fill="#1e6470">SessionStart Hook</text>
+
+<circle cx="60" cy="844" r="3" fill="#5EADB8"/>
+<text x="70" y="848" class="plugin-item-cc" fill="#1e6470">Stop Hook</text>
+
+<!-- Codex arrows -->
+<line x1="310" y1="742" x2="598" y2="742" stroke="#5EADB8" stroke-width="2"/>
+<polygon points="596,738 606,742 596,746" fill="#5EADB8"/>
+<text x="454" y="736" class="arrow-text" text-anchor="middle" fill="#1e6470">DIRECT TO LLM (HOOKS MONITOR INLINE)</text>
+
+<line x1="310" y1="812" x2="598" y2="812" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="6 4"/>
+<polygon points="596,808 604,812 596,816" fill="#0ea5e9"/>
+<text x="454" y="806" class="arrow-text" text-anchor="middle" fill="#0891b2">AUDIT DATA</text>
+
+<!-- Block-mode annotation: Codex blocks inline via PreToolUse, no proxy needed -->
+<text x="454" y="830" class="arrow-text" text-anchor="middle" fill="#1e6470">BLOCK MODE: INLINE VIA HOOK (NO PROXY NEEDED)</text>
+
+<!-- ===== Aegis Dashboard (spans all three agents) ===== -->
+<rect x="608" y="382" width="320" height="476" rx="10" fill="#ffffff" stroke="#0ea5e9" stroke-width="1.5"/>
+<text x="768" y="404" class="label" fill="#0891b2" text-anchor="middle">AEGIS</text>
+<text x="768" y="422" class="heading-sm" text-anchor="middle">Dashboard</text>
+<line x1="628" y1="430" x2="908" y2="430" stroke="#e0f2fe" stroke-width="1"/>
+
+<rect x="628" y="438" width="280" height="24" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+<text x="644" y="454" fill="#16a34a" font-size="12" font-family="-apple-system, sans-serif">&#10003;</text>
+<text x="660" y="454" class="item" fill="#15803d">Threat Log &amp; Analytics</text>
+
+<rect x="628" y="466" width="280" height="24" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+<text x="644" y="482" fill="#2563eb" font-size="12" font-family="-apple-system, sans-serif">&#10003;</text>
+<text x="660" y="482" class="item" fill="#1d4ed8">Tool Call Audit (SHA-256 chain)</text>
+
+<rect x="628" y="494" width="280" height="24" rx="6" fill="#faf5ff" stroke="#d8b4fe" stroke-width="1"/>
+<text x="644" y="510" fill="#a855f7" font-size="12" font-family="-apple-system, sans-serif">&#10003;</text>
+<text x="660" y="510" class="item" fill="#7c2d92">Per-Runtime View &amp; Filters</text>
+
+<rect x="628" y="522" width="280" height="24" rx="6" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+<text x="644" y="538" fill="#d97706" font-size="12" font-family="-apple-system, sans-serif">&#10003;</text>
+<text x="660" y="538" class="item" fill="#b45309">Spend &amp; Budget Controls</text>
+
+<rect x="628" y="550" width="280" height="24" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+<text x="644" y="566" fill="#2563eb" font-size="12" font-family="-apple-system, sans-serif">&#10003;</text>
+<text x="660" y="566" class="item" fill="#1d4ed8">Tool Permissions (cloud + local)</text>
+
+<!-- SIEM Forwarder row — outgoing pipe to customer SIEM -->
+<rect x="628" y="578" width="280" height="24" rx="6" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1"/>
+<text x="644" y="594" fill="#059669" font-size="12" font-family="-apple-system, sans-serif">&#10003;</text>
+<text x="660" y="594" class="item" fill="#047857">SIEM Forwarder (OCSF 1.3.0)</text>
+<text x="900" y="594" class="item" fill="#059669" text-anchor="end" font-size="11" font-weight="700">&#8599;</text>
+
+<!-- ================================================================== -->
+<!-- BOTTOM: Run Anywhere                                               -->
+<!-- ================================================================== -->
+<text x="480" y="898" class="heading" text-anchor="middle">Run Anywhere</text>
+
+<rect x="40" y="910" width="164" height="20" rx="10" fill="#ffffff" stroke="#e0e7ef" stroke-width="1.5"/>
+<text x="122" y="924" class="env-title" text-anchor="middle" font-size="11">Local</text>
+
+<rect x="216" y="910" width="164" height="20" rx="10" fill="#ffffff" stroke="#e0e7ef" stroke-width="1.5"/>
+<text x="298" y="924" class="env-title" text-anchor="middle" font-size="11">Cloud</text>
+
+<rect x="392" y="910" width="164" height="20" rx="10" fill="#ffffff" stroke="#e0e7ef" stroke-width="1.5"/>
+<text x="474" y="924" class="env-title" text-anchor="middle" font-size="11">Docker &amp; K8s</text>
+
+<rect x="568" y="910" width="164" height="20" rx="10" fill="#ffffff" stroke="#e0e7ef" stroke-width="1.5"/>
+<text x="650" y="924" class="env-title" text-anchor="middle" font-size="11">VMs</text>
+
+<rect x="744" y="910" width="164" height="20" rx="10" fill="#ffffff" stroke="#e0e7ef" stroke-width="1.5"/>
+<text x="826" y="924" class="env-title" text-anchor="middle" font-size="11">Edge &amp; Serverless</text>
+
+</svg>
