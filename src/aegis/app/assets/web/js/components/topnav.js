@@ -1,43 +1,33 @@
 /**
- * TopNav — horizontal primary navigation + per-section secondary strip.
+ * TopNav — horizontal primary navigation with hover mega-dropdowns.
  *
  * The top-of-window command row. Renders the SAME data Sidebar uses
  * (Sidebar.navItems) and drives the SAME navigation entry points
- * (Sidebar.navigate / Sidebar.navigateToSection), so the rail, the command
- * palette, deep links and this bar can never disagree about where you are.
+ * (Sidebar.navigate / Sidebar.navigateToSection), so the rail, the top bar,
+ * the command palette and deep links can never disagree about where you are.
  *
  * Layout roles:
- *   #topnav   brand + primary tabs (one per top-level destination)
- *   #subnav   secondary tabs (the active section's sub-items, e.g.
- *             Threat Monitor → Threats | Blocked Actions | Secret Detections)
+ *   #topnav   brand + one tab per top-level destination (FULL labels)
+ *   #subnav   secondary strip for the ACTIVE section (contextual quick tabs)
  *
- * Active state is driven by Sidebar.setActive() broadcasting the
- * `aegis:navigate` event — the same hook App.loadPage already calls on every
- * page change (deep links, back/forward, wizard auto-launch included).
+ * Every section tab opens a floating dropdown panel listing ALL of that
+ * section's features — hover to explore, click an entry to navigate. Every
+ * tab and every entry carries a native title tooltip (name + description).
+ *
+ * Occlusion rules (checked): the dropdown is appended to <body> and
+ * position:fixed, so it can never be clipped by #topnav's horizontal
+ * overflow; z-index 400 sits above the page and the topnav (60) and below
+ * every modal overlay (1000+); on mobile the tabs are hidden entirely and
+ * navigation falls back to the off-canvas rail, so nothing can overlap there.
  */
 const TopNav = {
     _root: null,
     _tabsRoot: null,
     _tabs: [],          // { el, item } for each primary tab
     _subRoot: null,
-
-    // Compact display labels so 13 top-level destinations stay scannable in
-    // one horizontal row. Anything not listed falls back to the nav label.
-    _LABELS: {
-        dashboard: 'Dashboard',
-        'threat-monitor': 'Threat Monitor',
-        'instant-audit': 'Audit',
-        'agent-activity': 'Observability',
-        'policies-controls': 'Policies',
-        governance: 'Governance',
-        'mcp-policies': 'MCP',
-        'guide-connect-agents': 'Connect',
-        integrations: 'Integrations',
-        'siem-export': 'SIEM',
-        'cloud-activity': 'Cloud',
-        guide: 'Guide',
-        settings: 'Settings',
-    },
+    _dd: null,          // currently open dropdown panel (<body> child)
+    _ddOpenFor: null,   // navItems item the dropdown belongs to
+    _ddTimer: null,
 
     // Destinations that need a Aegis cloud account — dimmed/locked on
     // personal-mode installs, mirroring the rail's treatment.
@@ -59,8 +49,28 @@ const TopNav = {
         this._subRoot = document.getElementById('subnav');
 
         document.addEventListener('aegis:navigate', (e) => {
+            this._closeDropdown();
             this.update(e.detail && e.detail.page);
         });
+
+        // Close the dropdown on Escape / click outside / viewport changes.
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this._closeDropdown();
+        });
+        document.addEventListener('click', (e) => {
+            if (this._dd && !this._dd.contains(e.target)
+                && !(e.target.closest && e.target.closest('.ag-tab'))) {
+                this._closeDropdown();
+            }
+        });
+        window.addEventListener('resize', () => this._closeDropdown());
+        window.addEventListener('scroll', (e) => {
+            // Scrolling INSIDE the dropdown (its own overflow list) must not
+            // close it; scrolling the page closes it so stale coordinates
+            // never leave a floating panel where it no longer belongs.
+            if (this._dd && e.target && this._dd.contains(e.target)) return;
+            this._closeDropdown();
+        }, true);
 
         // Reflect the current page (setActive fired before init ran).
         this.update(Sidebar.currentPage);
@@ -89,7 +99,7 @@ const TopNav = {
         const brand = document.createElement('a');
         brand.className = 'ag-brand';
         brand.href = '#';
-        brand.title = 'Go to Dashboard';
+        brand.title = 'Dashboard';
         const logo = document.createElement('img');
         logo.src = '/images/favicon.png';
         logo.alt = 'Aegis';
@@ -109,11 +119,6 @@ const TopNav = {
         const tabs = document.createElement('div');
         tabs.className = 'ag-tabs';
         root.appendChild(tabs);
-
-        // Right spacer + subtle "identity" chip keeps the row balanced.
-        const spacer = document.createElement('div');
-        spacer.className = 'ag-topnav-spacer';
-        root.appendChild(spacer);
     },
 
     _renderPrimaryTabs() {
@@ -122,9 +127,18 @@ const TopNav = {
             const el = document.createElement('button');
             el.type = 'button';
             el.className = 'ag-tab';
-            el.title = item.tooltip || this._label(item);
-            el.textContent = this._label(item);
+            el.title = item.tooltip || item.label || item.id;   // hover shows the name
+            el.textContent = item.label || item.id;             // FULL label, not shortened
             el.dataset.page = item.id;
+
+            const hasSub = !!(item.subItems && item.subItems.length);
+            if (hasSub) {
+                el.classList.add('ag-has-dd');
+                const caret = document.createElement('span');
+                caret.className = 'ag-tab-caret';
+                caret.textContent = '▾';
+                el.appendChild(caret);
+            }
 
             if (this._CLOUD_TIER.has(item.id)) {
                 el.classList.add('ag-cloud');
@@ -139,20 +153,35 @@ const TopNav = {
             if (this._CORE_BADGE.has(item.id) && !localStorage.getItem('ag-visited-core-' + item.id)) {
                 const dot = document.createElement('span');
                 dot.className = 'ag-core-dot';
-                dot.dataset.agCoreDot = item.id;
                 el.appendChild(dot);
             }
 
-            el.addEventListener('click', () => this._go(item));
+            el.addEventListener('mouseenter', () => {
+                if (hasSub) this._openDropdown(item, el);
+            });
+            el.addEventListener('mouseleave', () => {
+                if (hasSub) this._scheduleClose(item);
+            });
+            el.addEventListener('focus', () => {
+                if (hasSub) this._openDropdown(item, el);
+            });
+            el.addEventListener('blur', () => {
+                if (hasSub) this._scheduleClose(item);
+            });
+            el.addEventListener('click', (e) => {
+                if (hasSub) {
+                    e.stopPropagation();
+                    if (this._ddOpenFor === item) this._closeDropdown();
+                    else this._openDropdown(item, el);
+                } else {
+                    this._go(item);
+                }
+            });
             el._item = item;
             this._tabs.push({ el, item });
             frag.appendChild(el);
         });
         this._tabsRoot.appendChild(frag);
-    },
-
-    _label(item) {
-        return this._LABELS[item.id] || item.label || item.id;
     },
 
     _firstSubId(item) {
@@ -187,8 +216,99 @@ const TopNav = {
         return null;
     },
 
+    /* ── Dropdown ────────────────────────────────────────────────────────── */
+
+    _openDropdown(item, anchor) {
+        this._closeDropdown();
+        this._ddOpenFor = item;
+
+        const panel = document.createElement('div');
+        panel.className = 'ag-dropdown';
+        panel.setAttribute('role', 'menu');
+
+        const frag = document.createDocumentFragment();
+        let groupCount = 0;
+        (item.subItems || []).forEach((s) => {
+            if (s.header) {
+                const label = document.createElement('div');
+                label.className = 'ag-dd-label';
+                label.textContent = s.header;
+                frag.appendChild(label);
+                groupCount++;
+            } else if (s.id) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'ag-dd-item';
+                btn.setAttribute('role', 'menuitem');
+                btn.title = s.tooltip || s.label;
+                btn.dataset.page = s.id;
+                const span = document.createElement('span');
+                span.textContent = s.label;
+                btn.appendChild(span);
+
+                const active = s.id === this.currentPage
+                    || (s.aliases && s.aliases.includes(this.currentPage));
+                if (active) btn.classList.add('active');
+
+                if (this._CLOUD_TIER.has(item.id) && Sidebar._enrolled !== true) {
+                    btn.classList.add('ag-locked');
+                }
+
+                btn.addEventListener('click', () => {
+                    if (s.section) Sidebar.navigateToSection(item.id, s.section, s.id);
+                    else Sidebar.navigate(s.id);
+                    this._closeDropdown();
+                });
+                frag.appendChild(btn);
+            }
+        });
+
+        if (!groupCount) panel.classList.add('ag-dd-flat');
+        panel.appendChild(frag);
+
+        // Measure off-screen, then pin over the tab — fixed, on <body>, so no
+        // ancestor overflow can clip it.
+        panel.style.cssText = 'position:fixed; left:0; top:0; visibility:hidden; z-index:400;';
+        document.body.appendChild(panel);
+        const pad = 8;
+        const r = anchor.getBoundingClientRect();
+        const pw = panel.offsetWidth;
+        const ph = panel.offsetHeight;
+        let left = r.left;
+        let top = r.bottom + 6;
+        if (left + pw > window.innerWidth - pad) left = Math.max(pad, window.innerWidth - pad - pw);
+        if (top + ph > window.innerHeight - pad) top = Math.max(pad, r.top - ph - 6);
+        panel.style.left = left + 'px';
+        panel.style.top = top + 'px';
+        panel.style.visibility = 'visible';
+        requestAnimationFrame(() => panel.classList.add('ag-dd-open'));
+
+        panel.addEventListener('mouseenter', () => clearTimeout(this._ddTimer));
+        panel.addEventListener('mouseleave', () => this._scheduleClose(item));
+        this._dd = panel;
+    },
+
+    _scheduleClose(item) {
+        clearTimeout(this._ddTimer);
+        this._ddTimer = setTimeout(() => {
+            if (this._ddOpenFor === item) this._closeDropdown();
+        }, 200);
+    },
+
+    _closeDropdown() {
+        clearTimeout(this._ddTimer);
+        if (this._dd) {
+            this._dd.remove();
+            this._dd = null;
+        }
+        this._ddOpenFor = null;
+    },
+
+    /* ── Active state + secondary strip ──────────────────────────────────── */
+
     update(page) {
         if (!this._tabsRoot) return;
+        this.currentPage = page;
         this._tabs.forEach(({ el, item }) => {
             el.classList.toggle('active', this._isTabActive(item, page));
             const dot = el.querySelector('.ag-core-dot');
