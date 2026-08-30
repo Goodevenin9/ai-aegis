@@ -99,6 +99,9 @@ const App = {
         // (the Dashboard), so no init-time render here.
         Sidebar.render();
         Header.render();
+        // Top navigation row renders after the rail (it mirrors Sidebar.navItems)
+        // and subscribes to the aegis:navigate event before the first loadPage.
+        if (window.TopNav) TopNav.init();
 
         // Handle browser back/forward
         window.addEventListener('popstate', (e) => {

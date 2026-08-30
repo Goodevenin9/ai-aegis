@@ -10,26 +10,34 @@
     <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
     <link rel="stylesheet" href="/css/styles.css?v=347">
     <!-- Aurora design layer — visual identity reskin, loaded after the base -->
-    <link rel="stylesheet" href="/css/lingdun.css?v=1">
+    <link rel="stylesheet" href="/css/lingdun.css?v=2">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar" id="sidebar"></aside>
+    <div class="app-container ag-topnav">
+        <!-- Top navigation command row (rendered by TopNav). -->
+        <div id="topnav"></div>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <!-- Header -->
-            <header class="header" id="header"></header>
+        <div class="app-body">
+            <!-- Sidebar Navigation — identity rail on desktop, off-canvas overlay on mobile -->
+            <aside class="sidebar" id="sidebar"></aside>
 
-            <!-- Page Content -->
-            <div class="page-content" id="page-content">
-                <div class="loading-container">
-                    <div class="spinner"></div>
-                    <p>Loading...</p>
+            <!-- Main Content Area -->
+            <main class="main-content">
+                <!-- Header -->
+                <header class="header" id="header"></header>
+
+                <!-- Per-section secondary tab strip (rendered by TopNav) -->
+                <div id="subnav"></div>
+
+                <!-- Page Content -->
+                <div class="page-content" id="page-content">
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <p>Loading...</p>
+                    </div>
                 </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 
     <!-- Scripts -->
@@ -39,6 +47,7 @@
     <script src="/js/i18n-dict.js?v=3"></script>
     <script src="/js/i18n.js?v=3"></script>
     <script src="/js/components/sidebar.js?v=122"></script>
+    <script src="/js/components/topnav.js?v=1"></script>
     <script src="/js/components/command-palette.js?v=13"></script>
     <script src="/js/components/header.js?v=49"></script>
     <script src="/js/components/tour.js?v=18"></script>

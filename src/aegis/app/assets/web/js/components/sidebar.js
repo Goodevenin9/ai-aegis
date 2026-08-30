@@ -1833,6 +1833,11 @@ const Sidebar = {
 
     setActive(page) {
         this.currentPage = page;
+        // Broadcast the page change so every surface that mirrors the nav
+        // (TopNav's primary tabs + secondary strip, the command palette…)
+        // stays in lockstep. App.loadPage calls setActive on every navigation
+        // — deep links, back/forward and wizard auto-launch included.
+        document.dispatchEvent(new CustomEvent('aegis:navigate', { detail: { page } }));
         document.querySelectorAll('.nav-item').forEach(item => {
             const isSubItem = item.classList.contains('nav-sub-item');
             const matchesPage = item.dataset.page === page ||

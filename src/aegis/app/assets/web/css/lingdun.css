@@ -377,3 +377,269 @@ body {
     .main-content { padding: 0; }
     .header { margin-bottom: 0; border-radius: 0; }
 }
+
+/* ============================================================================
+   Command-row layout ("Splunk / Wiz" scheme) — top navigation bar
+   ============================================================================
+   The shell becomes a vertical stack: a floating top command row (brand +
+   primary destinations) over an app body that pairs a 64px identity rail
+   (desktop) with the page column. TopNav renders #topnav and #subnav; the
+   rail keeps all its data — it is simply shrunk to its icons.            */
+
+.app-container { flex-direction: column; }
+.app-body { flex: 1; display: flex; min-width: 0; min-height: 0; }
+
+/* ── Top command row ─────────────────────────────────────────────────────── */
+#topnav {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 52px;
+    padding: 0 12px 0 10px;
+    margin: 12px 16px 0 12px;
+    border: 1px solid rgba(124,108,255,0.18);
+    border-radius: 16px;
+    background: rgba(20,26,48,0.78);
+    box-shadow:
+        0 8px 30px rgba(4,3,28,0.35),
+        inset 0 1px 0 rgba(148,130,255,0.08);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 60;
+}
+[data-theme="light"] #topnav {
+    background: rgba(255,255,255,0.84);
+    border-color: rgba(33,29,53,0.08);
+    box-shadow: 0 8px 24px rgba(33,29,53,0.08);
+}
+
+.ag-burger {
+    display: none;              /* shown only on mobile — one hamburger total */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    width: 36px;
+    height: 36px;
+    background: rgba(124,108,255,0.08);
+    border: 1px solid rgba(148,130,255,0.25);
+    border-radius: 10px;
+    cursor: pointer;
+}
+.ag-burger-line {
+    display: block;
+    width: 16px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--text-primary);
+}
+
+.ag-brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    text-decoration: none;
+    flex-shrink: 0;
+    margin-right: 6px;
+    padding-right: 12px;
+    border-right: 1px solid rgba(148,130,255,0.16);
+}
+.ag-brand-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    box-shadow: 0 3px 12px rgba(124,108,255,0.35);
+}
+.ag-brand-word {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    background: linear-gradient(135deg, #cfc3ff, #8b7cff 60%, #6b4ee8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.ag-tabs {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.ag-tabs::-webkit-scrollbar { display: none; }
+.ag-topnav-spacer { flex-shrink: 0; }
+
+.ag-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 13px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        background var(--transition-fast),
+        color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+.ag-tab:hover { background: rgba(124,108,255,0.10); color: var(--text-primary); }
+.ag-tab.active {
+    background: linear-gradient(135deg, rgba(124,108,255,0.30), rgba(139,92,246,0.16));
+    color: #fff;
+    box-shadow:
+        inset 0 0 0 1px rgba(148,130,255,0.35),
+        0 0 14px rgba(124,108,255,0.18);
+}
+[data-theme="light"] .ag-tab.active {
+    background: linear-gradient(135deg, rgba(124,108,255,0.22), rgba(139,92,246,0.12));
+    color: #2a2347;
+}
+.ag-cloud-tag {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(124,108,255,0.18);
+    border: 1px solid rgba(148,130,255,0.35);
+    color: #cfc3ff;
+}
+.ag-tab.ag-locked { opacity: 0.55; }
+.ag-tab.ag-locked:hover { opacity: 0.85; }
+.ag-core-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ff9d5c;
+    box-shadow: 0 0 8px rgba(255,157,92,0.8);
+}
+
+/* ── Secondary tab strip (active section's sub-items) ────────────────────── */
+#subnav {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 14px;
+    margin-bottom: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+#subnav::-webkit-scrollbar { display: none; }
+#subnav:empty { display: none; }
+.ag-subnav-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 8px 0 2px;
+    white-space: nowrap;
+}
+.ag-subnav-tab {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 11px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        background var(--transition-fast),
+        color var(--transition-fast);
+}
+.ag-subnav-tab:hover { background: rgba(124,108,255,0.10); color: var(--text-primary); }
+.ag-subnav-tab.active {
+    background: rgba(124,108,255,0.20);
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(148,130,255,0.30);
+}
+[data-theme="light"] .ag-subnav-tab.active { color: #2a2347; }
+
+/* ── Desktop: the rail shrinks to a 64px identity column ───────────────────
+   Logo on top, theme / cloud / status icons below — the nav tree lives in
+   the top command row now, so the rail's own tree, wordmark, resize handle
+   and collapse button are retired. */
+@media (min-width: 769px) {
+    .ag-topnav .sidebar {
+        width: 64px !important;
+        border-radius: 18px;
+    }
+    .ag-topnav .sidebar-nav,
+    .ag-topnav .sidebar-logo-text,
+    .ag-topnav .sidebar-version,
+    .ag-topnav .sidebar-resize-handle,
+    .ag-topnav .sidebar-collapse-btn { display: none !important; }
+
+    .ag-topnav .sidebar-header {
+        justify-content: center;
+        padding: 16px 0 8px;
+    }
+    .ag-topnav .sidebar-logo-link { justify-content: center; }
+    .ag-topnav .sidebar-logo-img { width: 34px; height: 34px; }
+
+    .ag-topnav .sidebar-bottom {
+        padding: 10px 0;
+        border-top: 1px solid rgba(124,108,255,0.12);
+    }
+    .ag-topnav .sidebar-bottom > * { justify-content: center; }
+    .ag-topnav .sidebar-theme-fixed { margin: 6px 8px; }
+    .ag-topnav .sidebar-theme-trigger { justify-content: center; padding: 8px; }
+    .ag-topnav .sidebar-theme-name,
+    .ag-topnav .sidebar-theme-current,
+    .ag-topnav .sidebar-theme-chev,
+    .ag-topnav .cloud-toggle-btn span,
+    .ag-topnav #integration-banner-text,
+    .ag-topnav #cc-plugin-banner-text,
+    .ag-topnav #codex-plugin-banner-text,
+    .ag-topnav #copilot-plugin-banner-text,
+    .ag-topnav #siem-banner-text { display: none !important; }
+    .ag-topnav .cloud-toggle-wrapper,
+    .ag-topnav .cloud-toggle-btn,
+    .ag-topnav .sidebar-status { justify-content: center; }
+
+    /* Status stack collapses to icon-only: the toggle shrinks to its chevron,
+       each banner (proxy/plugin/SIEM) to its status dot. */
+    .ag-topnav #sidebar-status-toggle {
+        justify-content: center;
+        width: 38px;
+        margin: 10px auto 2px;
+        padding: 6px 0;
+    }
+    .ag-topnav #sidebar-status-toggle span:not([aria-hidden]) { display: none !important; }
+    .ag-topnav .proxy-banner-pulse { justify-content: center; }
+}
+
+/* ── Mobile: hide the tab rows, keep the burger + brand, restore the rail
+   to its full off-canvas overlay (base stylesheet owns that behaviour). */
+@media (max-width: 768px) {
+    #topnav {
+        margin: 0;
+        border-radius: 0;
+        height: 48px;
+    }
+    .ag-burger { display: flex; }
+    .ag-tabs { display: none; }
+    #subnav { display: none; }
+    .ag-topnav .sidebar { width: 280px !important; }
+    /* The topnav's hamburger takes over from the header's duplicate. */
+    .mobile-menu-btn { display: none !important; }
+}
