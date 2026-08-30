@@ -168,15 +168,12 @@ const TopNav = {
             el.addEventListener('blur', () => {
                 if (hasSub) this._scheduleClose(item);
             });
-            el.addEventListener('click', (e) => {
-                if (hasSub) {
-                    e.stopPropagation();
-                    if (this._ddOpenFor === item) this._closeDropdown();
-                    else this._openDropdown(item, el);
-                } else {
-                    this._go(item);
-                }
-            });
+            // One-click selection: clicking any tab navigates straight to its
+            // destination. A section tab lands on the section's first feature
+            // (its collapsible parent is not a route — see App.loadPage); the
+            // hover dropdown remains the "explore everything" path. The
+            // aegis:navigate event closes any open dropdown after the jump.
+            el.addEventListener('click', () => this._go(item));
             el._item = item;
             this._tabs.push({ el, item });
             frag.appendChild(el);
