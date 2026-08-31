@@ -81,6 +81,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", CTYPES.get(ext, "application/octet-stream"))
             self.send_header("Content-Length", str(len(data)))
+            # Never cache HTML (so the script-tag versions always refresh) and
+            # force revalidation on assets — otherwise the browser serves a
+            # stale pre-fix i18n.js from its heuristic cache and the user sees
+            # the old "switching back to English freezes" behavior forever.
+            self.send_header("Cache-Control",
+                             "no-store" if ext == ".html" else "no-cache, must-revalidate")
             self.end_headers()
             self.wfile.write(data)
             return
