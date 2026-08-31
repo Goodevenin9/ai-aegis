@@ -174,7 +174,47 @@ const TopNav = {
             // (its collapsible parent is not a route — see App.loadPage); the
             // hover dropdown remains the "explore everything" path. The
             // aegis:navigate event closes any open dropdown after the jump.
-            el.addEventListener('click', () => this._go(item));
+            el.addEventListener('click', () => {
+                // A touch long-press (below) already opened the dropdown; the
+                // release-tap that follows must NOT also navigate.
+                if (el._longPressed) { el._longPressed = false; return; }
+                this._go(item);
+            });
+
+            // Touchscreens have no hover, so a long-press is the touch
+            // equivalent of hovering a section tab: it opens the dropdown and
+            // suppresses the native context menu. A quick tap still navigates
+            // (the one-click rule above).
+            if (hasSub) {
+                el.addEventListener('touchstart', (e) => {
+                    // Reset a stale flag from a previous long-press so the
+                    // next quick tap navigates normally.
+                    el._longPressed = false;
+                    const startX = e.touches[0].clientX;
+                    const startY = e.touches[0].clientY;
+                    el._lpTimer = setTimeout(() => {
+                        el._longPressed = true;
+                        this._openDropdown(item, el);
+                    }, 450);
+                    const onMove = (ev) => {
+                        const dx = ev.touches[0].clientX - startX;
+                        const dy = ev.touches[0].clientY - startY;
+                        if (Math.abs(dx) + Math.abs(dy) > 8) clearTimeout(el._lpTimer);
+                    };
+                    const onEnd = () => {
+                        clearTimeout(el._lpTimer);
+                        el.removeEventListener('touchmove', onMove);
+                        el.removeEventListener('touchend', onEnd);
+                        el.removeEventListener('touchcancel', onEnd);
+                    };
+                    el.addEventListener('touchmove', onMove);
+                    el.addEventListener('touchend', onEnd);
+                    el.addEventListener('touchcancel', onEnd);
+                });
+                el.addEventListener('contextmenu', (e) => {
+                    if (el._longPressed) e.preventDefault();
+                });
+            }
             el._item = item;
             this._tabs.push({ el, item });
             frag.appendChild(el);

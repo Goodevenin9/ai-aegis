@@ -24,6 +24,26 @@
 
     var STORAGE_KEY = 'ag-lang';
 
+    // Original (English) values for every node / attribute we translated, so a
+    // switch back to English can restore them IN PLACE — no full page
+    // re-render, no loading spinner (the old zh→en path re-rendered the whole
+    // page, showing a ~1.3s spinner and leaving the top nav stuck in Chinese
+    // because TopNav was never re-rendered). Only the FIRST original is kept,
+    // so a node translated twice (apply() running again) still restores to the
+    // real English source. Entries for removed nodes are GC'd automatically.
+    var _orig = new WeakMap();
+
+    function rememberOriginal(node, kind, value) {
+        var rec = _orig.get(node);
+        if (!rec) { rec = {}; _orig.set(node, rec); }
+        if (kind === 'text') {
+            if (rec.text === undefined) rec.text = value;
+        } else {
+            if (!rec.attrs) rec.attrs = {};
+            if (rec.attrs[kind] === undefined) rec.attrs[kind] = value;
+        }
+    }
+
     // Elements whose content must stay machine-readable English.
     var SKIP_RE = /(^|\s)(code-block|code|terminal|term|log|logs|mono|monospace|command-box|console|output|env-var|inline-code|copied|language-|json|bash|clipboard|keyboard|code-)(\s|$)/i;
 
@@ -140,7 +160,10 @@
         if (node.nodeType === Node.TEXT_NODE) {
             if (hasSkippableAncestor(node)) return;
             var out = translateText(node.nodeValue);
-            if (out !== null && out !== node.nodeValue) node.nodeValue = out;
+            if (out !== null && out !== node.nodeValue) {
+                rememberOriginal(node, 'text', node.nodeValue);
+                node.nodeValue = out;
+            }
             return;
         }
         if (node.nodeType === Node.ELEMENT_NODE) {
@@ -148,7 +171,10 @@
             for (var a = 0; a < ATTRS.length; a++) {
                 if (node.hasAttribute && node.hasAttribute(ATTRS[a])) {
                     var attrOut = translateAttribute(node.getAttribute(ATTRS[a]));
-                    if (attrOut !== null) node.setAttribute(ATTRS[a], attrOut);
+                    if (attrOut !== null) {
+                        rememberOriginal(node, ATTRS[a], node.getAttribute(ATTRS[a]));
+                        node.setAttribute(ATTRS[a], attrOut);
+                    }
                 }
             }
         }
@@ -176,12 +202,36 @@
             if (next === 'zh') {
                 this.apply();
             } else {
-                // Re-render chrome + page from source to restore original English.
-                if (window.App && App.currentPage) App.loadPage(App.currentPage);
-                if (window.Header) { try { Header.render(); } catch (_) { /* ignore */ } }
-                if (window.Sidebar) { try { Sidebar.render(); } catch (_) { /* ignore */ } }
+                // Restore every translated node / attribute to its original
+                // English value, in place. Both directions are now O(DOM):
+                // en→zh translates, zh→en un-translates — no page re-render,
+                // no loading spinner, and chrome that was never re-rendered
+                // (TopNav) gets its English labels back correctly.
+                this.restore();
             }
             this._updateToggleButton();
+        },
+
+        restore: function () {
+            // Attributes first (elements), then text nodes. Only nodes we
+            // actually translated have entries, so untouched content is left
+            // alone.
+            var els = document.querySelectorAll('*');
+            for (var j = 0; j < els.length; j++) {
+                var rec = _orig.get(els[j]);
+                if (!rec || !rec.attrs) continue;
+                for (var name in rec.attrs) {
+                    if (rec.attrs.hasOwnProperty(name)) els[j].setAttribute(name, rec.attrs[name]);
+                }
+            }
+            var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+            var nodes = [];
+            while (walker.nextNode()) nodes.push(walker.currentNode);
+            for (var k = 0; k < nodes.length; k++) {
+                var r = _orig.get(nodes[k]);
+                if (r && r.text !== undefined) nodes[k].nodeValue = r.text;
+            }
+            _orig = new WeakMap(); // DOM is English again; start fresh
         },
 
         toggle: function () {
