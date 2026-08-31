@@ -4,6 +4,7 @@ Serves the repo's web assets statically; proxies everything else (API) to the
 local backend on 127.0.0.1:8741 so the new frontend renders real data.
 """
 import http.server
+import socket
 import socketserver
 import os
 import sys
@@ -102,7 +103,31 @@ class Server(socketserver.TCPServer):
     allow_reuse_address = True
 
 
+class V6Server(socketserver.TCPServer):
+    """IPv6 twin of Server, bound to ::1. Windows browsers often resolve
+    `localhost` to ::1 before 127.0.0.1; without this the page refuses to
+    connect even though the IPv4 socket is healthy."""
+
+    allow_reuse_address = True
+    address_family = socket.AF_INET6
+
+
 if __name__ == "__main__":
-    with Server(("127.0.0.1", PORT), Handler) as httpd:
-        print("Aegis frontend demo on http://127.0.0.1:%d (proxy -> %s)" % (PORT, BACKEND))
-        httpd.serve_forever()
+    import threading
+    import time
+
+    # IPv4 on 127.0.0.1.
+    httpd4 = Server(("127.0.0.1", PORT), Handler)
+    threading.Thread(target=httpd4.serve_forever, daemon=True).start()
+    print("Aegis frontend demo on http://127.0.0.1:%d (proxy -> %s)" % (PORT, BACKEND))
+
+    # IPv6 on ::1 so `localhost` works on browsers that prefer IPv6.
+    try:
+        httpd6 = V6Server(("::1", PORT), Handler)
+        threading.Thread(target=httpd6.serve_forever, daemon=True).start()
+        print("IPv6 fallback on http://[::1]:%d" % PORT)
+    except OSError:
+        print("IPv6 bind skipped (::1 not available)")
+
+    while True:
+        time.sleep(3600)
