@@ -9,7 +9,13 @@ import os
 import sys
 import urllib.request
 
-WEB = r"C:\Users\19546\Desktop\aegis-ai-threat-monitor\src\aegis\app\assets\web"
+# Resolve the web root relative to THIS script, so the demo server survives
+# a repo rename/move (the old line hard-coded "aegis-ai-threat-monitor", which
+# broke once the project folder was renamed to ai-aegis).
+WEB = os.path.realpath(os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..", "src", "aegis", "app", "assets", "web",
+))
 BACKEND = "http://127.0.0.1:8741"
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8088
 WEB_ROOT = os.path.realpath(WEB)
