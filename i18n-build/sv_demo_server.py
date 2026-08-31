@@ -8,6 +8,8 @@ import socket
 import socketserver
 import os
 import sys
+import threading
+import time
 import urllib.request
 
 # Resolve the web root relative to THIS script, so the demo server survives
@@ -17,7 +19,9 @@ WEB = os.path.realpath(os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "..", "src", "aegis", "app", "assets", "web",
 ))
-BACKEND = "http://127.0.0.1:8741"
+BACKEND_HOST = "127.0.0.1"
+BACKEND_PORT = 8741
+BACKEND = "http://%s:%d" % (BACKEND_HOST, BACKEND_PORT)
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8088
 WEB_ROOT = os.path.realpath(WEB)
 
@@ -36,6 +40,34 @@ CTYPES = {
 }
 
 
+_BACKEND_CACHE = {"ts": 0.0, "ok": False}
+_BACKEND_CACHE_TTL = 3.0
+
+
+def _backend_reachable(timeout=1.5):
+    """True if the real backend accepts a TCP connection right now.
+
+    Windows firewalls often DROP a connection to a dead port instead of
+    refusing it, so urllib's read timeout (20s) would otherwise sit on the
+    socket for 20s per call. Probing with a short connect timeout lets a dead
+    backend fail in ~2s — fast enough that the frontend renders its fallback
+    state instead of showing a spinner forever. The result is cached for a
+    few seconds so a page that fires several API calls probes the dead port
+    at most once instead of paying the ~2s connect each time.
+    """
+    now = time.time()
+    if now - _BACKEND_CACHE["ts"] < _BACKEND_CACHE_TTL:
+        return _BACKEND_CACHE["ok"]
+    try:
+        s = socket.create_connection((BACKEND_HOST, BACKEND_PORT), timeout=timeout)
+        s.close()
+        _BACKEND_CACHE["ok"] = True
+    except OSError:
+        _BACKEND_CACHE["ok"] = False
+    _BACKEND_CACHE["ts"] = now
+    return _BACKEND_CACHE["ok"]
+
+
 class Handler(http.server.BaseHTTPRequestHandler):
     def _handle(self, method):
         path = self.path.split("?")[0]
@@ -52,7 +84,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(data)
             return
-        # Proxy to backend (API endpoints, health, analyze, etc.)
+        # Proxy to backend (API endpoints, health, analyze, etc.). Fail FAST
+        # when the backend is down — see _backend_reachable.
+        if not _backend_reachable():
+            payload = b'{"detail": "backend offline: the AI Aegis service on port 8741 is not running"}'
+            self.send_response(502)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+            return
         url = BACKEND + path
         if "?" in self.path:
             url += "?" + self.path.split("?", 1)[1]
@@ -99,23 +140,27 @@ class Handler(http.server.BaseHTTPRequestHandler):
         pass
 
 
-class Server(socketserver.TCPServer):
+class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    """Threaded so one slow proxied call (e.g. a dead backend) never blocks
+    static files or the other API calls. A single-threaded server freezes the
+    whole frontend for the duration of the slowest request — which is exactly
+    what turned a dead backend into an infinite loading spinner."""
+
     allow_reuse_address = True
+    daemon_threads = True
 
 
-class V6Server(socketserver.TCPServer):
+class V6Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
     """IPv6 twin of Server, bound to ::1. Windows browsers often resolve
     `localhost` to ::1 before 127.0.0.1; without this the page refuses to
     connect even though the IPv4 socket is healthy."""
 
     allow_reuse_address = True
+    daemon_threads = True
     address_family = socket.AF_INET6
 
 
 if __name__ == "__main__":
-    import threading
-    import time
-
     # IPv4 on 127.0.0.1.
     httpd4 = Server(("127.0.0.1", PORT), Handler)
     threading.Thread(target=httpd4.serve_forever, daemon=True).start()
