@@ -141,7 +141,15 @@
         if (typeof value !== 'string' || value.length === 0) return null;
         if (hasNonAscii(value)) return null;
         var trimmed = value.trim();
-        if (DICT.hasOwnProperty(trimmed)) return DICT[trimmed];
+        if (DICT.hasOwnProperty(trimmed)) {
+            // Some entries map a name to ITSELF (brands that need no translation,
+            // e.g. "OpenClaw / ClawdBot"). Reporting the identical string as a
+            // "translation" makes callers setAttribute it back, and the observer
+            // re-translates it forever. A translation that changes nothing is no
+            // translation at all — report null.
+            var exact = DICT[trimmed];
+            return exact !== value ? exact : null;
+        }
 
         var re = ensureRegex();
         re.lastIndex = 0;
@@ -170,9 +178,19 @@
             if (hasSkippableAncestor(node)) return;
             for (var a = 0; a < ATTRS.length; a++) {
                 if (node.hasAttribute && node.hasAttribute(ATTRS[a])) {
-                    var attrOut = translateAttribute(node.getAttribute(ATTRS[a]));
-                    if (attrOut !== null) {
-                        rememberOriginal(node, ATTRS[a], node.getAttribute(ATTRS[a]));
+                    var cur = node.getAttribute(ATTRS[a]);
+                    var attrOut = translateAttribute(cur);
+                    // Never setAttribute with a value identical to the current
+                    // one. Several dict entries map a name to ITSELF (brands like
+                    // "OpenClaw / ClawdBot", "LangChain"), so translateAttribute
+                    // returns a non-null but unchanged string. Setting it fires
+                    // an 'attributes' mutation, which re-triggers this function
+                    // via the observer, which sets it again -> infinite loop
+                    // that pegged the main thread when hovering the Guide tab
+                    // in Chinese. The text branch below already guards with
+                    // `out !== node.nodeValue`; this is the same guard for attrs.
+                    if (attrOut !== null && attrOut !== cur) {
+                        rememberOriginal(node, ATTRS[a], cur);
                         node.setAttribute(ATTRS[a], attrOut);
                     }
                 }
