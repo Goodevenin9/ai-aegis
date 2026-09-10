@@ -567,7 +567,7 @@ class AegisMCPServer:
                         raise SecurityException(
                             "Invalid or expired API key",
                             error_code="INVALID_API_KEY",
-                            details={"message": "Please check your API key or create a new one at https://github.com/Goodevenin9/ai-aegis"}
+                            details={"message": "Please check your API key or create a new one at https://gitee.com/wan-xianghao/ai-aegis"}
                         )
 
                     # Cache user context for this session (no more validation needed!)

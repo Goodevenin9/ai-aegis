@@ -84,7 +84,7 @@ pip install ai-aegis[app]
 aegis-app --web
 ```
 
-**Or download the app:** [Windows](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/Aegis-v1.0.0-Windows-Setup.exe) · [Linux](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/Aegis-1.0.0-x86_64.AppImage) · [DEB](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/aegis_1.0.0_amd64.deb) · [RPM](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/aegis-1.0.0-1.x86_64.rpm) · [macOS](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/Aegis-1.0.0-macOS.dmg)
+**Or download the app:** [Windows](https://gitee.com/wan-xianghao/ai-aegis/releases) · [Linux](https://gitee.com/wan-xianghao/ai-aegis/releases) · [DEB](https://gitee.com/wan-xianghao/ai-aegis/releases) · [RPM](https://gitee.com/wan-xianghao/ai-aegis/releases) · [macOS](https://gitee.com/wan-xianghao/ai-aegis/releases)
 
 **Step 2 — Open the app**
 
@@ -459,17 +459,17 @@ No Python required. Download and run.
 
 | Platform | Download |
 |----------|----------|
-| Windows | [Aegis-v1.0.0-Windows-Setup.exe](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/Aegis-v1.0.0-Windows-Setup.exe) |
-| macOS | [Aegis-1.0.0-macOS.dmg](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/Aegis-1.0.0-macOS.dmg) |
-| Linux (AppImage) | [Aegis-1.0.0-x86_64.AppImage](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/Aegis-1.0.0-x86_64.AppImage) |
-| Linux (DEB) | [aegis_1.0.0_amd64.deb](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/aegis_1.0.0_amd64.deb) |
-| Linux (RPM) | [aegis-1.0.0-1.x86_64.rpm](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/aegis-1.0.0-1.x86_64.rpm) |
+| Windows | [Aegis-v1.0.0-Windows-Setup.exe](https://gitee.com/wan-xianghao/ai-aegis/releases) |
+| macOS | [Aegis-1.0.0-macOS.dmg](https://gitee.com/wan-xianghao/ai-aegis/releases) |
+| Linux (AppImage) | [Aegis-1.0.0-x86_64.AppImage](https://gitee.com/wan-xianghao/ai-aegis/releases) |
+| Linux (DEB) | [aegis_1.0.0_amd64.deb](https://gitee.com/wan-xianghao/ai-aegis/releases) |
+| Linux (RPM) | [aegis-1.0.0-1.x86_64.rpm](https://gitee.com/wan-xianghao/ai-aegis/releases) |
 
-[All Releases](https://github.com/Goodevenin9/ai-aegis/releases) · [SHA256 Checksums](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/SHA256SUMS.txt)
+[All Releases](https://gitee.com/wan-xianghao/ai-aegis/releases) · [SHA256 Checksums](https://gitee.com/wan-xianghao/ai-aegis/releases)
 
-> **Security:** Only download installers from this official GitHub repository. Always verify SHA256 checksums before installation. Aegis is not responsible for binaries obtained from third-party sources.
+> **Security:** Only download installers from this official Gitee repository. Always verify SHA256 checksums before installation. Aegis is not responsible for binaries obtained from third-party sources.
 
-> **macOS binary note:** **Only download from this official GitHub repository** and verify the [SHA256 checksum](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/SHA256SUMS.txt) before installing. (Prefer pip? `pip install ai-aegis[app]` always works too.)
+> **macOS binary note:** **Only download from this official GitHub repository** and verify the [SHA256 checksum](https://gitee.com/wan-xianghao/ai-aegis/releases) before installing. (Prefer pip? `pip install ai-aegis[app]` always works too.)
 
 ### Other install options
 
@@ -592,9 +592,9 @@ Every request is scanned for prompt injection. Every response is scanned for dat
 |--------|---------|
 | **PyPI** | `pip install --upgrade ai-aegis[app]` |
 | **Source** | `git pull && pip install -e ".[app]"` |
-| **Windows** | Download latest [.exe installer](https://github.com/Goodevenin9/ai-aegis/releases/latest) and run it (overwrites previous version) |
-| **macOS** | Download latest [.dmg](https://github.com/Goodevenin9/ai-aegis/releases/latest), drag to Applications |
-| **Linux AppImage** | Download latest [.AppImage](https://github.com/Goodevenin9/ai-aegis/releases/latest) and replace the old file |
+| **Windows** | Download latest [.exe installer](https://gitee.com/wan-xianghao/ai-aegis/releases) and run it (overwrites previous version) |
+| **macOS** | Download latest [.dmg](https://gitee.com/wan-xianghao/ai-aegis/releases), drag to Applications |
+| **Linux AppImage** | Download latest [.AppImage](https://gitee.com/wan-xianghao/ai-aegis/releases) and replace the old file |
 | **Linux DEB** | `sudo dpkg -i aegis_<version>_amd64.deb` |
 | **Linux RPM** | `sudo rpm -U aegis-<version>.x86_64.rpm` |
 
@@ -615,7 +615,7 @@ After updating, restart Aegis.
 ## Contributing
 
 ```bash
-git clone https://github.com/Goodevenin9/ai-aegis.git
+git clone https://gitee.com/wan-xianghao/ai-aegis.git
 cd aegis-ai-threat-monitor
 pip install -e ".[dev]"
 pytest tests/ -v
@@ -639,6 +639,6 @@ The starter SIEM dashboard templates under [`docs/siem/`](docs/siem/) (Splunk XM
 
 <div align="center">
 
-**[Get Started](#install)** · **[Documentation](docs/)** · **[GitHub Issues](https://github.com/Goodevenin9/ai-aegis/issues)**
+**[Get Started](#install)** · **[Documentation](docs/)** · **[GitHub Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)**
 
 </div>

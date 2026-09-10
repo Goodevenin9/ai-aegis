@@ -342,7 +342,7 @@ We carefully audit all dependencies:
 
 - **Security Issues:** GitHub security advisory (or contact@)
 - **Privacy Issues:** contact@
-- **General Issues:** [GitHub Issues](https://github.com/Goodevenin9/ai-aegis/issues)
+- **General Issues:** [GitHub Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)
 
 ### PGP Key (Optional)
 

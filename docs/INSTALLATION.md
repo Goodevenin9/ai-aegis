@@ -17,15 +17,15 @@ No Python required. Download and run.
 
 | Platform | Download |
 |----------|----------|
-| Windows | [Aegis-v3.4.0-Windows-Setup.exe](https://github.com/Goodevenin9/ai-aegis/releases/download/v3.4.0/Aegis-v3.4.0-Windows-Setup.exe) |
-| macOS | [Aegis-3.4.0-macOS.dmg](https://github.com/Goodevenin9/ai-aegis/releases/download/v3.4.0/Aegis-3.4.0-macOS.dmg) |
-| Linux (AppImage) | [Aegis-3.4.0-x86_64.AppImage](https://github.com/Goodevenin9/ai-aegis/releases/download/v3.4.0/Aegis-3.4.0-x86_64.AppImage) |
-| Linux (DEB) | [aegis_3.4.0_amd64.deb](https://github.com/Goodevenin9/ai-aegis/releases/download/v3.4.0/aegis_3.4.0_amd64.deb) |
-| Linux (RPM) | [aegis-3.4.0-1.x86_64.rpm](https://github.com/Goodevenin9/ai-aegis/releases/download/v3.4.0/aegis-3.4.0-1.x86_64.rpm) |
+| Windows | [Aegis-v3.4.0-Windows-Setup.exe](https://gitee.com/wan-xianghao/ai-aegis/releases) |
+| macOS | [Aegis-3.4.0-macOS.dmg](https://gitee.com/wan-xianghao/ai-aegis/releases) |
+| Linux (AppImage) | [Aegis-3.4.0-x86_64.AppImage](https://gitee.com/wan-xianghao/ai-aegis/releases) |
+| Linux (DEB) | [aegis_3.4.0_amd64.deb](https://gitee.com/wan-xianghao/ai-aegis/releases) |
+| Linux (RPM) | [aegis-3.4.0-1.x86_64.rpm](https://gitee.com/wan-xianghao/ai-aegis/releases) |
 
-[All Releases](https://github.com/Goodevenin9/ai-aegis/releases) · [SHA256 Checksums](https://github.com/Goodevenin9/ai-aegis/releases/download/v3.4.0/SHA256SUMS.txt)
+[All Releases](https://gitee.com/wan-xianghao/ai-aegis/releases) · [SHA256 Checksums](https://gitee.com/wan-xianghao/ai-aegis/releases)
 
-> **Security:** Only download installers from this official GitHub repository. Always verify SHA256 checksums before installation.
+> **Security:** Only download installers from this official Gitee repository. Always verify SHA256 checksums before installation.
 
 ---
 
@@ -200,7 +200,7 @@ pip install --upgrade ai-aegis[app]
 git pull && pip install -e ".[app]"
 ```
 
-For binary installers, download the latest version from [Releases](https://github.com/Goodevenin9/ai-aegis/releases/latest) and install over the existing version.
+For binary installers, download the latest version from [Releases](https://gitee.com/wan-xianghao/ai-aegis/releases) and install over the existing version.
 
 After updating, restart Aegis.
 
@@ -223,5 +223,5 @@ pip uninstall ai-aegis
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/Goodevenin9/ai-aegis/issues)
+- **Issues:** [GitHub Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)
 - **Documentation:** [docs.](https://docs.)

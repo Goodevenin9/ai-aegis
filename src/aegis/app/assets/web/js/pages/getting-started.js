@@ -1957,7 +1957,7 @@ const GettingStartedPage = {
         tplNote.style.cssText = 'margin-top:4px;padding:10px 12px;font-size:11.5px;color:var(--text-muted);line-height:1.55;background:var(--bg-tertiary);border:1px solid var(--border-default);border-radius:6px;';
         tplNote.innerHTML = `
             <strong style="color:var(--text-secondary);">Starter templates, not production-validated.</strong>
-            All four are MIT-licensed and provided AS-IS. Import into your own stack, verify panels render against real events, and adjust queries / facets to match your environment. See the <a href="https://github.com/Goodevenin9/ai-aegis/blob/master/docs/siem/NOTICE" target="_blank" rel="noopener" style="color:var(--accent-primary);text-decoration:underline;">NOTICE</a> for trademark + upstream-license attributions.
+            All four are MIT-licensed and provided AS-IS. Import into your own stack, verify panels render against real events, and adjust queries / facets to match your environment. See the <a href="https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/siem/NOTICE" target="_blank" rel="noopener" style="color:var(--accent-primary);text-decoration:underline;">NOTICE</a> for trademark + upstream-license attributions.
         `;
         dashBody.appendChild(tplNote);
 
@@ -2663,7 +2663,7 @@ const GettingStartedPage = {
         footer.style.cssText = 'margin-top: 12px; font-size: 12px; color: var(--text-secondary);';
         footer.appendChild(document.createTextNode('Still stuck? '));
         const issueLink = document.createElement('a');
-        issueLink.href = 'https://github.com/Goodevenin9/ai-aegis/issues';
+        issueLink.href = 'https://gitee.com/wan-xianghao/ai-aegis/issues';
         issueLink.target = '_blank';
         issueLink.style.cssText = 'color: var(--accent-primary); text-decoration: none;';
         issueLink.textContent = 'Open an issue on GitHub';

@@ -20,7 +20,7 @@ pip install ai-aegis
 pip install ai-aegis[mcp]
 ```
 
-Binary installers: [Windows](https://github.com/Goodevenin9/ai-aegis/releases/latest) | [macOS](https://github.com/Goodevenin9/ai-aegis/releases/latest) | [Linux](https://github.com/Goodevenin9/ai-aegis/releases/latest)
+Binary installers: [Windows](https://gitee.com/wan-xianghao/ai-aegis/releases) | [macOS](https://gitee.com/wan-xianghao/ai-aegis/releases) | [Linux](https://gitee.com/wan-xianghao/ai-aegis/releases)
 
 ---
 

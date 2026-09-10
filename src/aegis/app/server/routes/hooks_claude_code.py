@@ -423,7 +423,7 @@ def _load_known_marketplaces() -> dict:
 def _build_marketplace_manifest() -> dict:
     return {
         "name": MARKETPLACE_SLUG,
-        "owner": {"name": "Aegis", "url": "https://github.com/Goodevenin9/ai-aegis"},
+        "owner": {"name": "Aegis", "url": "https://gitee.com/wan-xianghao/ai-aegis"},
         "plugins": [
             {
                 "name": PLUGIN_NAME,
@@ -433,7 +433,7 @@ def _build_marketplace_manifest() -> dict:
                 ),
                 "source": "./",
                 "category": "security",
-                "homepage": "https://github.com/Goodevenin9/ai-aegis",
+                "homepage": "https://gitee.com/wan-xianghao/ai-aegis",
             }
         ],
     }

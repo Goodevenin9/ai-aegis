@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 PRICING_REMOTE_URL = (
-    "https://raw.githubusercontent.com/Goodevenin9/ai-aegis/"
+    "https://gitee.com/wan-xianghao/ai-aegis/raw/"
     "master/src/aegis/pricing/model_pricing.yml"
 )
 

@@ -271,7 +271,7 @@ Debugging:
   aegis-enhanced debug health --detailed                   # Health check
   aegis-enhanced debug simulate api --count 5              # Simulate API errors
 
-For detailed documentation: https://github.com/Goodevenin9/ai-aegis/tree/master/docs
+For detailed documentation: https://gitee.com/wan-xianghao/ai-aegis/tree/master/docs
         """
 
     async def run_command(self, args) -> int:

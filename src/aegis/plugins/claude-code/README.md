@@ -21,7 +21,7 @@ Every MCP tool call (`mcp__<server>__<tool>`) that the host issues passes throug
 
 - [Claude Code](https://www.anthropic.com/code) ≥ the version that supports plugins with `.claude-plugin/plugin.json` manifests
 - Node.js 18+ (the host uses its own Node runtime; no separate install required)
-- A running local [Aegis AI Threat Monitor](https://github.com/Goodevenin9/ai-aegis) app on `http://127.0.0.1:8741` (or override via `AEGIS_ENGINE_ENDPOINT` env var)
+- A running local [Aegis AI Threat Monitor](https://gitee.com/wan-xianghao/ai-aegis) app on `http://127.0.0.1:8741` (or override via `AEGIS_ENGINE_ENDPOINT` env var)
 
 ## Installation
 

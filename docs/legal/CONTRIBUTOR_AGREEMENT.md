@@ -1,7 +1,7 @@
 # Aegis Contributor Agreement
 
 **Project:** Aegis AI Threat Monitor  
-**Repository:** https://github.com/Goodevenin9/ai-aegis
+**Repository:** https://gitee.com/wan-xianghao/ai-aegis
 **Effective Date:** January 1, 2025
 
 ---

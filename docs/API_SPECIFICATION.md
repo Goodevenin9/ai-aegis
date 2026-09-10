@@ -234,5 +234,5 @@ export AEGIS_API_URL="http://127.0.0.1:8780"
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/Goodevenin9/ai-aegis/issues)
+- **Issues:** [GitHub Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)
 - **Documentation:** [docs.](https://docs.)

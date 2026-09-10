@@ -604,7 +604,7 @@ _PACKAGE_JSON = """{
   "keywords": ["openclaw", "openclaw-plugin", "security", "threat-detection", "ai-safety"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Goodevenin9/ai-aegis"
+    "url": "https://gitee.com/wan-xianghao/ai-aegis"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -30,7 +30,7 @@ Cursor splits enforcement across event-typed hooks (not one unified PreToolUse),
 
 - [Cursor](https://cursor.com) 1.7+ with Hooks support
 - Node.js 18+ on PATH (the hook commands run `node`)
-- A running local [Aegis AI Threat Monitor](https://github.com/Goodevenin9/ai-aegis) app on `http://127.0.0.1:8741` (or override via `AEGIS_ENGINE_ENDPOINT`)
+- A running local [Aegis AI Threat Monitor](https://gitee.com/wan-xianghao/ai-aegis) app on `http://127.0.0.1:8741` (or override via `AEGIS_ENGINE_ENDPOINT`)
 
 ## Installation
 
@@ -62,7 +62,7 @@ export AEGIS_ENGINE_ENDPOINT="https://<your-engine-endpoint>"   # legacy: AEGIS_
 
 ## License
 
-Apache 2.0. Source at <https://github.com/Goodevenin9/ai-aegis> under `src/aegis/plugins/cursor/`.
+Apache 2.0. Source at <https://gitee.com/wan-xianghao/ai-aegis> under `src/aegis/plugins/cursor/`.
 
 ## Disclaimer
 

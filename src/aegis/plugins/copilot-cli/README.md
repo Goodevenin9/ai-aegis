@@ -28,7 +28,7 @@ Every tool call your Copilot CLI session issues passes through hooks installed b
 
 - [GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli) with the plugin/hooks system
 - Node.js 18+ (Copilot uses its own Node runtime; no separate install required)
-- A running local [Aegis AI Threat Monitor](https://github.com/Goodevenin9/ai-aegis) app on `http://127.0.0.1:8741` (or override via `AEGIS_ENGINE_ENDPOINT`)
+- A running local [Aegis AI Threat Monitor](https://gitee.com/wan-xianghao/ai-aegis) app on `http://127.0.0.1:8741` (or override via `AEGIS_ENGINE_ENDPOINT`)
 
 ## Installation
 
@@ -74,7 +74,7 @@ export AEGIS_ENGINE_ENDPOINT="https://<your-engine-endpoint>"   # legacy: AEGIS_
 
 ## License
 
-Apache 2.0. Source at <https://github.com/Goodevenin9/ai-aegis> under `src/aegis/plugins/copilot-cli/`.
+Apache 2.0. Source at <https://gitee.com/wan-xianghao/ai-aegis> under `src/aegis/plugins/copilot-cli/`.
 
 ## Disclaimer
 

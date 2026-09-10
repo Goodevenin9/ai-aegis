@@ -24,7 +24,7 @@ Every network-bound surface talks to **loopback HTTP** at `http://127.0.0.1:8741
 
 The plugin writes no files to disk.
 
-For anything the companion app does with hook payloads after they arrive (local SQLite persistence, optional Cloud Connect, SIEM forwarding, retention, deletion), see the companion app's privacy documentation: <https://github.com/Goodevenin9/ai-aegis>.
+For anything the companion app does with hook payloads after they arrive (local SQLite persistence, optional Cloud Connect, SIEM forwarding, retention, deletion), see the companion app's privacy documentation: <https://gitee.com/wan-xianghao/ai-aegis>.
 
 ## Client-side redaction before any POST
 
@@ -53,8 +53,8 @@ Once uninstalled, no hook events are read and no POSTs are made.
 
 ## Source code & licence
 
-Apache-2.0, published at <https://github.com/Goodevenin9/ai-aegis> under `src/aegis/plugins/copilot-cli/`. The redactor, all hook scripts, the hook manifest, and the HTTP client are auditable — we encourage reviewing them before installation.
+Apache-2.0, published at <https://gitee.com/wan-xianghao/ai-aegis> under `src/aegis/plugins/copilot-cli/`. The redactor, all hook scripts, the hook manifest, and the HTTP client are auditable — we encourage reviewing them before installation.
 
 ## Contact
 
-Privacy questions: **GitHub security advisory**, or open an issue at <https://github.com/Goodevenin9/ai-aegis/issues>.
+Privacy questions: **GitHub security advisory**, or open an issue at <https://gitee.com/wan-xianghao/ai-aegis/issues>.

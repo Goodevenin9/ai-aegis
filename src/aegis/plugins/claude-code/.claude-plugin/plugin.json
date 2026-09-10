@@ -4,10 +4,10 @@
   "description": "Real-time policy enforcement and tamper-evident audit for tool calls (MCP and built-in) in a Claude Code session. Forwards every tool call to a local Aegis app for cloud-managed deny rules and persistent audit logging. Fails open if the local app is unreachable.",
   "author": {
     "name": "Aegis",
-    "url": "https://github.com/Goodevenin9/ai-aegis"
+    "url": "https://gitee.com/wan-xianghao/ai-aegis"
   },
-  "homepage": "https://github.com/Goodevenin9/ai-aegis",
-  "repository": "https://github.com/Goodevenin9/ai-aegis",
+  "homepage": "https://gitee.com/wan-xianghao/ai-aegis",
+  "repository": "https://gitee.com/wan-xianghao/ai-aegis",
   "license": "Apache-2.0",
   "keywords": [
     "security",

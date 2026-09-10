@@ -15,7 +15,7 @@ rules:
     references:
     - description: Community-developed methodology inspired by OWASP research
       title: Aegis Prompt Injection Detection
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - prompt_injection
@@ -74,7 +74,7 @@ rules:
     references:
     - description: Community-developed methodology for output validation
       title: Aegis Output Security Analysis
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - output_validation

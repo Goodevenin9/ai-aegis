@@ -58,5 +58,5 @@ ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 LABEL org.opencontainers.image.title="Aegis Engine" \
       org.opencontainers.image.description="AI Aegis threat-monitor engine for self-hosted deployments." \
-      org.opencontainers.image.source="https://github.com/Goodevenin9/ai-aegis" \
+      org.opencontainers.image.source="https://gitee.com/wan-xianghao/ai-aegis" \
       org.opencontainers.image.licenses="Apache-2.0"

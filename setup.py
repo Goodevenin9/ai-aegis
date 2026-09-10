@@ -26,7 +26,7 @@ setup(
     description="Real-time AI threat monitoring. Protect your apps from prompt injection, leaks, and attacks in just a few lines of code.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/Goodevenin9/ai-aegis",
+    url="https://gitee.com/wan-xianghao/ai-aegis",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     classifiers=[
@@ -195,9 +195,9 @@ setup(
     },
     keywords="ai security llm prompt-injection threat-detection threat-monitoring openai claude aegis",
     project_urls={
-        "Bug Reports": "https://github.com/Goodevenin9/ai-aegis/issues",
-        "Source": "https://github.com/Goodevenin9/ai-aegis",
-        "Documentation": "https://github.com/Goodevenin9/ai-aegis/tree/master/docs",
-        "Homepage": "https://github.com/Goodevenin9/ai-aegis",
+        "Bug Reports": "https://gitee.com/wan-xianghao/ai-aegis/issues",
+        "Source": "https://gitee.com/wan-xianghao/ai-aegis",
+        "Documentation": "https://gitee.com/wan-xianghao/ai-aegis/tree/master/docs",
+        "Homepage": "https://gitee.com/wan-xianghao/ai-aegis",
     },
 )

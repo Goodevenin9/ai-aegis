@@ -40,7 +40,7 @@ Examples:
   aegis config --show          # Show current configuration
   aegis rules --list           # List available rules
 
-For more information, visit: https://github.com/Goodevenin9/ai-aegis
+For more information, visit: https://gitee.com/wan-xianghao/ai-aegis
             """,
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )

@@ -10,7 +10,7 @@ rules:
     references:
     - description: Community-developed detection patterns for injection attacks
       title: Aegis Process Injection Analysis
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - injection
@@ -54,7 +54,7 @@ rules:
     references:
     - description: Community-developed patterns for data theft attempts
       title: Aegis Data Exfiltration Analysis
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - exfiltration
@@ -98,7 +98,7 @@ rules:
     references:
     - description: Community-developed patterns for detecting credential access attempts
       title: Aegis Credential Security Analysis
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - credentials
@@ -146,7 +146,7 @@ rules:
     references:
     - description: Community-based detection of covert communication channels
       title: Aegis Protocol Security Analysis
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - communication
@@ -190,7 +190,7 @@ rules:
     references:
     - description: Detection patterns for account discovery attempts
       title: Aegis Account Security Analysis
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - discovery
@@ -235,7 +235,7 @@ rules:
     references:
     - description: Community patterns for detecting command execution attempts
       title: Aegis Command Security Analysis
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - execution
@@ -297,7 +297,7 @@ rules:
     references:
     - description: Community-based detection of phishing and social engineering attempts
       title: Aegis Social Engineering Analysis
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - phishing
@@ -341,7 +341,7 @@ rules:
     references:
     - description: Detection patterns for content disguise and impersonation
       title: Aegis Masquerading Analysis
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - masquerading

@@ -92,7 +92,7 @@ async function main() {
         'Aegis Guard is installed but INACTIVE: the local Aegis app at '
         + baseUrl + ' is not reachable, so tool calls are NOT being enforced or audited '
         + 'this session (failing open). Install and start the free Aegis app to '
-        + 'activate policy enforcement + tamper-evident audit. See https://github.com/Goodevenin9/ai-aegis\n',
+        + 'activate policy enforcement + tamper-evident audit. See https://gitee.com/wan-xianghao/ai-aegis\n',
       );
     }
   } catch { /* fail-open — never block session startup */ }

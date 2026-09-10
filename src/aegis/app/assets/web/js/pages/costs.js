@@ -2057,13 +2057,13 @@ const CostsPage = {
         syncBtn.id = 'sync-pricing-btn';
         syncBtn.textContent = this.syncInProgress ? 'Syncing…' : 'Sync Prices';
         syncBtn.disabled = this.syncInProgress;
-        syncBtn.title = 'Fetches the latest model_pricing.yml from Goodevenin9/ai-aegis (master) and updates the local database. Pricing is also refreshed from the bundled YAML on app startup.';
+        syncBtn.title = 'Fetches the latest model_pricing.yml from wan-xianghao/ai-aegis (master) and updates the local database. Pricing is also refreshed from the bundled YAML on app startup.';
         syncBtn.addEventListener('click', () => this._syncPricing());
         toolbar.appendChild(syncBtn);
 
         const syncInfo = document.createElement('span');
         syncInfo.style.cssText = 'font-size: 12px; color: var(--text-muted); margin-left: 8px;';
-        syncInfo.textContent = 'Pulls from Goodevenin9/ai-aegis. Also auto-updates on app restart.';
+        syncInfo.textContent = 'Pulls from wan-xianghao/ai-aegis. Also auto-updates on app restart.';
         toolbar.appendChild(syncInfo);
 
         if (this.lastSyncedAt) {

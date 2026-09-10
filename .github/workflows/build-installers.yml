@@ -486,14 +486,14 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           PKG_NAME: ${{ steps.version.outputs.pkg_name }}
         run: |
-          fpm -s dir -t deb -n "${PKG_NAME}" -v "${VERSION}" --description "Aegis AI Threat Monitor" --url "https://github.com/Goodevenin9/ai-aegis" --maintainer "Aegis" --license "Apache-2.0" -C package .
+          fpm -s dir -t deb -n "${PKG_NAME}" -v "${VERSION}" --description "Aegis AI Threat Monitor" --url "https://gitee.com/wan-xianghao/ai-aegis" --maintainer "Aegis" --license "Apache-2.0" -C package .
 
       - name: Build .rpm package
         env:
           VERSION: ${{ steps.version.outputs.version }}
           PKG_NAME: ${{ steps.version.outputs.pkg_name }}
         run: |
-          fpm -s dir -t rpm -n "${PKG_NAME}" -v "${VERSION}" --description "Aegis AI Threat Monitor" --url "https://github.com/Goodevenin9/ai-aegis" --maintainer "Aegis" --license "Apache-2.0" -C package .
+          fpm -s dir -t rpm -n "${PKG_NAME}" -v "${VERSION}" --description "Aegis AI Threat Monitor" --url "https://gitee.com/wan-xianghao/ai-aegis" --maintainer "Aegis" --license "Apache-2.0" -C package .
 
       - name: Build AppImage
         env:

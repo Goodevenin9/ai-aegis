@@ -987,4 +987,4 @@ async def chat(message: str):
 - **Enterprise security**: Consider **both**
 - **Still unsure**: Try **MCP Server** first (easier to experiment)
 
-For specific questions about your use case, check our [GitHub Discussions](https://github.com/Goodevenin9/ai-aegis/discussions) or review the main [README.md](README.md) for detailed implementation guides.
+For specific questions about your use case, check our [GitHub Discussions](https://gitee.com/wan-xianghao/ai-aegis/issues) or review the main [README.md](README.md) for detailed implementation guides.

@@ -27,7 +27,7 @@ In addition to the POSTs listed in the table above, the `PreToolUse` and `PostTo
 
 The plugin writes no files to disk. (The Claude Code plugin's Stop-event probe is intentionally NOT ported to Codex — Codex's Stop event has a different shape and no probe is required.)
 
-For anything the companion app does with hook payloads after they arrive (local SQLite persistence, optional Cloud Connect, SIEM forwarding, retention windows, deletion), see the companion app's privacy documentation: <https://github.com/Goodevenin9/ai-aegis>.
+For anything the companion app does with hook payloads after they arrive (local SQLite persistence, optional Cloud Connect, SIEM forwarding, retention windows, deletion), see the companion app's privacy documentation: <https://gitee.com/wan-xianghao/ai-aegis>.
 
 ## Client-side redaction before any POST
 
@@ -69,7 +69,7 @@ Once uninstalled, no hook events are read and no POSTs are made.
 
 ## Source code & licence
 
-The plugin is **Apache-2.0 licensed** and published at <https://github.com/Goodevenin9/ai-aegis> under `src/aegis/plugins/codex/`. The redactor ([`lib/redact.js`](./lib/redact.js)), all three hook scripts ([`hooks/*.js`](./hooks/)), the hook manifest ([`hooks/hooks.json`](./hooks/hooks.json)), and the HTTP client ([`lib/client.js`](./lib/client.js)) are auditable — we encourage reviewing them before installation.
+The plugin is **Apache-2.0 licensed** and published at <https://gitee.com/wan-xianghao/ai-aegis> under `src/aegis/plugins/codex/`. The redactor ([`lib/redact.js`](./lib/redact.js)), all three hook scripts ([`hooks/*.js`](./hooks/)), the hook manifest ([`hooks/hooks.json`](./hooks/hooks.json)), and the HTTP client ([`lib/client.js`](./lib/client.js)) are auditable — we encourage reviewing them before installation.
 
 ## Changes to this policy
 
@@ -77,4 +77,4 @@ We may update this policy from time to time. Material changes will bump the **La
 
 ## Contact
 
-For privacy questions about the plugin, email **GitHub security advisory**, or open an issue at <https://github.com/Goodevenin9/ai-aegis/issues>.
+For privacy questions about the plugin, email **GitHub security advisory**, or open an issue at <https://gitee.com/wan-xianghao/ai-aegis/issues>.

@@ -40,7 +40,7 @@ A successful verification reports the source commit, the GitHub Actions workflow
 
 ```sh
 cosign verify-blob \
-    --certificate-identity-regexp "https://github.com/Goodevenin9/ai-aegis/.github/workflows/release.yml@.*" \
+    --certificate-identity-regexp "https://gitee.com/wan-xianghao/ai-aegis/.github/workflows/release.yml@.*" \
     --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
     --bundle <attestation-bundle.json> \
     <wheel-file>

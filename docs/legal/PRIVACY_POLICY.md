@@ -371,7 +371,7 @@ Aegis AI Threat Monitor is not directed at children under 13 (or 16 in EU).
 
 **Privacy Questions:**
 - Email: contact@
-- GitHub: Create issue with "privacy" label at https://github.com/Goodevenin9/ai-aegis/issues
+- GitHub: Create issue with "privacy" label at https://gitee.com/wan-xianghao/ai-aegis/issues
 - Response time: 30 days maximum
 
 **Data Protection Officer:**

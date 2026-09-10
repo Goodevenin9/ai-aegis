@@ -114,7 +114,7 @@ ERROR_SOLUTIONS = {
             "Switch to local mode: AegisClient(mode='local')",
             "Use hybrid mode for automatic fallback",
         ],
-        "https://github.com/Goodevenin9/ai-aegis/tree/master/docs",
+        "https://gitee.com/wan-xianghao/ai-aegis/tree/master/docs",
     ),
     ErrorCode.API_CONNECTION_FAILED: ErrorSolution(
         ErrorCode.API_CONNECTION_FAILED,
@@ -127,7 +127,7 @@ ERROR_SOLUTIONS = {
             "Enable hybrid mode for automatic fallback",
             "Check if firewall is blocking the connection",
         ],
-        "https://github.com/Goodevenin9/ai-aegis/issues",
+        "https://gitee.com/wan-xianghao/ai-aegis/issues",
     ),
     ErrorCode.VALIDATION_EMPTY_PROMPT: ErrorSolution(
         ErrorCode.VALIDATION_EMPTY_PROMPT,
@@ -160,7 +160,7 @@ ERROR_SOLUTIONS = {
             "Upgrade to higher rate limit plan",
             "Use batch processing for multiple prompts",
         ],
-        "https://github.com/Goodevenin9/ai-aegis/tree/master/docs",
+        "https://gitee.com/wan-xianghao/ai-aegis/tree/master/docs",
     ),
     ErrorCode.RULES_LOAD_FAILED: ErrorSolution(
         ErrorCode.RULES_LOAD_FAILED,
@@ -172,7 +172,7 @@ ERROR_SOLUTIONS = {
             "Reinstall the package to restore community rules",
             "Check file permissions on rules directory",
         ],
-        "https://github.com/Goodevenin9/ai-aegis/tree/master/docs",
+        "https://gitee.com/wan-xianghao/ai-aegis/tree/master/docs",
     ),
 }
 

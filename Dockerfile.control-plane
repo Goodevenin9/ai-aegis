@@ -30,5 +30,5 @@ CMD ["aegis-control-plane"]
 
 LABEL org.opencontainers.image.title="AI Aegis Control Plane" \
       org.opencontainers.image.description="Self-hosted device enrollment and signed policy distribution." \
-      org.opencontainers.image.source="https://github.com/Goodevenin9/ai-aegis" \
+      org.opencontainers.image.source="https://gitee.com/wan-xianghao/ai-aegis" \
       org.opencontainers.image.licenses="Apache-2.0"

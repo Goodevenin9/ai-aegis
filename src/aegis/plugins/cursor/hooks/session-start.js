@@ -67,7 +67,7 @@ async function main() {
         + baseUrl + ' is not reachable, so the Cursor agent\'s tool calls are NOT being '
         + 'enforced or audited this session (failing open). Install and start the free '
         + 'Aegis app to activate policy enforcement + tamper-evident audit. '
-        + 'See https://github.com/Goodevenin9/ai-aegis\n',
+        + 'See https://gitee.com/wan-xianghao/ai-aegis\n',
       );
     }
   } catch { /* fail-open — never block session startup */ }

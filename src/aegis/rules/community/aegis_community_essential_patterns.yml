@@ -16,7 +16,7 @@ rules:
     references:
     - description: Core security patterns for all local deployments
       title: Aegis Essential Security Patterns
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - instruction_override
@@ -84,7 +84,7 @@ rules:
     references:
     - description: Essential detection of harmful persona activation
       title: Aegis Jailbreak Persona Detection
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - persona_activation
@@ -149,7 +149,7 @@ rules:
     references:
     - description: Essential credential extraction prevention
       title: Aegis Credential Protection
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - credential_extraction
@@ -214,7 +214,7 @@ rules:
     references:
     - description: Essential safety mechanism protection
       title: Aegis Safety Bypass Detection
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - safety_bypass
@@ -279,7 +279,7 @@ rules:
     references:
     - description: Detection of system reconnaissance attempts
       title: Aegis System Probing Detection
-      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://gitee.com/wan-xianghao/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - system_probing

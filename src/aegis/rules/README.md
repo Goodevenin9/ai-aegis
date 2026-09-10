@@ -201,8 +201,8 @@ Users can adjust rule behavior by:
 - **API Mode**: Get real-time updates via Aegis API
 
 ### Getting Help
-- **Documentation**: [https://github.com/Goodevenin9/ai-aegis/tree/master/docs](https://github.com/Goodevenin9/ai-aegis/tree/master/docs)
-- **Support**: [GitHub Issues](https://github.com/Goodevenin9/ai-aegis/issues)
+- **Documentation**: [https://gitee.com/wan-xianghao/ai-aegis/tree/master/docs](https://gitee.com/wan-xianghao/ai-aegis/tree/master/docs)
+- **Support**: [GitHub Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)
 - **Security Issues**: GitHub security advisory (for security vulnerabilities)
 
 ---

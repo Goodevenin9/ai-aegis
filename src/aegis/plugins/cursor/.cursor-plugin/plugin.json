@@ -4,10 +4,10 @@
   "version": "4.6.0",
   "author": {
     "name": "Aegis",
-    "url": "https://github.com/Goodevenin9/ai-aegis"
+    "url": "https://gitee.com/wan-xianghao/ai-aegis"
   },
-  "homepage": "https://github.com/Goodevenin9/ai-aegis",
-  "repository": "https://github.com/Goodevenin9/ai-aegis",
+  "homepage": "https://gitee.com/wan-xianghao/ai-aegis",
+  "repository": "https://gitee.com/wan-xianghao/ai-aegis",
   "license": "Apache-2.0",
   "logo": "./favicon.ico",
   "category": "Security",

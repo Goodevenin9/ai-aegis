@@ -22,7 +22,7 @@ Every tool call your Codex session issues passes through three hooks installed b
 
 - [OpenAI Codex CLI](https://github.com/openai/codex) ≥ 0.133.0 (the version that supports `codex plugin marketplace` / `codex plugin add`)
 - Node.js 18+ (Codex uses its own Node runtime; no separate install required)
-- A running local [Aegis AI Threat Monitor](https://github.com/Goodevenin9/ai-aegis) app on `http://127.0.0.1:8741` (or override via `AEGIS_ENGINE_ENDPOINT` env var)
+- A running local [Aegis AI Threat Monitor](https://gitee.com/wan-xianghao/ai-aegis) app on `http://127.0.0.1:8741` (or override via `AEGIS_ENGINE_ENDPOINT` env var)
 
 ## Installation
 
@@ -108,7 +108,7 @@ Codex's statusline (`status_line` config field and `/statusline` slash command) 
 
 ## License
 
-Apache 2.0. Source at <https://github.com/Goodevenin9/ai-aegis> under `src/aegis/plugins/codex/`.
+Apache 2.0. Source at <https://gitee.com/wan-xianghao/ai-aegis> under `src/aegis/plugins/codex/`.
 
 ## Disclaimer
 
