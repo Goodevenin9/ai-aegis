@@ -37,7 +37,7 @@ async def test_manifest_drives_pretool_capability_when_adapter_does_not_supply_o
 
 
 @pytest.mark.asyncio
-async def test_pipeline_config_is_persisted_and_applied(tmp_path, monkeypatch):
+async def test_pipeline_config_direct_write_is_rejected_in_favour_of_agent_approval(tmp_path, monkeypatch):
     db = DatabaseConnection(tmp_path / "p1-config.db")
     await run_migrations(db)
     repo = RuntimePolicyRepository(db)
@@ -52,13 +52,14 @@ async def test_pipeline_config_is_persisted_and_applied(tmp_path, monkeypatch):
             x_aegis_ui_token=None,
         )
     assert getattr(denied.value, "status_code", None) == 403
-    saved = await runtime_pipeline.update_pipeline_config(
-        runtime_pipeline.PipelineConfigRequest(confirm_threshold=20, block_threshold=60),
-        x_aegis_ui_token=token,
-    )
-
-    assert saved["version"] == 1
-    assert (await runtime_pipeline.get_pipeline_config())["config"]["confirm_threshold"] == 20
+    with pytest.raises(HTTPException) as governed:
+        await runtime_pipeline.update_pipeline_config(
+            runtime_pipeline.PipelineConfigRequest(confirm_threshold=20, block_threshold=60),
+            x_aegis_ui_token=token,
+        )
+    assert governed.value.status_code == 409
+    assert "policy_change" in str(governed.value.detail)
+    assert (await runtime_pipeline.get_pipeline_config())["config"]["confirm_threshold"] != 20
     await db.disconnect()
 
 

@@ -79,11 +79,10 @@ const API = {
     },
 
     async updateRuntimePipelineConfig(config) {
-        const token = await this._getJitToken();
-        return this.request('/api/runtime/config', {
-            method: 'PUT',
-            headers: { 'X-Aegis-UI-Token': token },
-            body: JSON.stringify(config),
+        return this.startSecurityAgent({
+            query: 'Simulate and propose this five-stage pipeline configuration change.',
+            requested_task: 'policy_change',
+            policy_changes: config,
         });
     },
 

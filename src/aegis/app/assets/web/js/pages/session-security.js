@@ -126,8 +126,8 @@ const SessionSecurityPage = {
         const keys = ['confirm_threshold', 'block_threshold', 'theme_shift_weight', 'permission_probe_weight', 'request_escalation_weight', 'repeated_retry_weight', 'third_retry_weight', 'max_drift_score', 'max_immune_session_score'];
         const status = document.getElementById('ss-config-status');
         try {
-            await API.updateRuntimePipelineConfig(Object.fromEntries(keys.map(key => [key, Number(form.get(key))])));
-            status.textContent = 'Saved';
+            const run = await API.updateRuntimePipelineConfig(Object.fromEntries(keys.map(key => [key, Number(form.get(key))])));
+            status.textContent = `Proposal ${run.run_id || ''} created. Review and approve it in Security Operations.`;
         } catch (error) { status.textContent = error.message; }
     },
 

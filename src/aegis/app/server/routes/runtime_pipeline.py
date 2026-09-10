@@ -475,19 +475,13 @@ async def update_pipeline_config(
     from aegis.app.server.routes.jit_access import _require_ui_token
 
     _require_ui_token(x_aegis_ui_token)
-    if request.confirm_threshold >= request.block_threshold:
-        raise HTTPException(status_code=422, detail="confirm_threshold must be below block_threshold")
-    if request.block_threshold > request.max_drift_score:
-        raise HTTPException(status_code=422, detail="block_threshold exceeds max_drift_score")
-    if request.max_immune_session_score >= request.block_threshold:
-        raise HTTPException(
-            status_code=422,
-            detail="immune evidence alone must remain below block_threshold",
-        )
-    config = PipelineConfig(**request.model_dump())
-    if not _policy_repository:
-        raise HTTPException(status_code=503, detail="runtime policy persistence unavailable")
-    return await _policy_repository.save_config(config)
+    raise HTTPException(
+        status_code=409,
+        detail=(
+            "Direct policy writes are disabled; create a policy_change Security Agent run, "
+            "review its simulation, and approve the exact proposal hash"
+        ),
+    )
 
 
 @router.get("/immunity/antibodies")
