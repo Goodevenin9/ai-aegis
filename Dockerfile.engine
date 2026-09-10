@@ -1,6 +1,6 @@
 # AI Aegis Engine — headless web-server image built from this repository.
 # Multi-platform: linux/amd64, linux/arm64.
-# Published to: ghcr.io/Goodevenin9/ai-aegis
+# Not published to any registry — build it locally (see docker-compose.self-host.yml).
 #
 # Runtime contract:
 #   - serves on $PORT (default 8741) bound to 0.0.0.0
