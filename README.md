@@ -616,10 +616,12 @@ After updating, restart Aegis.
 
 ```bash
 git clone https://gitee.com/wan-xianghao/ai-aegis.git
-cd aegis-ai-threat-monitor
+cd ai-aegis
 pip install -e ".[dev]"
 pytest tests/ -v
 ```
+
+> **About CI:** the workflow definitions in `.github/workflows/` are written for GitHub Actions, which does not run on Gitee. They are kept as the project's CI configuration; the Gitee mirror hosts the source and the releases. The command above is what they would run.
 
 [Contributing Guidelines](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/legal/CONTRIBUTOR_AGREEMENT.md) · [Code of Conduct](https://gitee.com/wan-xianghao/ai-aegis/blob/master/.github/CODE_OF_CONDUCT.md)
 
