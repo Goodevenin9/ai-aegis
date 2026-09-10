@@ -227,6 +227,13 @@ class RuntimeSessionRepository:
             """,
             (session_key,),
         )
+        if not rows:
+            return {
+                "valid": False,
+                "broken_seq": None,
+                "checked": 0,
+                "reason": "session_not_found",
+            }
         timeline = []
         for row in rows:
             event = dict(row)

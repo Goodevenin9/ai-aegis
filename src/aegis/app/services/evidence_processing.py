@@ -6,6 +6,7 @@ import csv
 import hashlib
 import io
 import json
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -31,6 +32,9 @@ class EvidenceProcessor:
     _CSV_EXTENSIONS = {".csv", ".tsv"}
     _DOCUMENT_EXTENSIONS = {".pdf", ".docx"}
     _IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".bmp"}
+    _MAX_DOCX_ENTRIES = 5000
+    _MAX_DOCX_UNCOMPRESSED_BYTES = 100 * 1024 * 1024
+    _MAX_DOCX_COMPRESSION_RATIO = 200
 
     def __init__(
         self,
@@ -152,19 +156,36 @@ class EvidenceProcessor:
         except Exception as exc:
             raise ValueError("PDF evidence could not be parsed") from exc
 
-    @staticmethod
-    def _extract_docx(data: bytes) -> str:
+    @classmethod
+    def _extract_docx(cls, data: bytes) -> str:
         try:
             from docx import Document
         except ImportError as exc:  # pragma: no cover
             raise ValueError("Word extraction dependency is unavailable") from exc
         try:
+            with zipfile.ZipFile(io.BytesIO(data)) as archive:
+                entries = archive.infolist()
+                if len(entries) > cls._MAX_DOCX_ENTRIES:
+                    raise ValueError("DOCX archive entry limit exceeded")
+                if sum(entry.file_size for entry in entries) > cls._MAX_DOCX_UNCOMPRESSED_BYTES:
+                    raise ValueError("DOCX archive expansion limit exceeded")
+                for entry in entries:
+                    if entry.flag_bits & 0x1:
+                        raise ValueError("encrypted DOCX evidence is not supported")
+                    if (
+                        entry.file_size >= 5 * 1024 * 1024
+                        and entry.compress_size > 0
+                        and entry.file_size / entry.compress_size > cls._MAX_DOCX_COMPRESSION_RATIO
+                    ):
+                        raise ValueError("DOCX archive expansion ratio exceeded")
             document = Document(io.BytesIO(data))
             parts = [paragraph.text for paragraph in document.paragraphs if paragraph.text]
             for table in document.tables:
                 for row in table.rows:
                     parts.append(" | ".join(cell.text for cell in row.cells))
             return "\n".join(parts)
+        except ValueError:
+            raise
         except Exception as exc:
             raise ValueError("Word evidence could not be parsed") from exc
 

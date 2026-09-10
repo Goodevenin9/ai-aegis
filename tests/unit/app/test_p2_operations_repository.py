@@ -59,6 +59,7 @@ async def test_confirmed_incident_memory_requires_evidence_and_can_be_deleted(op
     )
 
     assert (await operations_repo.list_memories(memory_type="incident"))[0]["confirmed"] is True
+    assert memory["expires_at"] is not None
     assert await operations_repo.delete_memory(memory["memory_id"]) is True
     assert await operations_repo.list_memories(memory_type="incident") == []
 

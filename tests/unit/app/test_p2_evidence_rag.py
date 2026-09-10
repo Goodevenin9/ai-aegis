@@ -1,5 +1,8 @@
 """Public behavior tests for P2 evidence ingestion and security RAG."""
 
+import io
+import zipfile
+
 from aegis.app.services.evidence_processing import EvidenceProcessor
 from aegis.app.services.security_rag import SecurityChunk, SecurityRAG
 
@@ -35,6 +38,18 @@ def test_unsupported_binary_is_rejected_before_storage():
         assert "unsupported evidence type" in str(exc)
     else:
         raise AssertionError("arbitrary binary uploads must be rejected")
+
+
+def test_docx_zip_bomb_is_rejected_before_parser_expansion():
+    payload = io.BytesIO()
+    with zipfile.ZipFile(payload, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("word/document.xml", b"0" * (6 * 1024 * 1024))
+    try:
+        EvidenceProcessor().process("bomb.docx", payload.getvalue())
+    except ValueError as exc:
+        assert "DOCX archive expansion" in str(exc)
+    else:
+        raise AssertionError("high-ratio DOCX archive must be rejected")
 
 
 def test_hybrid_rag_combines_exact_security_terms_and_context_with_citations():

@@ -215,6 +215,8 @@ class SecurityOperationsRepository:
             unknown = sorted(set(evidence) - known)
             if unknown:
                 raise ValueError("incident memory contains unknown evidence IDs")
+        if memory_type == "incident" and ttl_days is None:
+            ttl_days = 365
         expires_at = None
         if ttl_days is not None:
             expires_at = (

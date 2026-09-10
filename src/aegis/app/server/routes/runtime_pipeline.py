@@ -468,7 +468,13 @@ async def get_pipeline_config() -> dict[str, Any]:
 
 
 @router.put("/config")
-async def update_pipeline_config(request: PipelineConfigRequest) -> dict[str, Any]:
+async def update_pipeline_config(
+    request: PipelineConfigRequest,
+    x_aegis_ui_token: Optional[str] = Header(None),
+) -> dict[str, Any]:
+    from aegis.app.server.routes.jit_access import _require_ui_token
+
+    _require_ui_token(x_aegis_ui_token)
     if request.confirm_threshold >= request.block_threshold:
         raise HTTPException(status_code=422, detail="confirm_threshold must be below block_threshold")
     if request.block_threshold > request.max_drift_score:

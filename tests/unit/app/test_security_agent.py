@@ -63,6 +63,16 @@ async def test_policy_change_pauses_for_exact_proposal_approval_then_applies_onc
         waiting["run_id"], decision="approve", proposal_hash=proposal_hash,
         approved_by="security-admin",
     )
+    with pytest.raises(ValueError, match="proposal hash"):
+        await agent.resume(
+            waiting["run_id"], decision="approve", proposal_hash="wrong-hash",
+            approved_by="security-admin",
+        )
+    with pytest.raises(ValueError, match="approve decision"):
+        await agent.resume(
+            waiting["run_id"], decision="reject", proposal_hash=proposal_hash,
+            approved_by="security-admin",
+        )
 
     assert completed["status"] == "completed"
     assert (await policy.get_config()).confirm_threshold == 45

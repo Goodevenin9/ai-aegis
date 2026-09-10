@@ -1,6 +1,7 @@
 """P1 contracts for manifests, configuration, and bounded trust reuse."""
 
 import pytest
+from fastapi import HTTPException
 
 from aegis.app.database.connection import DatabaseConnection
 from aegis.app.database.migrations import run_migrations
@@ -44,8 +45,16 @@ async def test_pipeline_config_is_persisted_and_applied(tmp_path, monkeypatch):
     monkeypatch.setattr(runtime_pipeline, "_repository", None)
     monkeypatch.setattr(runtime_pipeline, "_store", SessionDriftStore())
     monkeypatch.setattr(runtime_pipeline, "_hydrated", set())
+    token = (await jit_access.get_ui_token())["token"]
+    with pytest.raises(HTTPException) as denied:
+        await runtime_pipeline.update_pipeline_config(
+            runtime_pipeline.PipelineConfigRequest(confirm_threshold=20, block_threshold=60),
+            x_aegis_ui_token=None,
+        )
+    assert getattr(denied.value, "status_code", None) == 403
     saved = await runtime_pipeline.update_pipeline_config(
-        runtime_pipeline.PipelineConfigRequest(confirm_threshold=20, block_threshold=60)
+        runtime_pipeline.PipelineConfigRequest(confirm_threshold=20, block_threshold=60),
+        x_aegis_ui_token=token,
     )
 
     assert saved["version"] == 1
@@ -89,7 +98,7 @@ async def test_short_term_trust_requires_local_ui_approval_token(monkeypatch):
     monkeypatch.setattr(runtime_pipeline, "_repository", None)
     monkeypatch.setattr(runtime_pipeline, "_store", SessionDriftStore())
 
-    with pytest.raises(Exception) as exc:
+    with pytest.raises(HTTPException) as exc:
         await runtime_pipeline.grant_session_trust(
             runtime_pipeline.TrustGrantRequest(
                 session_id="agent", runtime_kind="codex", capability="shell_exec"

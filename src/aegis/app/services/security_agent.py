@@ -363,12 +363,13 @@ class SecurityAnalystAgent:
                 integrity = await self.tools.execute("verify_audit_chain", {"session_key": str(session_key)})
                 timeline = await self.tools.execute("get_session_timeline", {"session_key": str(session_key)})
                 evidence.append({"session_key": session_key, "integrity": integrity, "events": timeline})
-                facts.append(
-                    {
-                        "fact": f"会话 {session_key} 哈希链{'完整' if integrity['valid'] else '损坏'}",
-                        "evidence_ids": [f"session:{session_key}"],
-                    }
-                )
+                if timeline:
+                    facts.append(
+                        {
+                            "fact": f"会话 {session_key} 哈希链{'完整' if integrity['valid'] else '损坏'}",
+                            "evidence_ids": [f"session:{session_key}"],
+                        }
+                    )
         memories = await self.operations.list_memories(limit=20)
         if memories:
             evidence.append(
@@ -581,6 +582,13 @@ class SecurityAnalystAgent:
         if not run:
             raise KeyError(run_id)
         if run["status"] == "completed":
+            expected = str(run.get("approval_hash") or "")
+            if not expected or not hmac.compare_digest(expected, proposal_hash):
+                raise ValueError("proposal hash does not match the reviewed proposal")
+            if decision != "approve":
+                raise ValueError("completed policy proposal requires a repeated approve decision")
+            if not approved_by.strip():
+                raise ValueError("approver identity is required")
             result = dict(run)
             result["result"] = {**(run.get("result") or {}), "idempotent": True}
             return result

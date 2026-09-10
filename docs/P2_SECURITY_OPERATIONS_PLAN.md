@@ -16,7 +16,7 @@ changes and learn bounded attack patterns.
 - Every factual Agent finding carries evidence references.
 - A learned antibody cannot directly return allow/block and its session contribution is capped.
 - Candidate antibodies must pass shadow mode and explicit approval before activation.
-- A policy proposal is simulated, hashed and approved by exact hash before application.
+- An Agent-originated policy proposal is simulated, hashed and approved by exact hash before application. Direct local configuration is a separate human UI operation protected by the per-run UI token.
 - Model failure degrades to a deterministic report and never weakens P0/P1 enforcement.
 - Long-term incident memory requires explicit confirmation, provenance, expiry and deletion.
 

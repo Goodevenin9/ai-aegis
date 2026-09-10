@@ -79,8 +79,11 @@ const API = {
     },
 
     async updateRuntimePipelineConfig(config) {
+        const token = await this._getJitToken();
         return this.request('/api/runtime/config', {
-            method: 'PUT', body: JSON.stringify(config),
+            method: 'PUT',
+            headers: { 'X-Aegis-UI-Token': token },
+            body: JSON.stringify(config),
         });
     },
 

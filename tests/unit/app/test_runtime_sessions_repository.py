@@ -106,3 +106,15 @@ async def test_session_summary_exposes_risk_curve_without_raw_secrets(tmp_path):
     timeline = await repo.get_timeline("cursor\0s2")
     assert "super-secret-value" not in (timeline[0]["content"] or "")
     await db.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_missing_session_is_not_reported_as_an_intact_hash_chain(tmp_path):
+    db = DatabaseConnection(tmp_path / "runtime-missing.db")
+    await run_migrations(db)
+    repo = RuntimeSessionRepository(db)
+    integrity = await repo.verify_event_chain("codex\0does-not-exist")
+    assert integrity == {
+        "valid": False, "broken_seq": None, "checked": 0, "reason": "session_not_found"
+    }
+    await db.disconnect()
