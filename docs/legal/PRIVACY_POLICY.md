@@ -223,7 +223,7 @@ If Aegis is acquired or merged, your data may be transferred to the new entity u
 - Opt out of analytics (may limit service functionality)
 
 **How to Exercise Rights:**
-- Email: contact@ (or create GitHub issue with "privacy" label)
+- Email: 2086695957@qq.com (or create a Gitee issue with the "privacy" label)
 - Response time: 30 days
 
 ---
@@ -242,7 +242,7 @@ If Aegis is acquired or merged, your data may be transferred to the new entity u
 - Right to withdraw consent (where applicable)
 - Right to data portability
 
-**Data Controller:** Aegis (contact via contact@)
+**Data Controller:** Aegis (contact via 2086695957@qq.com)
 
 **EU Representative:** Not yet appointed (company under 250 employees)
 
@@ -264,7 +264,7 @@ We do not sell personal information. No opt-out needed.
 
 ### Other Jurisdictions
 
-We comply with applicable privacy laws in all jurisdictions. If you have specific privacy law questions, contact contact@.
+We comply with applicable privacy laws in all jurisdictions. If you have specific privacy law questions, contact 2086695957@qq.com.
 
 ---
 
@@ -370,7 +370,7 @@ Aegis AI Threat Monitor is not directed at children under 13 (or 16 in EU).
 ## 15. Contact Information
 
 **Privacy Questions:**
-- Email: contact@
+- Email: 2086695957@qq.com
 - GitHub: Create issue with "privacy" label at https://gitee.com/wan-xianghao/ai-aegis/issues
 - Response time: 30 days maximum
 
@@ -404,7 +404,7 @@ Not yet appointed (company under GDPR threshold)
 - **User control:** You choose your privacy level
 
 **📧 Questions?**
-Contact contact@ or create a GitHub issue.
+Contact 2086695957@qq.com or create a Gitee issue.
 
 ---
 

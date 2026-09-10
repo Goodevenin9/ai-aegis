@@ -223,5 +223,5 @@ pip uninstall ai-aegis
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)
+- **Issues:** [Gitee Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)
 - **Documentation:** [docs.](https://docs.)

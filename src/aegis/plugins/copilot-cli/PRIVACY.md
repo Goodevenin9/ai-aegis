@@ -57,4 +57,4 @@ Apache-2.0, published at <https://gitee.com/wan-xianghao/ai-aegis> under `src/ae
 
 ## Contact
 
-Privacy questions: **GitHub security advisory**, or open an issue at <https://gitee.com/wan-xianghao/ai-aegis/issues>.
+Privacy questions: **2086695957@qq.com**, or open an issue at <https://gitee.com/wan-xianghao/ai-aegis/issues>.

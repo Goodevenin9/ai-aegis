@@ -83,4 +83,4 @@ We may update this policy from time to time. Material changes will bump the **La
 
 ## Contact
 
-For privacy questions about the plugin, email **GitHub security advisory**, or open an issue at <https://gitee.com/wan-xianghao/ai-aegis/issues>.
+For privacy questions about the plugin, email **2086695957@qq.com**, or open an issue at <https://gitee.com/wan-xianghao/ai-aegis/issues>.

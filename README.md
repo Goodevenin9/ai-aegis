@@ -35,7 +35,7 @@
 [![Python](https://img.shields.io/pypi/pyversions/ai-aegis.svg?style=for-the-badge)](https://pypi.org/project/ai-aegis)
 [![Downloads/month](https://img.shields.io/pypi/dm/ai-aegis?style=for-the-badge&label=downloads%2Fmonth&color=orange)](https://pypistats.org/packages/ai-aegis)
 [![Downloads total](https://img.shields.io/pepy/dt/ai-aegis?style=for-the-badge&label=downloads%20total&color=orange)](https://pepy.tech/project/ai-aegis)
-[Getting Started](docs/GETTING_STARTED.md) · [Verify your install](SECURITY.md#build-provenance--verifying-your-install) · [Dashboard Screenshots](#screenshots)
+[Getting Started](docs/GETTING_STARTED.md) · [Verify your install](SECURITY.md#verifying-your-download) · [Dashboard Screenshots](#screenshots)
 
 </div>
 
@@ -469,7 +469,7 @@ No Python required. Download and run.
 
 > **Security:** Only download installers from this official Gitee repository. Always verify SHA256 checksums before installation. Aegis is not responsible for binaries obtained from third-party sources.
 
-> **macOS binary note:** **Only download from this official GitHub repository** and verify the [SHA256 checksum](https://gitee.com/wan-xianghao/ai-aegis/releases) before installing. (Prefer pip? `pip install ai-aegis[app]` always works too.)
+> **macOS binary note:** **Only download from this official Gitee repository** and verify the [SHA256 checksum](https://gitee.com/wan-xianghao/ai-aegis/releases) before installing. (Prefer pip? `pip install ai-aegis[app]` always works too.)
 
 ### Other install options
 
@@ -639,6 +639,6 @@ The starter SIEM dashboard templates under [`docs/siem/`](docs/siem/) (Splunk XM
 
 <div align="center">
 
-**[Get Started](#install)** · **[Documentation](docs/)** · **[GitHub Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)**
+**[Get Started](#install)** · **[Documentation](docs/)** · **[Gitee Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)**
 
 </div>

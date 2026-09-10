@@ -17,10 +17,7 @@ We provide security updates for the following versions:
 
 | Version | Supported          | End of Support |
 | ------- | ------------------ | -------------- |
-| 2.1.x   | ✅ Yes            | Current        |
-| 2.0.x   | ✅ Yes            | June 2026      |
-| 1.3.x   | ⚠️ Limited       | March 2026     |
-| < 1.3   | ❌ No             | Ended          |
+| 1.0.x   | ✅ Yes            | Current        |
 
 **Recommendation:** Always use the latest version for the best security and features.
 
@@ -33,12 +30,9 @@ We provide security updates for the following versions:
 We appreciate responsible disclosure of security vulnerabilities. If you discover a security issue, please report it through one of these channels:
 
 **Primary (Recommended):**
-- **GitHub Security Advisories:** [Report a vulnerability](https://github.com/Goodevenin9/ai-aegis/security/advisories/new)
-- **Email:** GitHub security advisory (or contact@ with subject "SECURITY:")
+- **Email:** 2086695957@qq.com (subject "SECURITY:")
 
-**Alternative:**
-- Create a **private** GitHub issue (if your repository supports it)
-- For critical vulnerabilities, use encrypted email (PGP key below)
+Gitee has no private vulnerability reporting. Issues on this repository are **public** — please do not report vulnerabilities in an issue.
 
 ### What to Include
 
@@ -172,7 +166,7 @@ As a small open source project, we do not offer monetary bug bounties. However, 
    ```
 
 4. **Monitor for Updates**
-   - Watch GitHub releases
+   - Watch Gitee releases
    - Subscribe to security advisories
    - Enable Dependabot alerts
 
@@ -340,21 +334,14 @@ We carefully audit all dependencies:
 
 ### Security Contacts
 
-- **Security Issues:** GitHub security advisory (or contact@)
-- **Privacy Issues:** contact@
-- **General Issues:** [GitHub Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)
+- **Security Issues:** 2086695957@qq.com
+- **Privacy Issues:** 2086695957@qq.com
+- **General Issues:** [Gitee Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)
 
-### PGP Key (Optional)
+### PGP Key
 
-For highly sensitive vulnerabilities, you may encrypt your email:
-
-```
------BEGIN PGP PUBLIC KEY BLOCK-----
-(PGP key not yet generated - use encrypted GitHub Security Advisories instead)
------END PGP PUBLIC KEY BLOCK-----
-```
-
-**Recommendation:** Use GitHub Security Advisories for encrypted reporting.
+No PGP key is published yet. If you need to send an encrypted report, email
+us first with no sensitive content and we will reply with a key.
 
 ---
 
@@ -376,14 +363,14 @@ The following vulnerabilities were addressed by updating dependencies:
 
 **Additional fixes in v2.0.0:**
 - Removed clear-text logging of sensitive information (client IDs, session keys)
-- Added explicit permissions to GitHub Actions workflows (principle of least privilege)
+- Added explicit permissions to CI workflows (principle of least privilege)
 
 ### 2025
 
 **No security advisories issued.**
 
 We will publish all security advisories at:
-- GitHub Security Advisories: https://github.com/Goodevenin9/ai-aegis/security/advisories
+- Email: 2086695957@qq.com
 - This file (summary)
 
 ---
@@ -425,7 +412,7 @@ Our security practices are informed by:
 
 We deeply appreciate the security research community's efforts to keep open source software secure. Your responsible disclosure helps protect our users and improve our software.
 
-**Found a vulnerability?** Report it: GitHub security advisory
+**Found a vulnerability?** Report it: 2086695957@qq.com
 
 **Want to help?** Contribute: [CONTRIBUTOR_AGREEMENT.md](../docs/legal/CONTRIBUTOR_AGREEMENT.md)
 
@@ -437,7 +424,7 @@ We deeply appreciate the security research community's efforts to keep open sour
 
 We're committed to continuous improvement of our security practices.
 
-**Questions?** Contact us at contact@
+**Questions?** Contact us at 2086695957@qq.com
 
 </div>
 

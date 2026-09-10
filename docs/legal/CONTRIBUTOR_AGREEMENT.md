@@ -170,7 +170,7 @@ Aegis has no obligation to:
 By submitting a pull request, you indicate agreement with these terms.
 
 **For Corporate Contributors:**  
-Please create a GitHub issue with the label "corporate-cla" for corporate CLA requests.
+Please create a Gitee issue with the label "corporate-cla" for corporate CLA requests.
 
 ### Getting Started
 
@@ -295,20 +295,18 @@ While not yet implemented, future commercial versions might include:
 
 ## 💬 Communication & Support
 
-- **GitHub Issues**: For bug reports and feature requests
-- **GitHub Discussions**: For questions and ideas
-- **Legal Questions**: Create GitHub issue with "legal" label
-- **Technical Questions**: Create GitHub issue with "question" label  
-- **Commercial Questions**: Create GitHub issue with "commercial" label
-- **Security Issues**: Create GitHub issue with "security" label
+- **Gitee Issues**: For bug reports, feature requests, questions, and ideas
+- **Legal Questions**: Create a Gitee issue with the "legal" label
+- **Technical Questions**: Create a Gitee issue with the "question" label
+- **Commercial Questions**: Create a Gitee issue with the "commercial" label
+- **Security Issues**: See [SECURITY.md](../SECURITY.md) — do not open a public issue
 
 ---
 
 ## 🔒 Security Issues
 
 For security vulnerabilities:
-- **Create GitHub issue** with "security" label (mark as private if your repository supports private issues)
-- **For critical vulnerabilities** contact through GitHub's private vulnerability reporting if available
+- **Email** 2086695957@qq.com with subject "SECURITY:" — Gitee issues are public, so do not report vulnerabilities there
 - **Response time**: 24 hours for acknowledgment
 
 ---

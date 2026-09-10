@@ -202,13 +202,13 @@ Users can adjust rule behavior by:
 
 ### Getting Help
 - **Documentation**: [https://gitee.com/wan-xianghao/ai-aegis/tree/master/docs](https://gitee.com/wan-xianghao/ai-aegis/tree/master/docs)
-- **Support**: [GitHub Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)
-- **Security Issues**: GitHub security advisory (for security vulnerabilities)
+- **Support**: [Gitee Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)
+- **Security Issues**: 2086695957@qq.com (for security vulnerabilities)
 
 ---
 
 **⚖️ Legal Notice**: This software is provided "AS IS" without warranty. Users are responsible for compliance with applicable laws and regulations. See LICENSE file for full terms.
 
-**🔐 Security Notice**: Report security vulnerabilities privately to GitHub security advisory. Do not disclose security issues publicly until patched.
+**🔐 Security Notice**: Report security vulnerabilities privately to 2086695957@qq.com. Do not disclose security issues publicly until patched.
 
 **📅 Last Updated**: January 2025 | **Version**: 1.0.0

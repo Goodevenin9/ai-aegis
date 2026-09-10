@@ -721,7 +721,7 @@
     "Claude Code's statusLine.command is set in ~/.claude/settings.json. If you already have a custom statusline (e.g. context-window usage), it overrides the Aegis emitter unless you compose them (see \"Statusline integration\").": "Claude Code 的 statusLine.command 在 ~/.claude/settings.json 中设置。如果你已有自定义状态栏（例如上下文窗口用量），除非进行组合（见\"状态栏集成\"），否则它会覆盖 Aegis 输出器。",
     "Bash calls are scanned but my custom MCP tool isn't — ": "Bash 调用被扫描了，但我的自定义 MCP 工具没有 — ",
     "macOS Gatekeeper blocks the app — ": "macOS Gatekeeper 阻止了应用 — ",
-    "install via pip rather than the .dmg. If you must use the .dmg, only download from the official GitHub releases page, verify SHA256SUMS.txt, then xattr -cr /Applications/Aegis.app in Terminal.": "通过 pip 安装而不是 .dmg。如果必须使用 .dmg，请只从官方 GitHub releases 页面下载，验证 SHA256SUMS.txt，然后在终端中执行 xattr -cr /Applications/Aegis.app。",
+    "install via pip rather than the .dmg. If you must use the .dmg, only download from the official Gitee releases page, verify SHA256SUMS.txt, then xattr -cr /Applications/Aegis.app in Terminal.": "通过 pip 安装而不是 .dmg。如果必须使用 .dmg，请只从官方 Gitee releases 页面下载，验证 SHA256SUMS.txt，然后在终端中执行 xattr -cr /Applications/Aegis.app。",
     "Plugin not in Claude Code's plugin list — ": "插件不在 Claude Code 的插件列表中 — ",
     "Privacy posture": "隐私说明",
     "Surface": "数据面",

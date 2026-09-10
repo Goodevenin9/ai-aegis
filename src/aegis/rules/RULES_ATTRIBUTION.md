@@ -188,7 +188,7 @@ These rules are designed to assist with security and compliance but do not guara
 ## 📞 Contact Information
 
 - **General Questions**: GitHub issues
-- **Security Issues**: GitHub security advisory
+- **Security Issues**: 2086695957@qq.com
 - **Legal Questions**: GitHub issues
 - **Rule Contributions**: GitHub issues
 
