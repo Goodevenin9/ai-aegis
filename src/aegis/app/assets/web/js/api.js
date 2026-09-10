@@ -176,6 +176,25 @@ const API = {
         return this._jitDecision('/api/security-operations/agent/model/test', {});
     },
 
+    // Model credentials (DeepSeek key + drift-extraction toggle). The key is
+    // write-only: the server returns a last-four mask and never the key body,
+    // never the key file path.
+    async getModelCredentials() {
+        return this.request('/api/security-operations/model-credentials');
+    },
+
+    async updateModelCredentials(data) {
+        return this._jitDecision('/api/security-operations/model-credentials', data, 'PUT');
+    },
+
+    async deleteModelCredentials() {
+        return this._jitDecision('/api/security-operations/model-credentials', {}, 'DELETE');
+    },
+
+    async testModelCredentials() {
+        return this._jitDecision('/api/security-operations/model-credentials/test', {});
+    },
+
     async cancelSecurityAgent(runId) {
         return this._jitDecision(
             `/api/security-operations/agent/runs/${encodeURIComponent(runId)}/cancel`, {},
@@ -741,12 +760,12 @@ const API = {
         }
         return this._jitToken;
     },
-    async _jitDecision(endpoint, body) {
+    async _jitDecision(endpoint, body, method = 'POST') {
         // NB: request() replaces the whole headers object when options.headers
         // is set (the ...options spread wins), so Content-Type must be
         // restated here or FastAPI 422s on an unparseable body.
         const call = async () => this.request(endpoint, {
-            method: 'POST',
+            method: method,
             headers: {
                 'Content-Type': 'application/json',
                 'X-Aegis-UI-Token': await this._getJitToken(),

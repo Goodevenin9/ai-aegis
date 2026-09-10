@@ -18,7 +18,9 @@ D:\pyt\python.exe scripts/smoke_security_agent.py --key-file C:\secure\deepseek-
 
 ## 服务端配置
 
-优先级：AEGIS_DEEPSEEK_API_KEY → AEGIS_DEEPSEEK_API_KEY_FILE → DEEPSEEK_API_KEY。专用文件不会被通用旧环境变量覆盖。模型默认 deepseek-v4-flash，关闭思考模式。网页连接测试会消耗一次 API 请求。未配置显示 unconfigured；配置尚未测试显示 untested；真实成功后显示 online；调用失败显示 unavailable。配置文件路径和密钥不返回网页。
+优先级：AEGIS_DEEPSEEK_API_KEY → AEGIS_DEEPSEEK_API_KEY_FILE → DEEPSEEK_API_KEY。专用文件不会被通用旧环境变量覆盖。模型默认 deepseek-v4-flash，关闭思考模式。网页连接测试会消耗一次 API 请求。未配置显示 unconfigured；配置尚未测试显示 untested；真实成功后显示 online；调用失败显示 unavailable。
+
+密钥可在**安全运营页直接输入并即时生效**（无需重启），也可继续用上面的环境变量或 `--key-file` 配置。网页写入的边界如下：**密钥路径永不返回网页；密钥本体永不返回网页，只返回末四位掩码**（如 `sk-****3f7a`）；写入、删除与连接测试三个端点都要求 UI 令牌，未携带返回 403。网页保存的密钥落在用户数据目录下的 `model_key` 文件（0600 权限），不进 SQLite，因此不会随备份或证据导出外泄。若密钥文件由启动参数 `--key-file` 提供，网页只读不改——删除操作会返回 409，请回到启动侧处理。同一张卡片上的“漂移提取”开关对应 `AEGIS_DRIFT_LLM_ENABLED`，默认关闭，状态以徽标形式常显，避免“以为开着其实没开”。
 
 AEGIS_AGENT_MAX_CALLS 是每次后端进程生命周期内的请求上限，默认 200，包含重试。当前不是持久化金额预算，重启会重置。调查并发为 2，队列最多 8，单任务时限 180 秒。
 
@@ -26,7 +28,7 @@ Ubuntu Demo 可叠加 docker-compose.agent.yml，设置 AEGIS_AGENT_KEY_FILE 指
 
 ## 演示流程
 
-1. 在安全运营页检查模型状态并点击连接测试。
+1. 在安全运营页“模型凭据”卡片输入 DeepSeek 密钥（保存后自动跑一次双路连接测试），确认密钥徽标显示末四位掩码、漂移提取徽标为“已启用”。
 2. 上传一份合成事件日志，保存返回的证据编号。
 3. 填写证据编号，输入“看看这个智能体是不是被带偏了”。
 4. 查看路由、证据收集、分析、报告节点及证据引用。

@@ -4,7 +4,6 @@
     "Cancel investigation": "取消调查",
     "Evidence IDs, comma separated": "证据编号，多个编号用逗号分隔",
     "Checking model": "正在检查模型",
-    "Test model connection": "测试模型连接",
     "Execution details": "执行详情",
     "Findings and evaluation": "调查发现与评测结果",
     "Proposed policy and simulation": "待审批策略与模拟结果",
@@ -115,11 +114,59 @@
     "Expand Cloud & Export": "展开云端与导出",
     "Collapse Cloud & Export": "收起云端与导出",
     "Expand Support": "展开帮助",
-    "Collapse Support": "收起帮助"
+    "Collapse Support": "收起帮助",
+    "Model credentials": "模型凭据",
+    "DeepSeek key and drift extraction · write-only, the key is never echoed back": "DeepSeek 密钥与漂移提取 · 只写不回显",
+    "Paste a DeepSeek API key, for example sk-...": "粘贴 DeepSeek API 密钥，例如 sk-...",
+    "Save key": "保存密钥",
+    "Enable drift extraction": "启用漂移提取",
+    "Test both paths": "测试两条链路",
+    "Remove stored key": "移除已存密钥",
+    "No credential check yet.": "尚未进行凭据检查。",
+    "Paste a key before saving.": "请先粘贴密钥再保存。",
+    "Saving…": "保存中…",
+    "Testing both paths…": "正在测试两条链路…"
   },
   "patterns": [
-    { "re": "^(\\d+)\\s+threat(?:s)? detected$", "zh": "检测到 $1 个威胁" },
-    { "re": "^(\\d+)\\s+detected$", "zh": "检测到 $1 个" },
-    { "re": "^You have (\\d+) of (\\d+) local custom rules\\. Upgrade to Cloud for unlimited rules with ML-powered detection\\.$", "zh": "您已使用 $1 / $2 条本地自定义规则。升级到云端即可获得无限规则和 ML 驱动的检测。" }
+    {
+      "re": "^(\\d+)\\s+threat(?:s)? detected$",
+      "zh": "检测到 $1 个威胁"
+    },
+    {
+      "re": "^(\\d+)\\s+detected$",
+      "zh": "检测到 $1 个"
+    },
+    {
+      "re": "^You have (\\d+) of (\\d+) local custom rules\\. Upgrade to Cloud for unlimited rules with ML-powered detection\\.$",
+      "zh": "您已使用 $1 / $2 条本地自定义规则。升级到云端即可获得无限规则和 ML 驱动的检测。"
+    },
+    {
+      "re": "^Key: not configured$",
+      "zh": "密钥：未配置"
+    },
+    {
+      "re": "^Key: (.+) · from (.+)$",
+      "zh": "密钥：$1 · 来源：$2"
+    },
+    {
+      "re": "^Key: (?!not configured$)(?!.* · from )(.+)$",
+      "zh": "密钥：$1"
+    },
+    {
+      "re": "^Drift extraction: enabled$",
+      "zh": "漂移提取：已启用"
+    },
+    {
+      "re": "^Drift extraction: disabled$",
+      "zh": "漂移提取：未启用"
+    },
+    {
+      "re": "^Drift extraction: (?!enabled$|disabled$)(.+)$",
+      "zh": "漂移提取：$1"
+    },
+    {
+      "re": "^Agent model: (.+)$",
+      "zh": "Agent 模型：$1"
+    }
   ]
 }

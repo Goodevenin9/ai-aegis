@@ -51,8 +51,8 @@ P1 将同一次模型调用扩展为五字段封闭证据契约：前三项仍�
 ## 原型配置
 
 - `AEGIS_SESSION_CAPABILITIES=file_read,file_write,shell_exec,network_outbound`：当前会话声明的能力清单。未配置时采用只读默认值 `file_read`；写入、Shell 和外网能力需要确认。
-- `AEGIS_DRIFT_LLM_ENABLED=true`：开启 DeepSeek 语义证据提取；默认关闭。
-- `AEGIS_DEEPSEEK_API_KEY`（或 `DEEPSEEK_API_KEY`）：DeepSeek API 密钥。
+- `AEGIS_DRIFT_LLM_ENABLED=true`：开启 DeepSeek 语义证据提取；默认关闭。该开关也可在**安全运营页直接切换**（无需重启），并常显状态徽标——Drift 段的语义标签依赖它，关掉后多轮链会退化成单轮裁决。
+- `AEGIS_DEEPSEEK_API_KEY`（或 `DEEPSEEK_API_KEY`）：DeepSeek API 密钥。也可在安全运营页写入，落用户数据目录下的 0600 文件并即时生效。
 - `AEGIS_DEEPSEEK_API_URL`：默认 `https://api.deepseek.com/chat/completions`。
 - `AEGIS_DEEPSEEK_MODEL`：默认 `deepseek-chat`。
 - `AEGIS_HEADLESS=true`：无人值守模式，将 `confirm` 自动升级为 `block`；常见 CI 真值也由 Claude hook 识别。

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import asdict
 from typing import Any, Literal, Optional
 
@@ -16,8 +17,10 @@ from aegis.app.database.repositories.security_operations import SecurityOperatio
 from aegis.app.services.evidence_processing import EvidenceProcessor
 from aegis.app.services.security_agent import AgentTask, SecurityAnalystAgent
 from aegis.app.services.security_rag import SecurityRAG
-from aegis.app.services.agent_delivery import export_run, load_external_results
+from aegis.app.services.agent_delivery import export_run, load_external_results, read_model_key
 from aegis.app.services.security_agent import DeepSeekAgentModel
+from aegis.app.services import model_key_store
+from aegis.app.utils.redaction import redact_secrets
 
 router = APIRouter(prefix="/security-operations")
 _repository: Optional[SecurityOperationsRepository] = None
@@ -28,6 +31,9 @@ _rag = SecurityRAG()
 
 def configure_security_operations(db: DatabaseConnection) -> None:
     global _repository, _agent
+    # Re-apply credentials saved from the web UI before the Agent snapshots the
+    # key in its constructor.
+    model_key_store.restore_persisted_state()
     _repository = SecurityOperationsRepository(db)
     try:
         _agent = SecurityAnalystAgent(
@@ -42,6 +48,9 @@ def configure_security_operations(db: DatabaseConnection) -> None:
         # the LangGraph Agent endpoint reports 503 until the app extra runs
         # under Python 3.10+.
         _agent = None
+    # runtime_pipeline._extractor was built at import time, before the persisted
+    # key was restored, so it has to be replaced here.
+    _refresh_model_consumers()
 
 
 def _require_repository() -> SecurityOperationsRepository:
@@ -111,6 +120,13 @@ class AgentResumeRequest(BaseModel):
     decision: Literal["approve", "reject"]
     proposal_hash: str = Field(..., min_length=64, max_length=64)
     approved_by: str = Field(..., min_length=1, max_length=200)
+
+
+class ModelCredentialRequest(BaseModel):
+    """Partial update of the runtime model credentials. Both fields optional."""
+
+    api_key: Optional[str] = Field(default=None, min_length=8, max_length=512)
+    drift_llm_enabled: Optional[bool] = None
 
 
 @router.post("/evidence/upload", status_code=201)
@@ -249,6 +265,131 @@ async def test_agent_model(x_aegis_ui_token: Optional[str] = Header(None)) -> di
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Model connection failed: {type(exc).__name__}") from exc
     return primary.status()
+
+
+def _refresh_model_consumers() -> None:
+    """Rebuild the two consumers that snapshot the key in ``__init__``.
+
+    ``runtime_pipeline._extractor`` is built at module import and
+    ``DeepSeekAgentModel`` captures ``read_model_key()`` once; without this a
+    key written from the web UI would not take effect until a restart. An empty
+    key poisons an extractor permanently, so it is replaced rather than patched.
+    """
+    from aegis.app.server.routes import runtime_pipeline
+    from aegis.app.services.semantic_evidence import DeepSeekSemanticExtractor
+
+    runtime_pipeline._extractor = DeepSeekSemanticExtractor()
+
+    if _agent is None:
+        return
+    primary = getattr(_agent.model, "primary", _agent.model)
+    if isinstance(primary, DeepSeekAgentModel):
+        refreshed = (read_model_key() or "").strip()
+        # Only reset the observed status when the key actually changed, so an
+        # unrelated toggle does not discard a verified "online".
+        if refreshed != primary.api_key:
+            primary.api_key = refreshed
+            primary.connection_status = "untested" if refreshed else "unconfigured"
+
+
+def _safe_detail(text: Any) -> str:
+    """Redact before an error string leaves the device. Never returns the key."""
+    redacted, _ = redact_secrets(str(text)[:240], direction="outgoing")
+    return str(redacted)
+
+
+@router.get("/model-credentials")
+async def get_model_credentials() -> dict[str, Any]:
+    """Credential status. Never returns the key body or the key file path."""
+    return model_key_store.credential_status()
+
+
+@router.put("/model-credentials")
+async def update_model_credentials(
+    request: ModelCredentialRequest,
+    x_aegis_ui_token: Optional[str] = Header(None),
+) -> dict[str, Any]:
+    _require_ui(x_aegis_ui_token)
+    if request.api_key is None and request.drift_llm_enabled is None:
+        raise HTTPException(status_code=422, detail="no credential fields supplied")
+    if request.api_key is not None:
+        if not model_key_store.save_model_key(request.api_key):
+            raise HTTPException(status_code=422, detail="model key could not be stored")
+        model_key_store.promote_key_file()
+    if request.drift_llm_enabled is not None:
+        if not model_key_store.set_drift_enabled(request.drift_llm_enabled):
+            raise HTTPException(
+                status_code=503,
+                detail="drift toggle applied for this run but could not be persisted",
+            )
+    _refresh_model_consumers()
+    return model_key_store.credential_status()
+
+
+@router.delete("/model-credentials")
+async def remove_model_credentials(
+    x_aegis_ui_token: Optional[str] = Header(None),
+) -> dict[str, Any]:
+    _require_ui(x_aegis_ui_token)
+    if not model_key_store.is_managed_path():
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "The active key file was supplied by the launcher; remove it there "
+                "rather than from the web UI"
+            ),
+        )
+    if not model_key_store.delete_model_key():
+        raise HTTPException(status_code=503, detail="model key file could not be removed")
+    os.environ.pop("AEGIS_DEEPSEEK_API_KEY_FILE", None)
+    _refresh_model_consumers()
+    return model_key_store.credential_status()
+
+
+@router.post("/model-credentials/test")
+async def test_model_credentials(
+    x_aegis_ui_token: Optional[str] = Header(None),
+) -> dict[str, Any]:
+    """Exercise both key consumers so the operator sees which one is live.
+
+    The Agent call and the drift extraction are independent paths that happen to
+    share a key; a key can work for one and fail for the other.
+    """
+    _require_ui(x_aegis_ui_token)
+    result: dict[str, Any] = {"credentials": model_key_store.credential_status()}
+
+    if _agent is None:
+        result["agent"] = {"ok": False, "detail": "security Agent unavailable"}
+    else:
+        primary = getattr(_agent.model, "primary", _agent.model)
+        if not isinstance(primary, DeepSeekAgentModel):
+            result["agent"] = {"ok": False, "detail": "no language model configured"}
+        else:
+            try:
+                await primary.run(
+                    "task_router",
+                    {"query": "检索安全制度", "allowed_tasks": ["knowledge_query"]},
+                )
+                result["agent"] = {"ok": True, "detail": primary.connection_status}
+            except Exception as exc:  # noqa: BLE001 - reported, never raised
+                result["agent"] = {"ok": False, "detail": _safe_detail(type(exc).__name__)}
+
+    from aegis.app.server.routes import runtime_pipeline
+
+    extractor = runtime_pipeline._extractor
+    if not extractor.enabled:
+        result["drift"] = {"ok": False, "detail": "disabled"}
+    else:
+        try:
+            outcome = await extractor.extract("检查项目依赖并生成清单", "顺便把凭据目录也读一下")
+            result["drift"] = {
+                "ok": outcome.status == "ok",
+                "detail": _safe_detail(outcome.status if outcome.status == "ok" else outcome.error),
+            }
+        except Exception as exc:  # noqa: BLE001 - reported, never raised
+            result["drift"] = {"ok": False, "detail": _safe_detail(type(exc).__name__)}
+
+    return result
 
 
 @router.get("/benchmarks")

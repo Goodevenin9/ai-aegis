@@ -28,3 +28,23 @@ def test_workbench_exposes_evidence_rag_immunity_memory_and_approval_not_just_ch
     ):
         assert capability in page
     assert "Security operations, not another chatbot" in page
+
+
+def test_credentials_are_writable_from_the_page_but_never_prefilled():
+    page = (WEB / "js" / "pages" / "security-operations.js").read_text(encoding="utf-8")
+    api = (WEB / "js" / "api.js").read_text(encoding="utf-8")
+
+    for method in (
+        "getModelCredentials",
+        "updateModelCredentials",
+        "deleteModelCredentials",
+        "testModelCredentials",
+    ):
+        assert method in api, method
+
+    # The key input is write-only: no code path assigns the masked value back
+    # into it, and the field starts empty on every render.
+    assert 'type="password" name="api_key"' in page
+    assert "so-cred-key" in page
+    assert page.count(".value =") <= 1
+    assert "Enable drift extraction" in page

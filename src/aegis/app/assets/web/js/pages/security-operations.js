@@ -7,6 +7,18 @@ const SecurityOperationsPage = {
         container.innerHTML = `
           <div class="so-hero"><div><span class="so-kicker">P2 · HUMAN-GOVERNED</span><h2>Security operations, not another chatbot</h2><p>Evidence stays untrusted. The five-stage pipeline remains the enforcement authority.</p></div><div class="so-status"><i></i> LangGraph workflow ready</div></div>
           <div class="so-grid">
+            <section class="so-card so-credentials"><header><span>00</span><div><h3>Model credentials</h3><p>DeepSeek key and drift extraction · write-only, the key is never echoed back</p></div></header>
+              <div id="so-cred-status" class="so-cred-badge"></div>
+              <form id="so-cred-form">
+                <div class="so-row"><input type="password" name="api_key" id="so-cred-key" autocomplete="off" placeholder="Paste a DeepSeek API key, for example sk-..."><button>Save key</button></div>
+                <div class="so-row">
+                  <label class="so-cred-toggle"><input type="checkbox" name="drift_llm_enabled" id="so-cred-drift"> Enable drift extraction</label>
+                  <button type="button" id="so-cred-test" class="ghost">Test both paths</button>
+                  <button type="button" id="so-cred-delete" class="ghost">Remove stored key</button>
+                </div>
+              </form>
+              <div id="so-cred-result" class="so-output">No credential check yet.</div>
+            </section>
             <section class="so-card so-agent"><header><span>01</span><div><h3>Security Analyst Agent</h3><p>Dynamic routing · investigation · evaluation · approval</p></div></header>
               <form id="so-agent-form"><textarea name="query" required placeholder="For example: investigate permission drift in a Codex session or find policy 17"></textarea><div class="so-row"><select name="requested_task"><option value="auto">Auto route</option><option value="incident_investigation">Incident investigation</option><option value="knowledge_query">Knowledge query</option><option value="dataset_evaluation">Dataset evaluation</option><option value="policy_change">Policy change</option></select><input name="session_keys" placeholder="session keys, comma separated"><button>Run Agent</button></div><input name="policy_changes" placeholder='Policy JSON, e.g. {"confirm_threshold":45}'></form><div id="so-agent-result" class="so-output">No run yet.</div>
             </section>
@@ -33,18 +45,13 @@ const SecurityOperationsPage = {
         modelPanel.id = 'so-model-status';
         modelPanel.textContent = 'Checking model';
         agentForm.before(modelPanel);
-        const testButton = document.createElement('button');
-        testButton.type = 'button';
-        testButton.textContent = 'Test model connection';
-        testButton.addEventListener('click', async () => {
-            testButton.disabled = true;
-            try {
-                await API.testSecurityAgentModel();
-                await this._modelStatus();
-            } catch (error) { modelPanel.textContent = error.message; }
-            finally { testButton.disabled = false; }
-        });
-        modelPanel.after(testButton);
+        document.getElementById('so-cred-form').addEventListener('submit', event => this._saveCredentials(event));
+        document.getElementById('so-cred-test').addEventListener('click', () => this._testCredentials());
+        document.getElementById('so-cred-delete').addEventListener('click', () => this._deleteCredentials());
+        // The drift toggle is the single most dangerous silent failure in this
+        // pipeline, so it applies and reports immediately rather than waiting
+        // for a separate save.
+        document.getElementById('so-cred-drift').addEventListener('change', event => this._saveDrift(event.currentTarget.checked));
         const historyPanel = document.createElement('div');
         historyPanel.id = 'so-run-history';
         agentForm.after(historyPanel);
@@ -53,8 +60,77 @@ const SecurityOperationsPage = {
         historyButton.textContent = 'Refresh investigation history';
         historyButton.addEventListener('click', () => this._history());
         historyPanel.before(historyButton);
+        await this._credentialStatus();
         await this._modelStatus();
         await this._refresh();
+    },
+
+    async _credentialStatus() {
+        const badge = document.getElementById('so-cred-status');
+        if (!badge) return null;
+        try {
+            const status = await API.getModelCredentials();
+            const keyText = status.key_configured
+                ? `${status.key_masked} · from ${status.key_source}`
+                : 'not configured';
+            badge.innerHTML =
+                `<span class="so-cred-chip ${status.key_configured ? 'ok' : 'warn'}">Key: ${this._esc(keyText)}</span>` +
+                `<span class="so-cred-chip ${status.drift_llm_enabled ? 'ok' : 'warn'}">Drift extraction: ${status.drift_llm_enabled ? 'enabled' : 'disabled'}</span>`;
+            const drift = document.getElementById('so-cred-drift');
+            if (drift) drift.checked = !!status.drift_llm_enabled;
+            const remove = document.getElementById('so-cred-delete');
+            if (remove) remove.disabled = !status.key_managed;
+            return status;
+        } catch (error) { badge.textContent = error.message; return null; }
+    },
+
+    async _saveCredentials(event) {
+        event.preventDefault();
+        const out = document.getElementById('so-cred-result');
+        const key = String(new FormData(event.currentTarget).get('api_key') || '').trim();
+        if (!key) { out.textContent = 'Paste a key before saving.'; return; }
+        out.textContent = 'Saving…';
+        try {
+            await API.updateModelCredentials({ api_key: key });
+            // Never leave the secret sitting in the DOM.
+            document.getElementById('so-cred-key').value = '';
+            await this._credentialStatus();
+            await this._testCredentials();
+            await this._modelStatus();
+        } catch (error) { out.textContent = error.message; }
+    },
+
+    async _saveDrift(enabled) {
+        const out = document.getElementById('so-cred-result');
+        try {
+            await API.updateModelCredentials({ drift_llm_enabled: enabled });
+            await this._credentialStatus();
+        } catch (error) {
+            out.textContent = error.message;
+            await this._credentialStatus();  // reflect what actually stuck
+        }
+    },
+
+    async _testCredentials() {
+        const out = document.getElementById('so-cred-result');
+        out.textContent = 'Testing both paths…';
+        try {
+            const result = await API.testModelCredentials();
+            // Separate chips keep each state its own text node, which is what
+            // the i18n pattern pass matches on. Technical details such as
+            // "online" or "HTTP 401" stay untranslated on purpose.
+            const chip = (label, item) => `<span class="so-cred-chip ${item.ok ? 'ok' : 'warn'}">${label}: ${item.ok ? 'ok' : 'failed'} (${this._esc(item.detail)})</span>`;
+            out.innerHTML = `${chip('Agent model', result.agent)} ${chip('Drift extraction', result.drift)}`;
+        } catch (error) { out.textContent = error.message; }
+    },
+
+    async _deleteCredentials() {
+        const out = document.getElementById('so-cred-result');
+        try {
+            await API.deleteModelCredentials();
+            await this._credentialStatus();
+            out.textContent = 'Stored key removed.';
+        } catch (error) { out.textContent = error.message; }
     },
 
     async _modelStatus() {
@@ -218,7 +294,7 @@ const SecurityOperationsPage = {
     _esc(value) { const node = document.createElement('div'); node.textContent = String(value == null ? '' : value); return node.innerHTML; },
     _style() {
         if (document.getElementById('so-style')) return; const style = document.createElement('style'); style.id = 'so-style';
-        style.textContent = `.so-hero{display:flex;justify-content:space-between;gap:20px;padding:24px;border:1px solid rgba(124,108,255,.35);border-radius:18px;background:radial-gradient(circle at 85% 10%,rgba(124,108,255,.18),transparent 38%),var(--bg-card);margin-bottom:16px}.so-hero h2{margin:5px 0;color:var(--text-primary)}.so-hero p,.so-card header p{margin:0;color:var(--text-muted);font-size:12px}.so-kicker{font-size:10px;letter-spacing:1.5px;color:#9f94ff}.so-status{align-self:center;color:#9ee7c1;font-size:12px}.so-status i{display:inline-block;width:7px;height:7px;background:#10b981;border-radius:50%;margin-right:7px}.so-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.so-card{padding:17px;border:1px solid var(--border-default);border-radius:14px;background:var(--bg-card);min-width:0}.so-agent{grid-column:span 2}.so-card header{display:flex;gap:11px;margin-bottom:13px}.so-card header>span{font-size:10px;color:#9f94ff;border:1px solid rgba(124,108,255,.35);height:22px;padding:3px 6px;border-radius:6px}.so-card h3{margin:0 0 2px;color:var(--text-primary)}.so-card form{display:flex;flex-direction:column;gap:8px}.so-card input,.so-card textarea,.so-card select{background:var(--bg-primary);border:1px solid var(--border-default);color:var(--text-primary);padding:9px;border-radius:8px}.so-card textarea{min-height:70px;resize:vertical}.so-card button{border:0;border-radius:8px;background:var(--accent-primary);color:white;padding:9px 12px;cursor:pointer}.so-card button.ghost{background:transparent;border:1px solid var(--border-default);color:var(--text-secondary)}.so-row,.so-inline{display:flex!important;flex-direction:row!important;gap:8px}.so-row>*:not(button),.so-inline input{flex:1}.so-output,.so-list{margin-top:12px;color:var(--text-secondary);font-size:12px}.so-output article,.so-list article{padding:9px 0;border-top:1px solid var(--border-default);display:flex;flex-direction:column;gap:3px}.so-list article{flex-direction:row;justify-content:space-between;align-items:center}.so-list small,.so-output small{display:block;color:var(--text-muted)}.so-run-head{display:flex;justify-content:space-between}.so-pill{padding:2px 7px;border-radius:999px;background:rgba(96,165,250,.14);color:#60a5fa}.so-pill.completed{color:#10b981;background:rgba(16,185,129,.14)}.so-pill.failed{color:#ef4444}.so-approval{margin-top:10px;padding:10px;border:1px solid #f59e0b;border-radius:9px}.so-approval code{display:block;word-break:break-all;margin:6px 0;color:var(--text-muted)}@media(max-width:900px){.so-grid{grid-template-columns:1fr}.so-agent{grid-column:auto}.so-row,.so-inline{flex-direction:column!important}.so-hero{flex-direction:column}}`;
+        style.textContent = `.so-hero{display:flex;justify-content:space-between;gap:20px;padding:24px;border:1px solid rgba(124,108,255,.35);border-radius:18px;background:radial-gradient(circle at 85% 10%,rgba(124,108,255,.18),transparent 38%),var(--bg-card);margin-bottom:16px}.so-hero h2{margin:5px 0;color:var(--text-primary)}.so-hero p,.so-card header p{margin:0;color:var(--text-muted);font-size:12px}.so-kicker{font-size:10px;letter-spacing:1.5px;color:#9f94ff}.so-status{align-self:center;color:#9ee7c1;font-size:12px}.so-status i{display:inline-block;width:7px;height:7px;background:#10b981;border-radius:50%;margin-right:7px}.so-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.so-card{padding:17px;border:1px solid var(--border-default);border-radius:14px;background:var(--bg-card);min-width:0}.so-agent{grid-column:span 2}.so-card header{display:flex;gap:11px;margin-bottom:13px}.so-card header>span{font-size:10px;color:#9f94ff;border:1px solid rgba(124,108,255,.35);height:22px;padding:3px 6px;border-radius:6px}.so-card h3{margin:0 0 2px;color:var(--text-primary)}.so-card form{display:flex;flex-direction:column;gap:8px}.so-card input,.so-card textarea,.so-card select{background:var(--bg-primary);border:1px solid var(--border-default);color:var(--text-primary);padding:9px;border-radius:8px}.so-card textarea{min-height:70px;resize:vertical}.so-card button{border:0;border-radius:8px;background:var(--accent-primary);color:white;padding:9px 12px;cursor:pointer}.so-card button.ghost{background:transparent;border:1px solid var(--border-default);color:var(--text-secondary)}.so-row,.so-inline{display:flex!important;flex-direction:row!important;gap:8px}.so-row>*:not(button),.so-inline input{flex:1}.so-output,.so-list{margin-top:12px;color:var(--text-secondary);font-size:12px}.so-output article,.so-list article{padding:9px 0;border-top:1px solid var(--border-default);display:flex;flex-direction:column;gap:3px}.so-list article{flex-direction:row;justify-content:space-between;align-items:center}.so-list small,.so-output small{display:block;color:var(--text-muted)}.so-run-head{display:flex;justify-content:space-between}.so-pill{padding:2px 7px;border-radius:999px;background:rgba(96,165,250,.14);color:#60a5fa}.so-pill.completed{color:#10b981;background:rgba(16,185,129,.14)}.so-pill.failed{color:#ef4444}.so-approval{margin-top:10px;padding:10px;border:1px solid #f59e0b;border-radius:9px}.so-approval code{display:block;word-break:break-all;margin:6px 0;color:var(--text-muted)}.so-credentials{grid-column:span 2}.so-cred-badge{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:11px}.so-cred-chip{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--border-default);color:var(--text-secondary)}.so-cred-chip.ok{color:#10b981;border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.12)}.so-cred-chip.warn{color:#f59e0b;border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.12)}.so-cred-toggle{display:flex;align-items:center;gap:7px;color:var(--text-secondary);font-size:12px}.so-cred-toggle input{width:auto}.so-card button[disabled]{opacity:.45;cursor:not-allowed}@media(max-width:900px){.so-grid{grid-template-columns:1fr}.so-agent,.so-credentials{grid-column:auto}.so-row,.so-inline{flex-direction:column!important}.so-hero{flex-direction:column}}`;
         document.head.appendChild(style);
     },
 };
