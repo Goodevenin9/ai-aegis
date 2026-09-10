@@ -52,7 +52,7 @@ class EnhancedCLI:
 
         # Global options
         parser.add_argument(
-            "--version", action="version", version="Aegis Enhanced CLI 1.0.0"
+            "--version", action="version", version="Aegis Enhanced CLI 1.0.1"
         )
         parser.add_argument("--debug", action="store_true", help="Enable debug mode")
         parser.add_argument("--telemetry", action="store_true", help="Enable telemetry collection")

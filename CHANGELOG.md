@@ -3,6 +3,19 @@
 本项目包含基于 Apache License 2.0 上游项目演进的代码，完整来源与版权归属见
 [NOTICE](NOTICE) 与 [LICENSE](LICENSE)。
 
+## 1.0.1 — 2026-09-10
+
+**品牌标识与文档修正**
+
+> 1.0.0 打包的是旧图标，而 PyPI 同一版本的内容不可修改，因此需要发此版本。
+
+### 修复
+- 产品内全部图标替换为 AI Aegis 盾牌标识：应用 Web UI（侧栏 / 顶部导航 / 浏览器标签页）、安装器图标、Cursor 插件、PDF 导出中内嵌的 base64 图标
+- PyPI 元数据补上 `license_expression`（1.0.0 时为 `None`，只有 classifier），改为 PEP 639 的 SPDX 表达式写入
+- 移除文档中并不存在的二进制安装包下载（`.exe` / `.dmg` / `.deb` / `.rpm` / `.AppImage`）——pip 与源码安装是唯一可用路径
+- 修正 `docs/MCP_GUIDE.md`：包名 `aegis[mcp]` → `ai-aegis[mcp]`（`aegis` 是 PyPI 上他人的包）、仓库目录名，以及无法拉取的预构建镜像说明（改为从 `Dockerfile.mcp` 本地构建）
+- 贡献指南依赖命令 `.[dev]` → `.[dev,app]`（`.[dev]` 缺少 `aiosqlite` / `sqlalchemy`，会导致测试收集失败）
+
 ## 1.0.0 — 2026-08-31
 
 **初始发布：AI Aegis（灵盾）**

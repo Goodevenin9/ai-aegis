@@ -93,7 +93,7 @@ def create_app(settings: Optional[ControlPlaneSettings] = None) -> FastAPI:
     store = ControlPlaneStore(cfg.database_path)
     app = FastAPI(
         title="AI Aegis Control Plane",
-        version="1.0.0",
+        version="1.0.1",
         description="Self-hosted device enrollment and signed policy distribution.",
     )
     app.state.settings = cfg

@@ -18,7 +18,7 @@ Usage:
 # Keep in sync with __version__ in src/aegis/__init__.py on every
 # release bump. This is the value main.py prints in the startup banner and
 # --version.
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __app_name__ = "Aegis Local Threat Monitor"
 
 # Required dependencies for the app

@@ -47,7 +47,7 @@ For more information, visit: https://gitee.com/wan-xianghao/ai-aegis
 
         # Global options
         parser.add_argument(
-            "--version", action="version", version="Aegis AI Threat Monitor 1.0.0"
+            "--version", action="version", version="Aegis AI Threat Monitor 1.0.1"
         )
 
         parser.add_argument(

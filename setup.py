@@ -27,6 +27,13 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://gitee.com/wan-xianghao/ai-aegis",
+    # Kept alongside the "License :: OSI Approved :: Apache Software License"
+    # classifier below, which is what PyPI actually renders in the sidebar.
+    # Note this lands in the legacy `License:` metadata field, NOT in
+    # `License-Expression`: a setup.py-only build does not get PEP 639
+    # treatment from setuptools (that needs a [project] table). Switching to
+    # `License-Expression` is a separate change to pyproject.toml.
+    license="Apache-2.0",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     classifiers=[

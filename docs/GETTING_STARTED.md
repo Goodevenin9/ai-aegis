@@ -20,7 +20,9 @@ pip install ai-aegis
 pip install ai-aegis[mcp]
 ```
 
-Binary installers: [Windows](https://gitee.com/wan-xianghao/ai-aegis/releases) | [macOS](https://gitee.com/wan-xianghao/ai-aegis/releases) | [Linux](https://gitee.com/wan-xianghao/ai-aegis/releases)
+pip is the only published install path — there are no `.exe`/`.dmg`/`.deb`
+installers to download. See the [Installation Guide](INSTALLATION.md) for the
+source install.
 
 ---
 
@@ -254,6 +256,6 @@ Aegis exposes a full REST API with interactive documentation:
 - [API Specification](API_SPECIFICATION.md) — Full REST API reference with schemas
 - [Use Cases & Examples](USECASES.md) — Real-world integration examples
 - [MCP Server Guide](MCP_GUIDE.md) — Claude Desktop and Cursor setup
-- [Installation Guide](INSTALLATION.md) — Binary installers, service setup
+- [Installation Guide](INSTALLATION.md) — pip, source install, service setup
 - [SDK Usage](SDK_USAGE.md) — Python SDK reference
 - Interactive API docs: `http://localhost:8741/docs`

@@ -190,7 +190,9 @@ If `total: 0`, your local app isn't enrolled with the cloud yet — open the Set
 
 **`Bash` calls are scanned but my custom MCP tool isn't.** `/analyze` only runs on tools whose `tool_input` is *natural-language prose* (WebFetch, Skill, Task, Agent prompts). Shell-syntax-shaped inputs (Bash, PowerShell, Write, Edit, MultiEdit, NotebookEdit) are audited to the hash chain but **not** fed to the rule pack — that scope mismatch produced high-volume false positives. Custom MCP tools that emit prose get scanned; tools that take structured inputs don't.
 
-**macOS Gatekeeper blocks the app.** Install via pip rather than the `.dmg`. If you must use the `.dmg`, only download from the official Gitee releases page, verify the `SHA256SUMS.txt`, then run `xattr -cr /Applications/Aegis.app` in Terminal.
+**macOS Gatekeeper blocks the app.** There is no `.dmg` to work around — Aegis
+ships no native macOS installer. Install via pip, which Gatekeeper does not
+quarantine: `pip install ai-aegis[app]`.
 
 **Multiple Aegis versions installed.** The statusline emitter globs `~/.claude/plugins/cache/aegis-local/aegis-guard/*/hooks/statusline.js` and picks the highest-versioned one. Uninstall + reinstall via the app to consolidate.
 

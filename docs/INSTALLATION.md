@@ -11,21 +11,21 @@ pip install ai-aegis[app]
 aegis-app --web
 ```
 
-### Option 2: Binary installers
+### Option 2: From source
 
-No Python required. Download and run.
+```bash
+git clone https://gitee.com/wan-xianghao/ai-aegis.git
+cd ai-aegis
+pip install -e ".[app]"
+aegis-app --web
+```
 
-| Platform | Download |
-|----------|----------|
-| Windows | [Aegis-v3.4.0-Windows-Setup.exe](https://gitee.com/wan-xianghao/ai-aegis/releases) |
-| macOS | [Aegis-3.4.0-macOS.dmg](https://gitee.com/wan-xianghao/ai-aegis/releases) |
-| Linux (AppImage) | [Aegis-3.4.0-x86_64.AppImage](https://gitee.com/wan-xianghao/ai-aegis/releases) |
-| Linux (DEB) | [aegis_3.4.0_amd64.deb](https://gitee.com/wan-xianghao/ai-aegis/releases) |
-| Linux (RPM) | [aegis-3.4.0-1.x86_64.rpm](https://gitee.com/wan-xianghao/ai-aegis/releases) |
-
-[All Releases](https://gitee.com/wan-xianghao/ai-aegis/releases) · [SHA256 Checksums](https://gitee.com/wan-xianghao/ai-aegis/releases)
-
-> **Security:** Only download installers from this official Gitee repository. Always verify SHA256 checksums before installation.
+> **No native installers are published.** There is no `.exe`, `.dmg`, `.deb`,
+> `.rpm`, or `.AppImage` to download. They are produced by
+> [`build-installers.yml`](https://gitee.com/wan-xianghao/ai-aegis/blob/master/.github/workflows/build-installers.yml),
+> which runs on GitHub Actions — and this project is hosted on Gitee, which does
+> not execute them. `pip install ai-aegis[app]` is the supported path on every
+> platform and needs nothing beyond Python.
 
 ---
 
@@ -200,7 +200,8 @@ pip install --upgrade ai-aegis[app]
 git pull && pip install -e ".[app]"
 ```
 
-For binary installers, download the latest version from [Releases](https://gitee.com/wan-xianghao/ai-aegis/releases) and install over the existing version.
+One of the two commands above is the whole update. There are no binary
+installers to download — see [Option 2](#option-2-from-source).
 
 After updating, restart Aegis.
 

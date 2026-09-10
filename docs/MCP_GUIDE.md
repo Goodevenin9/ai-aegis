@@ -26,20 +26,20 @@ Complete guide for setting up and using the Aegis MCP server with Claude Desktop
 
 ### Start the MCP Server
 
+No pre-built image is published to any registry. Build it locally from the
+`Dockerfile.mcp` in this repository:
+
 ```bash
-# Pull the latest image
-docker pull aegisrepo/aegis-mcp-server:latest
-
-# Start using docker-compose
-docker-compose up -d
-
-# Verify it's running
-docker ps | grep aegis-mcp
-docker logs -f aegis-mcp
+git clone https://gitee.com/wan-xianghao/ai-aegis.git
+cd ai-aegis
+docker build -f Dockerfile.mcp -t aegis-mcp-server:latest .
 ```
 
-**Available Images:**
-- `aegisrepo/aegis-mcp-server:latest` - Production
+Then point your MCP client at `docker run --rm -i aegis-mcp-server:latest`. The
+server speaks MCP over **stdio**, so `-i` is required and `-d` must not be used
+— see [Running It](#running-it).
+
+Docker-free alternative: `pip install ai-aegis[mcp]` and use `python -m aegis.mcp`.
 
 ---
 
@@ -197,60 +197,56 @@ Use the same JSON configuration as Claude Code above. The config file location f
 
 ## Docker Deployment
 
-### Building Images
+Docker is optional here. The MCP server is a **stdio** process, so the container
+is a way to run it without installing Python — not a service you keep running.
 
-**Production:**
+### Building the Image
+
+The image is not published to any registry. Build it from source:
+
 ```bash
-docker build -f Dockerfile.mcp -t aegisrepo/aegis-mcp-server:latest .
+git clone https://gitee.com/wan-xianghao/ai-aegis.git
+cd ai-aegis
+docker build -f Dockerfile.mcp -t aegis-mcp-server:latest .
 ```
 
-**Multi-platform (for publishing):**
+Tag it whatever you like; `aegis-mcp-server:latest` is the name used below.
+
+### Running It
+
+```bash
+docker run --rm -i aegis-mcp-server:latest
+```
+
+`-i` is required — the server reads JSON-RPC from stdin and writes to stdout, so
+without it the container exits immediately. Do not use `-d`.
+
+### Managing the Image
+
+Because the container is started per session and exits with it, there is no
+daemon to inspect: `docker ps`, `docker logs -f`, and `docker-compose` do not
+apply. Use one-shot runs instead:
+
+```bash
+# Confirm the MCP module works inside the image
+docker run --rm aegis-mcp-server:latest python -m aegis.mcp --health-check
+
+# Open a shell
+docker run --rm -it --entrypoint bash aegis-mcp-server:latest
+```
+
+### Multi-platform Build (for publishing)
+
+If you publish this image to your own registry, build both architectures and
+push under your own namespace — not one you do not control:
+
 ```bash
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   -f Dockerfile.mcp \
-  -t aegisrepo/aegis-mcp-server:latest \
+  -t <your-registry>/aegis-mcp-server:latest \
   --push \
   .
-```
-
-### Using Docker Compose
-
-**Start:**
-```bash
-docker-compose up -d
-```
-
-**View Logs:**
-```bash
-docker logs -f aegis-mcp
-```
-
-**Stop:**
-```bash
-docker-compose down
-```
-
-**Update:**
-```bash
-docker-compose pull && docker-compose up -d --force-recreate
-```
-
-### Container Management
-
-**Health Check:**
-```bash
-docker exec -i aegis-mcp python -m aegis.mcp --validate-only
-```
-
-**Access Shell:**
-```bash
-docker exec -it aegis-mcp bash
-```
-
-**View Stats:**
-```bash
-docker stats aegis-mcp
 ```
 
 ---
@@ -261,10 +257,11 @@ docker stats aegis-mcp
 
 ```bash
 # Install the package
-pip install aegis[mcp]
+pip install ai-aegis[mcp]
 
 # Or install from source
-cd ai-threat-monitor
+git clone https://gitee.com/wan-xianghao/ai-aegis.git
+cd ai-aegis
 pip install -e ".[mcp]"
 ```
 
