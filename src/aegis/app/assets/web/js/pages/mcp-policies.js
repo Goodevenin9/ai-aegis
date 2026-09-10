@@ -1082,10 +1082,10 @@ const McpPoliciesPage = {
         const cta = document.createElement('p');
         cta.style.cssText = 'margin-top: 4px;';
         const link = document.createElement('a');
-        link.href = 'https://app.aegis.example';
+        link.href = window.__AEGIS_CONTROL_PLANE_DOCS_URL;
         link.target = '_blank';
         link.rel = 'noopener';
-        link.textContent = 'Create a free cloud account → app.aegis.example';
+        link.textContent = 'Open your AI Aegis control plane →';
         link.style.cssText = 'color: var(--accent-primary); text-decoration: underline;';
         cta.appendChild(link);
         wrap.appendChild(cta);
@@ -1096,7 +1096,7 @@ const McpPoliciesPage = {
         cmdLabel.className = 'mcp-empty-cmd-label';
         cmdLabel.textContent = 'ALREADY HAVE A TOKEN?';
         const cmdCode = document.createElement('code');
-        cmdCode.textContent = 'aegis-app enroll <svet_token>';
+        cmdCode.textContent = 'aegis-app enroll <aet_token>';
         cmd.appendChild(cmdLabel);
         cmd.appendChild(cmdCode);
         wrap.appendChild(cmd);
@@ -1124,7 +1124,7 @@ const McpPoliciesPage = {
             title: '☁  Cloud-only feature',
             body:
                 'Personal-mode installs (no enrollment) bypass this entirely. ' +
-                'Policy Sync only activates after a successful svet_* token redeem.',
+                'Policy Sync only activates after a successful aet_* token redeem.',
         }));
 
         // Precedence map

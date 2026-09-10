@@ -25,7 +25,7 @@ The install flow:
      ``~/.aegis/staging/cursor-plugin/`` — the source-of-truth copy.
   2. Copy it to ``~/.cursor/plugins/local/aegis-guard/`` (atomic
      tmp→replace; a real directory, never a symlink), then resolve the
-     ``__SV_PLUGIN_ROOT__`` placeholder in the COPIED ``hooks/hooks.json`` to
+     ``__AEGIS_PLUGIN_ROOT__`` placeholder in the COPIED ``hooks/hooks.json`` to
      that absolute dir (Cursor has no ``${PLUGIN_ROOT}`` variable, and absolute
      command paths are robust regardless of the hook working directory).
   3. MIGRATE off the legacy install model: earlier versions copied to
@@ -116,7 +116,7 @@ LEGACY_INSTALL_ROOT = CURSOR_HOME / PLUGIN_NAME
 # Marker identifying OUR (legacy global) entries inside hooks.json.
 _COMMAND_MARKER = f"/{PLUGIN_NAME}/"
 # Placeholder in the staged hooks/hooks.json template.
-_ROOT_PLACEHOLDER = "__SV_PLUGIN_ROOT__"
+_ROOT_PLACEHOLDER = "__AEGIS_PLUGIN_ROOT__"
 
 
 # --- Pydantic response models -----------------------------------------------
@@ -214,11 +214,11 @@ def _atomic_write_json(path: Path, data: dict) -> None:
     resolved_parent = path.parent.resolve(strict=False)
     home = Path.home().resolve(strict=False)
     cursor_root = (home / ".cursor").resolve(strict=False)
-    sv_root = (home / ".aegis").resolve(strict=False)
+    aegis_root = (home / ".aegis").resolve(strict=False)
     configured_root = CURSOR_HOME.resolve(strict=False)
     if not (
         resolved_parent.is_relative_to(cursor_root)
-        or resolved_parent.is_relative_to(sv_root)
+        or resolved_parent.is_relative_to(aegis_root)
         or resolved_parent.is_relative_to(configured_root)
     ):
         raise PermissionError(
@@ -282,13 +282,30 @@ def _migrate_legacy_global_hooks() -> None:
 
 
 def _resolve_root_placeholder(plugin_dir: Path) -> None:
-    """Resolve ``__SV_PLUGIN_ROOT__`` → the absolute plugin dir inside the
+    """Resolve ``__AEGIS_PLUGIN_ROOT__`` → the absolute plugin dir inside the
     COPIED ``hooks/hooks.json`` so Cursor runs the bundled scripts by absolute
     path (robust regardless of the hook working directory)."""
     hooks_json = plugin_dir / "hooks" / "hooks.json"
     text = hooks_json.read_text(encoding="utf-8")
     if _ROOT_PLACEHOLDER in text:
-        hooks_json.write_text(text.replace(_ROOT_PLACEHOLDER, str(plugin_dir)), encoding="utf-8")
+        # Re-serialize JSON after substitution so Windows backslashes are
+        # escaped. A raw text replacement turns ``C:\Users`` into an invalid
+        # JSON ``\U`` escape and Cursor cannot load any bundled hook.
+        value = json.loads(text)
+
+        def replace(item):
+            if isinstance(item, str):
+                return item.replace(_ROOT_PLACEHOLDER, str(plugin_dir))
+            if isinstance(item, list):
+                return [replace(child) for child in item]
+            if isinstance(item, dict):
+                return {key: replace(child) for key, child in item.items()}
+            return item
+
+        hooks_json.write_text(
+            json.dumps(replace(value), ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
 
 
 def _auto_install_to_cursor() -> Path:
@@ -351,7 +368,7 @@ async def install_plugin():
     copy it to ``~/.cursor/plugins/local/aegis-guard/`` so Cursor lists
     it in Settings → Plugins and loads its bundled hooks. Idempotent."""
     _hooks_common.ensure_bundled_dir(BUNDLED_PLUGIN_DIR, PLUGIN_FILES)
-    sv_url = _hooks_common.resolve_sv_url()
+    aegis_url = _hooks_common.resolve_aegis_url()
     # Clear any prior staging first: stage_files is additive, and we copytree the
     # whole staging dir into the install location — so a file dropped from
     # PLUGIN_FILES across versions (e.g. the old root plugin.json, replaced by
@@ -363,14 +380,14 @@ async def install_plugin():
         source_dir=BUNDLED_PLUGIN_DIR,
         files=PLUGIN_FILES,
         substitutions={
-            "http://127.0.0.1:8741": sv_url,
-            "http://localhost:8741": sv_url,
+            "http://127.0.0.1:8741": aegis_url,
+            "http://localhost:8741": aegis_url,
         },
     )
 
     logger.info(
-        "Staged %d Cursor plugin file(s) for %s at %s (sv_url=%s)",
-        len(files_written), PLUGIN_NAME, STAGING_DIR, sv_url,
+        "Staged %d Cursor plugin file(s) for %s at %s (aegis_url=%s)",
+        len(files_written), PLUGIN_NAME, STAGING_DIR, aegis_url,
     )
 
     # Defense-in-depth: zero files means the bundled plugin assets are missing

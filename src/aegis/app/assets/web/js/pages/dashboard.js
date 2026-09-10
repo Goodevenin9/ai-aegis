@@ -578,17 +578,17 @@ const DashboardPage = {
         // the container's real width keeps every glyph and marker crisp; a
         // ResizeObserver re-renders when the card's width actually changes.
         const w = container.clientWidth || 600;
-        container._svTimelineOpts = opts;
-        container._svTimelineLastW = w;
-        if (!container._svTimelineRO && window.ResizeObserver) {
+        container._aegisTimelineOpts = opts;
+        container._aegisTimelineLastW = w;
+        if (!container._aegisTimelineRO && window.ResizeObserver) {
             const ro = new ResizeObserver(() => {
                 const cw = container.clientWidth;
-                if (!cw || Math.abs(cw - (container._svTimelineLastW || 0)) < 8) return;
+                if (!cw || Math.abs(cw - (container._aegisTimelineLastW || 0)) < 8) return;
                 requestAnimationFrame(() =>
-                    this._renderTimelineChart(container, container._svTimelineOpts));
+                    this._renderTimelineChart(container, container._aegisTimelineOpts));
             });
             ro.observe(container);
-            container._svTimelineRO = ro;
+            container._aegisTimelineRO = ro;
         }
 
         const n = labels.length;
@@ -1476,7 +1476,7 @@ const DashboardPage = {
             const rules = t.matched_rules || [];
             const first = rules[0] || {};
             let why;
-            if (/guardian/i.test(first.rule_name || '') || first.rule_id === 'sv_guardian_model') {
+            if (/guardian/i.test(first.rule_name || '') || first.rule_id === 'aegis_guardian_model') {
                 const score = (t.metadata && t.metadata.ml_malicious_score) || t.confidence;
                 why = 'Guardian ML' + (score ? ` · ${Math.round(score * 100)}%` : '');
             } else if (first.rule_name) {

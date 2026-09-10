@@ -171,7 +171,7 @@ app_settings = Table(
     Column("local_only_analysis", Boolean, nullable=False, default=True),
     # Data-residency hard-lock (schema v42): when True, local_only_analysis is
     # forced ON and the user CANNOT turn it off (EU/regulated orgs). Set by an
-    # env/config override (SV_DATA_RESIDENCY=eu / SV_RESIDENCY_LOCKED) today, or
+    # env/config override (AEGIS_DATA_RESIDENCY=eu / AEGIS_RESIDENCY_LOCKED) today, or
     # pushed by the cloud enrollment response (see llm-security-engine #189).
     Column("residency_locked", Boolean, nullable=False, default=False),
     Column(
@@ -293,7 +293,7 @@ INSERT OR IGNORE INTO app_settings (id) VALUES (1);
 """
 
 # Current schema version
-CURRENT_SCHEMA_VERSION = 44
+CURRENT_SCHEMA_VERSION = 47
 SCHEMA_DESCRIPTION = (
     "v20: hash-chain tool_call_audit for tamper-evidence; "
     "v21: device_id on scans + audit rows; "
@@ -321,8 +321,154 @@ SCHEMA_DESCRIPTION = (
     "comes from the cloud enrollment response at runtime; "
     "v43: JIT tool access — jit_access_requests + jit_access_grants lifecycle tables and a "
     "`requestable` flag on synced_tool_rules (policy-marked soft denies an agent may request "
-    "time-boxed access to; hard denies stay non-requestable and instant-fail)"
+    "time-boxed access to; hard denies stay non-requestable and instant-fail); "
+    "v45: persistent runtime session state + hash-chained intent/behaviour events; "
+    "v47: P2 evidence, knowledge, memory, immunity and durable Agent workflow tables"
 )
+
+
+# P2 security-operations foundation.  These tables deliberately store structured,
+# redacted evidence and references rather than unrestricted raw model context.
+MIGRATION_V47_SQL = """
+CREATE TABLE IF NOT EXISTS security_evidence (
+    evidence_id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL DEFAULT 'local',
+    evidence_type TEXT NOT NULL,
+    source_name TEXT NOT NULL,
+    media_type TEXT NOT NULL,
+    content_hash TEXT NOT NULL,
+    text_content TEXT,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    status TEXT NOT NULL DEFAULT 'ready',
+    error TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_security_evidence_tenant_hash
+    ON security_evidence (tenant_id, content_hash);
+
+CREATE TABLE IF NOT EXISTS knowledge_documents (
+    document_id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL DEFAULT 'local',
+    evidence_id TEXT,
+    title TEXT NOT NULL,
+    document_type TEXT NOT NULL,
+    policy_version TEXT,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(evidence_id) REFERENCES security_evidence(evidence_id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_knowledge_documents_tenant_type
+    ON knowledge_documents (tenant_id, document_type);
+
+CREATE TABLE IF NOT EXISTS knowledge_chunks (
+    chunk_id TEXT PRIMARY KEY,
+    document_id TEXT NOT NULL,
+    tenant_id TEXT NOT NULL DEFAULT 'local',
+    parent_path TEXT,
+    ordinal INTEGER NOT NULL,
+    text_content TEXT NOT NULL,
+    keywords_json TEXT NOT NULL DEFAULT '[]',
+    content_hash TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(document_id) REFERENCES knowledge_documents(document_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_document
+    ON knowledge_chunks (document_id, ordinal);
+CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_tenant
+    ON knowledge_chunks (tenant_id);
+
+CREATE TABLE IF NOT EXISTS agent_memories (
+    memory_id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL DEFAULT 'local',
+    memory_type TEXT NOT NULL,
+    subject_key TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    evidence_ids_json TEXT NOT NULL DEFAULT '[]',
+    confidence REAL NOT NULL DEFAULT 1.0,
+    confirmed INTEGER NOT NULL DEFAULT 0,
+    expires_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_agent_memories_lookup
+    ON agent_memories (tenant_id, memory_type, subject_key, expires_at);
+
+CREATE TABLE IF NOT EXISTS immune_antibodies (
+    antibody_id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL DEFAULT 'local',
+    name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'candidate',
+    pattern_json TEXT NOT NULL,
+    similarity_threshold REAL NOT NULL DEFAULT 0.75,
+    max_score_delta INTEGER NOT NULL DEFAULT 20,
+    weight REAL NOT NULL DEFAULT 1.0,
+    source_session_key TEXT,
+    source_evidence_json TEXT NOT NULL DEFAULT '[]',
+    support_count INTEGER NOT NULL DEFAULT 1,
+    match_count INTEGER NOT NULL DEFAULT 0,
+    false_positive_count INTEGER NOT NULL DEFAULT 0,
+    version INTEGER NOT NULL DEFAULT 1,
+    approved_by TEXT,
+    approved_at TIMESTAMP,
+    expires_at TIMESTAMP,
+    last_matched_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_immune_antibodies_status
+    ON immune_antibodies (tenant_id, status, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS immune_matches (
+    match_id TEXT PRIMARY KEY,
+    antibody_id TEXT NOT NULL,
+    tenant_id TEXT NOT NULL DEFAULT 'local',
+    session_key TEXT NOT NULL,
+    similarity REAL NOT NULL,
+    score_delta INTEGER NOT NULL DEFAULT 0,
+    effective INTEGER NOT NULL DEFAULT 0,
+    details_json TEXT NOT NULL DEFAULT '{}',
+    outcome TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(antibody_id) REFERENCES immune_antibodies(antibody_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_immune_matches_session
+    ON immune_matches (session_key, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS security_agent_runs (
+    run_id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL DEFAULT 'local',
+    task_type TEXT NOT NULL,
+    status TEXT NOT NULL,
+    request_json TEXT NOT NULL,
+    state_json TEXT NOT NULL,
+    result_json TEXT,
+    error TEXT,
+    approval_hash TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_security_agent_runs_status
+    ON security_agent_runs (tenant_id, status, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS security_agent_events (
+    event_id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    seq INTEGER NOT NULL,
+    node_name TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    payload_json TEXT NOT NULL DEFAULT '{}',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(run_id) REFERENCES security_agent_runs(run_id) ON DELETE CASCADE,
+    UNIQUE(run_id, seq)
+);
+CREATE INDEX IF NOT EXISTS idx_security_agent_events_run
+    ON security_agent_events (run_id, seq);
+
+INSERT OR IGNORE INTO schema_version (version, applied_at, description)
+VALUES (47, CURRENT_TIMESTAMP, 'P2 security evidence, RAG, memory, immunity and Agent workflow');
+"""
 
 # Migration SQL for v34 — redaction_events table.
 # Audit log of every redaction performed by ``redact_secrets()``. One row per

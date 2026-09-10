@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 960 950" width="960" height="950">
 <defs>
-  <linearGradient id="svGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+  <linearGradient id="aegisGrad" x1="0%" y1="0%" x2="100%" y2="100%">
     <stop offset="0%" stop-color="#06b6d4"/>
     <stop offset="50%" stop-color="#0ea5e9"/>
     <stop offset="100%" stop-color="#ef4444"/>
@@ -75,7 +75,7 @@
 <rect x="327" y="59" width="248" height="48" rx="9" fill="#f0f9ff"/>
 
 <text x="380" y="78" class="label" fill="#0891b2">AI FIREWALL</text>
-<text x="380" y="95" class="heading-sm" fill="url(#svGrad)">Aegis Proxy</text>
+<text x="380" y="95" class="heading-sm" fill="url(#aegisGrad)">Aegis Proxy</text>
 
 <line x1="346" y1="110" x2="556" y2="110" stroke="#e0f2fe" stroke-width="1"/>
 

@@ -742,16 +742,16 @@ const GettingStartedPage = {
         desc.textContent = 'Optionally connect to Aegis Cloud for multi-stage ML-powered analysis designed to minimize false positives through proprietary threat intelligence. When enabled, scans are routed to the cloud API and results appear in a centralized dashboard in your account.';
         frag.appendChild(desc);
 
-        frag.appendChild(this.createBulletList(['**Advanced ML-powered threat detection beyond regex**', 'Centralized dashboard at app.aegis.example', '**Industry-specific rule creation**', '**Notification system for webhook and email alerts**', 'Replaces local AI Analysis when active', 'Falls back to local analysis if cloud is unreachable']));
+        frag.appendChild(this.createBulletList(['**Advanced threat detection beyond regex**', 'Self-hosted AI Aegis control plane', '**Industry-specific rule creation**', '**Notification system for webhook and email alerts**', 'Can complement local AI Analysis when active', 'Falls back to local analysis if the server is unreachable']));
 
         const stepsWrapper = document.createElement('div');
         stepsWrapper.className = 'cloud-steps';
         stepsWrapper.style.cssText = 'margin-top: 14px;';
 
         [
-            { num: '1', title: 'Create Account', desc: ['Sign up at ', { copy: 'app.aegis.example' }, ' (free tier available)'] },
+            { num: '1', title: 'Create API Key', desc: ['Open your AI Aegis control plane and issue an ', { copy: 'aepk_*' }, ' key'] },
             { num: '2', title: 'Get API Key', desc: 'Go to Access Management, accept the Terms of Service and Privacy Policy, then create a new API key' },
-            { num: '3', title: 'Add Key', desc: ['Go to ', { copy: 'localhost/settings' }, ' and add the key you just created on ', { copy: 'app.aegis.example' }] },
+            { num: '3', title: 'Add Key', desc: ['Go to ', { copy: 'localhost/settings' }, ' and paste the key from your control plane'] },
             { num: '4', title: 'Connect', desc: 'Click "Cloud Connect" in the header' },
         ].forEach(step => {
             const stepEl = document.createElement('div');
@@ -821,7 +821,7 @@ const GettingStartedPage = {
         cloudOnly.appendChild(cloudOnlyTitle);
         const cloudOnlyBody = document.createElement('p');
         cloudOnlyBody.style.cssText = 'margin: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.5;';
-        cloudOnlyBody.textContent = 'Personal-mode installs (no enrollment) bypass this entirely. Policy Sync only activates after a successful svet_* token redeem: the cloud admin issues the token, the user runs `aegis-app enroll <token>` once, and from there the local app long-polls /policy/sync for signed bundles. Without enrollment, the page renders an empty-state and no cloud rules are enforced.';
+        cloudOnlyBody.textContent = 'Personal-mode installs (no enrollment) bypass this entirely. Policy Sync only activates after a successful aet_* token redeem: the cloud admin issues the token, the user runs `aegis-app enroll <token>` once, and from there the local app long-polls /policy/sync for signed bundles. Without enrollment, the page renders an empty-state and no cloud rules are enforced.';
         cloudOnly.appendChild(cloudOnlyBody);
         frag.appendChild(cloudOnly);
 
@@ -847,8 +847,8 @@ const GettingStartedPage = {
         enrollTitle.textContent = 'How to enroll';
         frag.appendChild(enrollTitle);
 
-        frag.appendChild(this.createMiniStep('1', 'Admin mints a token', 'In the Aegis cloud admin (app.aegis.example), an org admin opens Enroll Devices and clicks Invite User. The cloud generates a single-use svet_* token.'));
-        frag.appendChild(this.createMiniStep('2', 'User redeems it locally', 'Run `aegis-app enroll <svet_*>` once. The local app POSTs /api/v1/devices/enroll, gets back org binding + signing key + auth credentials, and persists them to the credentials file.'));
+        frag.appendChild(this.createMiniStep('1', 'Admin mints a token', 'An administrator calls the enrollment-token endpoint in the AI Aegis control plane. It generates a single-use aet_* token.'));
+        frag.appendChild(this.createMiniStep('2', 'User redeems it locally', 'Run `aegis-app enroll <aet_*>` once. The local app POSTs /api/v1/devices/enroll, gets back org binding + signing key + auth credentials, and persists them to the credentials file.'));
         frag.appendChild(this.createMiniStep('3', 'Set AEGIS_API_KEY (recommended)', 'Export a long-lived sk-* API key from the cloud admin so /policy/sync uses the X-Api-Key header. This is the canonical sync auth: it bypasses the short-lived JWT refresh path which can leave sync broken if the refresh token goes stale. JWT-only mode still works as a fallback.'));
         frag.appendChild(this.createMiniStep('4', 'Cloud Sync starts', 'On the next launch, the local app polls for updates from your Aegis account. Each update is verified (signed, fresh, monotonic version) before it\'s applied. The MCP Policies page reflects what\'s currently in force.'));
 
@@ -1215,10 +1215,10 @@ const GettingStartedPage = {
 <div style="margin:14px 0;padding:14px;background:var(--bg-tertiary);border:1px solid var(--border-default);border-radius:10px;">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 360" role="img" aria-label="Enterprise deployment: agent hosts forward OCSF events to the company SIEM" style="width:100%;height:auto;max-width:820px;display:block;">
     <defs>
-      <marker id="svArrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <marker id="aegisArrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
         <path d="M0,0 L10,5 L0,10 Z" fill="#7c6cff"/>
       </marker>
-      <marker id="svArrowRed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <marker id="aegisArrowRed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
         <path d="M0,0 L10,5 L0,10 Z" fill="#ef4444" opacity="0.5"/>
       </marker>
     </defs>
@@ -1267,9 +1267,9 @@ const GettingStartedPage = {
       </g>
 
       <!-- Flow arrows (converging to SIEM) -->
-      <path d="M 260 65  C 380 65, 430 170, 540 170" fill="none" stroke="#7c6cff" stroke-width="1.8" marker-end="url(#svArrow)"/>
-      <path d="M 260 155 L 540 170"                   fill="none" stroke="#7c6cff" stroke-width="1.8" marker-end="url(#svArrow)"/>
-      <path d="M 260 245 C 380 245, 430 170, 540 170" fill="none" stroke="#7c6cff" stroke-width="1.8" marker-end="url(#svArrow)"/>
+      <path d="M 260 65  C 380 65, 430 170, 540 170" fill="none" stroke="#7c6cff" stroke-width="1.8" marker-end="url(#aegisArrow)"/>
+      <path d="M 260 155 L 540 170"                   fill="none" stroke="#7c6cff" stroke-width="1.8" marker-end="url(#aegisArrow)"/>
+      <path d="M 260 245 C 380 245, 430 170, 540 170" fill="none" stroke="#7c6cff" stroke-width="1.8" marker-end="url(#aegisArrow)"/>
 
       <!-- Flow label -->
       <g transform="translate(320,140)">
@@ -1393,7 +1393,7 @@ const GettingStartedPage = {
             <span>
                 <strong style="color:var(--text-primary);">Shared machine?</strong>
                 The local API on <code>127.0.0.1</code> has no per-user access control: anyone on that loopback can add, edit, or delete a SIEM destination. That's fine for a personal laptop, not for a shared dev or jump host. If multiple people share this host and you need RBAC, use the
-                <a href="https://app.aegis.example" target="_blank" rel="noopener" style="color:var(--accent-primary);text-decoration:underline;">Aegis Cloud app</a>
+                <a href="${window.__AEGIS_CONTROL_PLANE_DOCS_URL}" target="_blank" rel="noopener" style="color:var(--accent-primary);text-decoration:underline;">AI Aegis control plane</a>
                 — teams, roles, and an audit trail of who changed what.
             </span>
         `;
@@ -1437,7 +1437,7 @@ const GettingStartedPage = {
                     <li><strong>Correlate.</strong> AI events sit alongside EDR / SSO / network signals in the same SIEM: one pane of glass, one on-call rotation, one runbook.</li>
                     <li><strong>Comply.</strong> OCSF + MITRE ATT&CK + tamper-evident tool audit chain give you evidence to support AI governance controls in SOC 2 / HIPAA / FINRA / EU AI Act audits.</li>
                 </ul>
-                <p style="margin:0;">For fleet-wide RBAC, teams, and a shared audit trail of who changed what across many devices, pair this with the <a href="https://app.aegis.example" target="_blank" rel="noopener" style="color:var(--accent-primary);text-decoration:underline;">Aegis Cloud app</a>, local agents keep scanning and forwarding; the cloud federates policy and access control across the fleet.</p>
+                <p style="margin:0;">For fleet-wide policies and a shared device audit trail, pair this with the <a href="${window.__AEGIS_CONTROL_PLANE_DOCS_URL}" target="_blank" rel="noopener" style="color:var(--accent-primary);text-decoration:underline;">AI Aegis control plane</a>. Local agents keep scanning while the control plane distributes signed policy across the fleet.</p>
             `,
             { open: true },
         ));
@@ -1957,7 +1957,7 @@ const GettingStartedPage = {
         tplNote.style.cssText = 'margin-top:4px;padding:10px 12px;font-size:11.5px;color:var(--text-muted);line-height:1.55;background:var(--bg-tertiary);border:1px solid var(--border-default);border-radius:6px;';
         tplNote.innerHTML = `
             <strong style="color:var(--text-secondary);">Starter templates, not production-validated.</strong>
-            All four are MIT-licensed and provided AS-IS. Import into your own stack, verify panels render against real events, and adjust queries / facets to match your environment. See the <a href="https://github.com/Wanshanghao/ai-aegis/blob/master/docs/siem/NOTICE" target="_blank" rel="noopener" style="color:var(--accent-primary);text-decoration:underline;">NOTICE</a> for trademark + upstream-license attributions.
+            All four are MIT-licensed and provided AS-IS. Import into your own stack, verify panels render against real events, and adjust queries / facets to match your environment. See the <a href="https://github.com/Goodevenin9/ai-aegis/blob/master/docs/siem/NOTICE" target="_blank" rel="noopener" style="color:var(--accent-primary);text-decoration:underline;">NOTICE</a> for trademark + upstream-license attributions.
         `;
         dashBody.appendChild(tplNote);
 
@@ -2663,7 +2663,7 @@ const GettingStartedPage = {
         footer.style.cssText = 'margin-top: 12px; font-size: 12px; color: var(--text-secondary);';
         footer.appendChild(document.createTextNode('Still stuck? '));
         const issueLink = document.createElement('a');
-        issueLink.href = 'https://github.com/Wanshanghao/ai-aegis/issues';
+        issueLink.href = 'https://github.com/Goodevenin9/ai-aegis/issues';
         issueLink.target = '_blank';
         issueLink.style.cssText = 'color: var(--accent-primary); text-decoration: none;';
         issueLink.textContent = 'Open an issue on GitHub';
@@ -2914,8 +2914,8 @@ const GettingStartedPage = {
 
     createCodeBlock(code) {
         // Substitute actual running ports and host so display and Copy both show the right values
-        const _pp = window.__SV_PROXY_PORT; const _wp = window.__SV_WEB_PORT;
-        const _host = window.__SV_HOST;
+        const _pp = window.__AEGIS_PROXY_PORT; const _wp = window.__AEGIS_WEB_PORT;
+        const _host = window.__AEGIS_HOST;
         if (_pp && _pp !== 8742) code = code.replaceAll(':8742', ':' + _pp);
         if (_wp && _wp !== 8741) code = code.replaceAll(':8741', ':' + _wp);
         if (_host && _host !== 'localhost' && _host !== '127.0.0.1') {

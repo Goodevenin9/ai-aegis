@@ -4,10 +4,10 @@
   "version": "4.6.0",
   "author": {
     "name": "Aegis",
-    "url": "https://aegis.example"
+    "url": "https://github.com/Goodevenin9/ai-aegis"
   },
-  "homepage": "https://aegis.example",
-  "repository": "https://github.com/Wanshanghao/ai-aegis",
+  "homepage": "https://github.com/Goodevenin9/ai-aegis",
+  "repository": "https://github.com/Goodevenin9/ai-aegis",
   "license": "Apache-2.0",
   "category": "Security",
   "keywords": [

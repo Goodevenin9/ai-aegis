@@ -1,0 +1,19 @@
+services:
+  demo:
+    build:
+      context: .
+      dockerfile: Dockerfile.demo
+      args:
+        AEGIS_PIP_INDEX_URL: ${AEGIS_PIP_INDEX_URL:-}
+    restart: unless-stopped
+    environment:
+      AEGIS_INGRESS_TOKEN: ${AEGIS_ENGINE_INGRESS_TOKEN}
+    volumes:
+      - demo-data:/home/aegis/.local/share/aegis/threat-monitor
+    ports:
+      - "127.0.0.1:${AEGIS_ENGINE_LOCAL_PORT:-8741}:8741"
+    mem_limit: 768m
+    cpus: 1.5
+
+volumes:
+  demo-data:

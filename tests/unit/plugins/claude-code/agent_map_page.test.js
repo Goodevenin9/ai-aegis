@@ -64,17 +64,17 @@ test('agent-map has outcome filter pills (allowed / blocked / logged / threats)'
 
 test('agent-map edges carry the travelling flow animation', () => {
   const src = read('js/pages/agent-map.js');
-  assert.match(src, /sv-edge-flow/);   // travelling dash overlay
-  assert.match(src, /@keyframes svFlow/);
+  assert.match(src, /aegis-edge-flow/);   // travelling dash overlay
+  assert.match(src, /@keyframes aegisFlow/);
   // the motion layer must switch off under prefers-reduced-motion
   assert.match(src, /prefers-reduced-motion/);
 });
 
 test('agent-map animates tool-call traffic as flowing water', () => {
   const src = read('js/pages/agent-map.js');
-  assert.match(src, /@keyframes svFlow/);
+  assert.match(src, /@keyframes aegisFlow/);
   assert.match(src, /stroke-dashoffset/);
-  assert.match(src, /sv-edge-blocked/); // blocked edges pulse
+  assert.match(src, /aegis-edge-blocked/); // blocked edges pulse
 });
 
 test('agent-map supports zoom, pan, and node drag', () => {

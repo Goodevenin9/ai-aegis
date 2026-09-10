@@ -3,13 +3,13 @@
  *
  * A threat can be caught by the regex rules, by the Guardian ML model, or by
  * both. The Guardian model shows up inside `matched_rules` as an entry with
- * `source === "model"` (rule_id `sv_guardian_model`), and its `confidence` is
+ * `source === "model"` (rule_id `aegis_guardian_model`), and its `confidence` is
  * the ML score. This helper classifies a detection and builds a badge whose
  * tooltip says exactly what detected it (and the ML score when present), so the
  * same label reads identically on the Threats, Agent Map, and Agent Runs views.
  */
 const DetectionLabel = {
-    ML_RULE_ID: 'sv_guardian_model',
+    ML_RULE_ID: 'aegis_guardian_model',
 
     _isMl(r) {
         return !!r && (r.source === 'model' || r.rule_id === this.ML_RULE_ID);

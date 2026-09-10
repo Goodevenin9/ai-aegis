@@ -7,7 +7,7 @@ confidence to a flat 0.8 for ANY regex hit and never emits a per-rule
 confidence. As a result the `_MIN_RULE_CONFIDENCE` floor in the /analyze
 route could never fire for a local match, and SHAPE-only heuristic matches
 from the "Output Credential Leakage Detection" rule
-(`sv_community_output_001_credential_leak`) were minted as `data_leakage`
+(`aegis_community_output_001_credential_leak`) were minted as `data_leakage`
 threat_intel rows at confidence 0.8 (rendered "0.8%" in the UI).
 
 The route now drops a rule match whose ONLY matched patterns are loose
@@ -31,7 +31,7 @@ from aegis.app.database.repositories.settings import AppSettings
 
 
 # --- Loose heuristic regex patterns straight from the CURRENT credential
-#     leak rule (`sv_community_output_001_credential_leak`). A match whose
+#     leak rule (`aegis_community_output_001_credential_leak`). A match whose
 #     only matched_patterns are loose shapes must NOT be recorded; the
 #     structured patterns (ghp_/AKIA/sk-/JWT/api_key:…) must be.
 #
@@ -150,7 +150,7 @@ def test_low_signal_heuristic_only_match_is_not_recorded(monkeypatch):
         confidence=0.8,  # engine's hardcoded flat confidence
         matched_rules=[
             {
-                "id": "sv_community_output_001_credential_leak",
+                "id": "aegis_community_output_001_credential_leak",
                 "name": "Output Credential Leakage Detection",
                 "category": "data_leakage",
                 "severity": "critical",
@@ -184,7 +184,7 @@ def test_real_secret_high_signal_match_is_recorded(monkeypatch):
         confidence=0.8,
         matched_rules=[
             {
-                "id": "sv_community_output_001_credential_leak",
+                "id": "aegis_community_output_001_credential_leak",
                 "name": "Output Credential Leakage Detection",
                 "category": "data_leakage",
                 "severity": "critical",
@@ -219,7 +219,7 @@ def test_mixed_match_keeps_structured_pattern(monkeypatch):
         confidence=0.8,
         matched_rules=[
             {
-                "id": "sv_community_output_001_credential_leak",
+                "id": "aegis_community_output_001_credential_leak",
                 "name": "Output Credential Leakage Detection",
                 "category": "data_leakage",
                 "severity": "critical",
@@ -251,7 +251,7 @@ def test_mixed_match_keeps_structured_pattern(monkeypatch):
 # STRUCTURED pattern so the low-signal heuristic gate keeps them.
 # ---------------------------------------------------------------------------
 
-def _rule(conf, rid="sv_test_rule"):
+def _rule(conf, rid="aegis_test_rule"):
     return {
         "id": rid,
         "name": "Test Rule",

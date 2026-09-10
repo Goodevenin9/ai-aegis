@@ -223,7 +223,7 @@ If Aegis is acquired or merged, your data may be transferred to the new entity u
 - Opt out of analytics (may limit service functionality)
 
 **How to Exercise Rights:**
-- Email: contact@aegis.example (or create GitHub issue with "privacy" label)
+- Email: contact@ (or create GitHub issue with "privacy" label)
 - Response time: 30 days
 
 ---
@@ -242,7 +242,7 @@ If Aegis is acquired or merged, your data may be transferred to the new entity u
 - Right to withdraw consent (where applicable)
 - Right to data portability
 
-**Data Controller:** Aegis (contact via contact@aegis.example)
+**Data Controller:** Aegis (contact via contact@)
 
 **EU Representative:** Not yet appointed (company under 250 employees)
 
@@ -264,7 +264,7 @@ We do not sell personal information. No opt-out needed.
 
 ### Other Jurisdictions
 
-We comply with applicable privacy laws in all jurisdictions. If you have specific privacy law questions, contact contact@aegis.example.
+We comply with applicable privacy laws in all jurisdictions. If you have specific privacy law questions, contact contact@.
 
 ---
 
@@ -290,7 +290,7 @@ If you require data to remain in specific jurisdiction, use **local mode**.
 - ❌ No browser tracking
 - ✅ Server-side API calls only
 
-**Website (aegis.example):**
+**Website ():**
 - Essential cookies for site functionality
 - Analytics cookies (optional - you can opt out)
 - No advertising cookies
@@ -370,8 +370,8 @@ Aegis AI Threat Monitor is not directed at children under 13 (or 16 in EU).
 ## 15. Contact Information
 
 **Privacy Questions:**
-- Email: contact@aegis.example
-- GitHub: Create issue with "privacy" label at https://github.com/Wanshanghao/ai-aegis/issues
+- Email: contact@
+- GitHub: Create issue with "privacy" label at https://github.com/Goodevenin9/ai-aegis/issues
 - Response time: 30 days maximum
 
 **Data Protection Officer:**
@@ -404,7 +404,7 @@ Not yet appointed (company under GDPR threshold)
 - **User control:** You choose your privacy level
 
 **📧 Questions?**
-Contact contact@aegis.example or create a GitHub issue.
+Contact contact@ or create a GitHub issue.
 
 ---
 

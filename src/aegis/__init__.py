@@ -10,7 +10,7 @@ A comprehensive AI security monitoring toolkit that protects applications from:
 
 Supports multiple modes:
 - Local mode (community rules, offline)
-- API mode (enhanced detection via api.aegis.example)
+- API mode (remote detection through a configured AI Aegis control plane)
 - Hybrid mode (intelligent switching)
 
 Copyright (c) 2025 SecureVector

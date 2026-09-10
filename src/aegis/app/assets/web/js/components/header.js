@@ -83,19 +83,8 @@ const Header = {
         // which is the block that was overflowing on a narrowed window.
         // See Sidebar.createThemeFooter().
 
-        // Guided tour launcher (compass) — opens the step-by-step walkthrough.
-        // The tour ends on the Guide, which is the single docs entry point now
-        // (the old standalone "?" help button was removed to avoid two doors to
-        // the same place).
-        const tourBtn = this.createTourButton();
-        right.appendChild(tourBtn);
-
-        // Connect Agents — always-visible entry to the two integration routes
-        // (Framework SDKs vs plugins). Shown for every persona regardless of
-        // whether they run the local app or a Terraform/self-host engine, so
-        // the path to "point my agents at this" is one click from any page.
-        const connectBtn = this.createConnectAgentsButton();
-        right.appendChild(connectBtn);
+        // Tour and Connect Agents are destinations in the persistent left rail.
+        // Duplicating them here made the old header compete with page actions.
 
         // NOTE: the "AI Analysis" toggle was removed from the header — it is an
         // OPTIONAL, configure-once setting (reduce false positives via an LLM)
@@ -199,18 +188,21 @@ const Header = {
         const btn = document.createElement('button');
         btn.className = 'lang-toggle-btn';
         btn.id = 'lang-toggle-btn';
-        btn.textContent = zh ? 'EN' : '中文';
-        btn.title = zh ? 'Switch to English' : 'Switch to Chinese';
+        btn.dataset.noTranslate = 'true';
+        btn.title = zh ? '切换到英文' : 'Switch to Chinese';
         btn.setAttribute('aria-label', btn.title);
-        btn.style.cssText = 'background: transparent; border: 2px solid var(--text-secondary); color: var(--text-secondary); height: 30px; border-radius: 15px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin-right: 10px; padding: 0 10px;';
-        btn.addEventListener('mouseenter', () => {
-            btn.style.borderColor = 'var(--accent-primary)';
-            btn.style.color = 'var(--accent-primary)';
-        });
-        btn.addEventListener('mouseleave', () => {
-            btn.style.borderColor = 'var(--text-secondary)';
-            btn.style.color = 'var(--text-secondary)';
-        });
+
+        const icon = document.createElement('span');
+        icon.className = 'lang-toggle-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = '文';
+        btn.appendChild(icon);
+
+        const label = document.createElement('span');
+        label.className = 'lang-toggle-label';
+        label.textContent = zh ? 'English' : '中文';
+        btn.appendChild(label);
+
         btn.addEventListener('click', () => { if (window.I18N) I18N.toggle(); });
         return btn;
     },
@@ -1073,13 +1065,13 @@ const Header = {
 
                 const routeLine = document.createElement('div');
                 routeLine.style.cssText = 'font-size: 11px; opacity: 0.9;';
-                routeLine.textContent = 'Scans routed to scan.aegis.example';
+                routeLine.textContent = 'Scans routed to your AI Aegis control plane';
                 tooltip.appendChild(routeLine);
 
                 const linkLine = document.createElement('div');
                 linkLine.style.cssText = 'font-size: 11px; margin-top: 4px;';
                 const link = document.createElement('a');
-                link.href = 'https://app.aegis.example';
+                link.href = window.__AEGIS_CONTROL_PLANE_DOCS_URL;
                 link.target = '_blank';
                 link.style.cssText = 'color: white; text-decoration: underline;';
                 link.textContent = 'View threat analysis dashboard →';
@@ -1132,7 +1124,7 @@ const Header = {
         content.appendChild(intro);
 
         const steps = [
-            { num: '1', title: 'Create Account', desc: 'Sign up at app.aegis.example (free tier available)' },
+            { num: '1', title: 'Create API Key', desc: 'Open your AI Aegis control plane and issue an API key' },
             { num: '2', title: 'Get API Key', desc: 'Go to Access Management -> Create a new key' },
             { num: '3', title: 'Add API Key', desc: 'Go to Settings and add your API key' },
             { num: '4', title: 'Connect', desc: 'Click Cloud Connect to sync rules, policies & fleet metadata. Your prompts stay on-device by default.' },
@@ -1165,27 +1157,16 @@ const Header = {
             stepsList.appendChild(stepEl);
         });
 
-        // CTA buttons — one-click trial leads (#194 f2: device flow, the
-        // device connects itself, no key to copy); manual path demoted.
+        // Self-hosted control-plane actions. Account and billing flows are not
+        // advertised until a real identity service is deployed.
         const cta = document.createElement('div');
         cta.style.cssText = 'margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;';
 
-        const trialBtn = document.createElement('button');
-        trialBtn.className = 'btn btn-primary';
-        trialBtn.textContent = 'Start free cloud trial';
-        trialBtn.title = 'Sign up in the browser; this device connects itself. No key to copy.';
-        trialBtn.addEventListener('click', () => {
-            Modal.close();
-            if (window.SettingsPage) SettingsPage._autoStartTrial = true;
-            if (window.Sidebar) Sidebar.navigate('settings');
-        });
-        cta.appendChild(trialBtn);
-
         const ctaBtn = document.createElement('button');
-        ctaBtn.className = 'btn btn-secondary';
-        ctaBtn.textContent = 'Go to app.aegis.example';
+        ctaBtn.className = 'btn btn-primary';
+        ctaBtn.textContent = 'Open AI Aegis control plane';
         ctaBtn.addEventListener('click', () => {
-            window.open('https://app.aegis.example/login?redirect=desktop', '_blank');
+            window.open(window.__AEGIS_CONTROL_PLANE_DOCS_URL, '_blank');
         });
         cta.appendChild(ctaBtn);
 
@@ -1214,7 +1195,7 @@ const Header = {
         [
             'Prompt input and output are analyzed on-device; by default none of that text is sent to Aegis Cloud.',
             'Rule sync, policy sync, fleet metadata, and governance keep working, and none of them send your prompts.',
-            'Cloud ML analysis is a separate opt-in that sends prompt text to scan.aegis.example.',
+            'Remote analysis is an opt-in that sends prompt text to your configured AI Aegis control plane.',
             'EU data-residency: when your organization enforces it, local-only analysis is hard-locked on and cannot be disabled. Cloud ML stays off and SIEM forwarders are capped to metadata-level detail, so prompt text does not leave this device.',
         ].forEach(t => {
             const li = document.createElement('li');
@@ -1225,8 +1206,7 @@ const Header = {
 
         content.appendChild(cta);
 
-        // Manual key path AFTER the one-click CTA — it's the fallback (and
-        // the only route for org svet_ enrollment tokens), not the default.
+        // API-key and organization-enrollment paths.
         const manualLabel = document.createElement('div');
         manualLabel.style.cssText = 'margin-top:24px;margin-bottom:10px;font-weight:600;font-size:13px;color:var(--text-secondary);';
         manualLabel.textContent = 'Prefer to connect manually?';
@@ -1823,7 +1803,7 @@ const Header = {
                     { num: '1', title: 'Open Settings', desc: 'Go to Settings → Community Nodes' },
                     { num: '2', title: 'Install Node', desc: 'Search and install: n8n-nodes-aegis' },
                     { num: '3', title: 'Add to Workflow', desc: 'Drag Aegis node into your workflow' },
-                    { num: '4', title: 'Configure Endpoint', desc: 'Paste your endpoint URL', code: 'Local: http://localhost:8741/analyze\nCloud: https://scan.aegis.example/analyze' },
+                    { num: '4', title: 'Configure Endpoint', desc: 'Paste your endpoint URL', code: 'Local: http://localhost:8741/analyze\nCloud: http://127.0.0.1:8780/analyze' },
                 ],
                 note: 'Enable "Output Scan" in header to scan LLM responses for data leakage, PII, and credential exposure.',
             },
@@ -1833,7 +1813,7 @@ const Header = {
                 steps: [
                     { num: '1', title: 'Open Settings', desc: 'Navigate to Settings → Triggers' },
                     { num: '2', title: 'Add Webhook', desc: 'Click "Add Webhook" button' },
-                    { num: '3', title: 'Configure URL', desc: 'Paste your endpoint URL', code: 'Local: http://localhost:8741/analyze\nCloud: https://scan.aegis.example/analyze' },
+                    { num: '3', title: 'Configure URL', desc: 'Paste your endpoint URL', code: 'Local: http://localhost:8741/analyze\nCloud: http://127.0.0.1:8780/analyze' },
                     { num: '4', title: 'Set Headers', desc: 'Content-Type: application/json' },
                     { num: '5', title: 'Configure Body', desc: 'Set request body format', code: '{"text": "<message>"}' },
                 ],
@@ -1843,7 +1823,7 @@ const Header = {
                 description: 'AI agent orchestration framework',
                 steps: [
                     { num: '1', title: 'Open Crew Settings', desc: 'Navigate to your Crew configuration' },
-                    { num: '2', title: 'Set Webhook URL', desc: 'Configure stepWebhookUrl parameter', code: 'Local: http://localhost:8741/analyze\nCloud: https://scan.aegis.example/analyze' },
+                    { num: '2', title: 'Set Webhook URL', desc: 'Configure stepWebhookUrl parameter', code: 'Local: http://localhost:8741/analyze\nCloud: http://127.0.0.1:8780/analyze' },
                     { num: '3', title: 'Deploy', desc: 'Save and deploy your Crew' },
                 ],
                 note: 'The webhook receives {"text": "..."} and returns threat analysis for each agent step.',

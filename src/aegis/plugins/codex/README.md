@@ -22,7 +22,7 @@ Every tool call your Codex session issues passes through three hooks installed b
 
 - [OpenAI Codex CLI](https://github.com/openai/codex) ≥ 0.133.0 (the version that supports `codex plugin marketplace` / `codex plugin add`)
 - Node.js 18+ (Codex uses its own Node runtime; no separate install required)
-- A running local [Aegis AI Threat Monitor](https://github.com/Wanshanghao/ai-aegis) app on `http://127.0.0.1:8741` (or override via `SV_BASE_URL` env var)
+- A running local [Aegis AI Threat Monitor](https://github.com/Goodevenin9/ai-aegis) app on `http://127.0.0.1:8741` (or override via `AEGIS_ENGINE_ENDPOINT` env var)
 
 ## Installation
 
@@ -62,7 +62,7 @@ Uninstall: `aegis-app --uninstall-plugin codex` (or `codex plugin remove aegis-g
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Calls pass even with a deny rule active | Aegis app not running, OR hook handler can't reach it | Confirm `curl http://127.0.0.1:8741/health`; check `SV_BASE_URL` if non-default port |
+| Calls pass even with a deny rule active | Aegis app not running, OR hook handler can't reach it | Confirm `curl http://127.0.0.1:8741/health`; check `AEGIS_ENGINE_ENDPOINT` if non-default port |
 | "Trust Aegis Guard hooks?" prompt every session | Codex trust-cache not persisted between sessions | Confirm the trust prompt was accepted, not dismissed; check `~/.codex/config.toml` for the trusted-hook entry |
 | Hook calls feel slow | Local app unreachable; 100ms timeout firing on every call | Restart the Aegis app — the timeout is fail-open by design |
 | No audit rows appearing | Plugin not installed in Codex, OR hooks not trusted | Run `codex plugin list` to confirm `aegis-guard` is listed |
@@ -70,10 +70,10 @@ Uninstall: `aegis-app --uninstall-plugin codex` (or `codex plugin remove aegis-g
 
 ## Configuration
 
-The plugin reads `AEGIS_ENGINE_ENDPOINT` (the unified engine-endpoint variable, shared with the SDKs and the other plugins) — or the legacy `SV_BASE_URL` — from the environment if set; otherwise defaults to `http://127.0.0.1:8741`. This is the **engine** (your local app or a self-hosted / Terraform deployment), **not** the Aegis cloud. To point at a non-default engine:
+The plugin reads `AEGIS_ENGINE_ENDPOINT` (the unified engine-endpoint variable, shared with the SDKs and the other plugins) — or the legacy `AEGIS_ENGINE_ENDPOINT` — from the environment if set; otherwise defaults to `http://127.0.0.1:8741`. This is the **engine** (your local app or a self-hosted / Terraform deployment), **not** the Aegis cloud. To point at a non-default engine:
 
 ```bash
-export AEGIS_ENGINE_ENDPOINT="https://<your-engine-endpoint>"   # legacy: SV_BASE_URL
+export AEGIS_ENGINE_ENDPOINT="https://<your-engine-endpoint>"   # legacy: AEGIS_ENGINE_ENDPOINT
 # then launch Codex
 ```
 
@@ -108,7 +108,7 @@ Codex's statusline (`status_line` config field and `/statusline` slash command) 
 
 ## License
 
-Apache 2.0. Source at <https://github.com/Wanshanghao/ai-aegis> under `src/aegis/plugins/codex/`.
+Apache 2.0. Source at <https://github.com/Goodevenin9/ai-aegis> under `src/aegis/plugins/codex/`.
 
 ## Disclaimer
 

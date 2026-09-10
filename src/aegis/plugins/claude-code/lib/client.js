@@ -134,6 +134,7 @@ async function fetchSyncedOverrides(baseUrl, runtime, opts = {}) {
  * which are a small fraction of tool calls.
  */
 const EGRESS_TIMEOUT_MS = 400;
+const PRETOOL_PIPELINE_TIMEOUT_MS = 200;
 
 /**
  * Domain helper: POST a tool call to the local app's egress evaluator.
@@ -173,7 +174,43 @@ async function evaluateEgress(baseUrl, body, opts = {}) {
   }
 }
 
+/**
+ * Run the deterministic five-stage PreToolUse pipeline.
+ *
+ * The endpoint never invokes an LLM; the slightly larger budget only covers
+ * local session-state lookup and evidence aggregation. As with every hook
+ * client operation, failure returns `{}` so this layer cannot wedge Claude.
+ *
+ * @param {string} baseUrl
+ * @param {object} body
+ * @param {{ timeoutMs?: number }} [opts]
+ * @returns {Promise<object>}
+ */
+async function evaluatePreToolPipeline(baseUrl, body, opts = {}) {
+  const timeoutMs = typeof opts.timeoutMs === 'number'
+    ? opts.timeoutMs
+    : PRETOOL_PIPELINE_TIMEOUT_MS;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const resp = await fetch(`${baseUrl}/api/runtime/pretool/decide`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!resp || !resp.ok) return {};
+    const data = await resp.json();
+    return data && typeof data === 'object' ? data : {};
+  } catch {
+    return {};
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 module.exports = {
   getJson, postJsonAndForget, fetchSyncedOverrides, evaluateEgress,
-  authHeaders, DEFAULT_TIMEOUT_MS, EGRESS_TIMEOUT_MS,
+  evaluatePreToolPipeline, authHeaders, DEFAULT_TIMEOUT_MS,
+  EGRESS_TIMEOUT_MS, PRETOOL_PIPELINE_TIMEOUT_MS,
 };

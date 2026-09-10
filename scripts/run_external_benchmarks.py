@@ -10,14 +10,17 @@ import logging
 import platform
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from aegis.app.services.external_benchmark_evaluation import (  # noqa: E402
     DeepSeekBenchmarkEvaluator,
+    DEEPSEEK_EVIDENCE_SCHEMA_VERSION,
     LIVE_REPLAY_VARIANTS,
     LiveSemanticDecision,
     REPLAY_VARIANTS,
@@ -26,6 +29,7 @@ from aegis.app.services.external_benchmark_evaluation import (  # noqa: E402
     load_agentharm,
     load_injecagent,
     write_replay_reports,
+    _fetch_text,
 )
 from aegis.app.services.pretool_pipeline import (  # noqa: E402
     IntentEvidence,
@@ -86,6 +90,30 @@ def _validate_counts(corpus: object) -> None:
         raise RuntimeError(f"{name} source count changed: expected {expected[name]}, got {actual}")
 
 
+def _source_fetcher(cache_dir: Path):
+    """Return a retrying, content-addressed source loader for reproducible reruns."""
+
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    def fetch(url: str) -> str:
+        cache_path = cache_dir / f"{hashlib.sha256(url.encode()).hexdigest()}.txt"
+        if cache_path.exists():
+            return cache_path.read_text(encoding="utf-8")
+        last_error: Optional[Exception] = None
+        for attempt in range(3):
+            try:
+                content = _fetch_text(url)
+                cache_path.write_text(content, encoding="utf-8")
+                return content
+            except Exception as exc:  # the fixed URL/hash is recorded in the report
+                last_error = exc
+                if attempt < 2:
+                    time.sleep(1.5 * (2**attempt))
+        raise RuntimeError(f"benchmark source unavailable after retries: {url}") from last_error
+
+    return fetch
+
+
 def _live_to_json(case_id: str, value: LiveSemanticDecision) -> dict[str, object]:
     return {
         "case_id": case_id,
@@ -100,6 +128,7 @@ def _live_to_json(case_id: str, value: LiveSemanticDecision) -> dict[str, object
             "theme_shifted": value.evidence.labels.theme_shifted,
             "permission_probing": value.evidence.labels.permission_probing,
             "request_escalation": value.evidence.labels.request_escalation,
+            "explicit_harm": value.evidence.labels.explicit_harm,
             "requested_capabilities": sorted(value.evidence.requested_capabilities),
             "requested_radius": value.evidence.requested_radius,
         },
@@ -115,6 +144,7 @@ def _live_from_json(row: dict[str, object]) -> LiveSemanticDecision:
                 theme_shifted=bool(evidence.get("theme_shifted")),
                 permission_probing=bool(evidence.get("permission_probing")),
                 request_escalation=bool(evidence.get("request_escalation")),
+                explicit_harm=bool(evidence.get("explicit_harm")),
             ),
             requested_capabilities=frozenset(evidence.get("requested_capabilities") or []),
             requested_radius=str(evidence.get("requested_radius") or "none"),  # type: ignore[arg-type]
@@ -163,12 +193,13 @@ def main() -> int:
     parser.add_argument("--limit", type=int, help="Per-benchmark smoke-test limit")
     args = parser.parse_args()
     logging.disable(logging.CRITICAL)
+    fetch_source = _source_fetcher(args.output_dir / "source-cache")
 
     corpora = []
     if "injecagent" in args.benchmarks:
-        corpora.append(load_injecagent())
+        corpora.append(load_injecagent(fetch_text=fetch_source))
     if "agentharm" in args.benchmarks:
-        corpora.append(load_agentharm())
+        corpora.append(load_agentharm(fetch_text=fetch_source))
     if "agentdojo" in args.benchmarks:
         if not args.agentdojo_root:
             parser.error("--agentdojo-root is required when agentdojo is selected")
@@ -200,7 +231,9 @@ def main() -> int:
         if evaluator is not None:
             cache_dir = args.output_dir / "deepseek-cache"
             cache_dir.mkdir(parents=True, exist_ok=True)
-            cache_path = cache_dir / f"{corpus.name}-{args.deepseek_model}.jsonl"
+            cache_path = cache_dir / (
+                f"{corpus.name}-{args.deepseek_model}-{DEEPSEEK_EVIDENCE_SCHEMA_VERSION}.jsonl"
+            )
             cached = _load_live_cache(cache_path)
             before = len(cached)
             completed_new = 0
@@ -249,6 +282,7 @@ def main() -> int:
         },
         "deepseek": {
             "model": args.deepseek_model if evaluator else None,
+            "evidence_schema_version": DEEPSEEK_EVIDENCE_SCHEMA_VERSION if evaluator else None,
             "paid_api_calls_for_result_set": total_represented_calls,
             "new_paid_api_calls_during_this_invocation": total_paid_calls,
             "api_responses_represented": total_represented_calls,

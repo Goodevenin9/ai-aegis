@@ -33,8 +33,8 @@ We provide security updates for the following versions:
 We appreciate responsible disclosure of security vulnerabilities. If you discover a security issue, please report it through one of these channels:
 
 **Primary (Recommended):**
-- **GitHub Security Advisories:** [Report a vulnerability](https://github.com/Wanshanghao/ai-aegis/security/advisories/new)
-- **Email:** security@aegis.example (or contact@aegis.example with subject "SECURITY:")
+- **GitHub Security Advisories:** [Report a vulnerability](https://github.com/Goodevenin9/ai-aegis/security/advisories/new)
+- **Email:** GitHub security advisory (or contact@ with subject "SECURITY:")
 
 **Alternative:**
 - Create a **private** GitHub issue (if your repository supports it)
@@ -340,9 +340,9 @@ We carefully audit all dependencies:
 
 ### Security Contacts
 
-- **Security Issues:** security@aegis.example (or contact@aegis.example)
-- **Privacy Issues:** contact@aegis.example
-- **General Issues:** [GitHub Issues](https://github.com/Wanshanghao/ai-aegis/issues)
+- **Security Issues:** GitHub security advisory (or contact@)
+- **Privacy Issues:** contact@
+- **General Issues:** [GitHub Issues](https://github.com/Goodevenin9/ai-aegis/issues)
 
 ### PGP Key (Optional)
 
@@ -383,7 +383,7 @@ The following vulnerabilities were addressed by updating dependencies:
 **No security advisories issued.**
 
 We will publish all security advisories at:
-- GitHub Security Advisories: https://github.com/Wanshanghao/ai-aegis/security/advisories
+- GitHub Security Advisories: https://github.com/Goodevenin9/ai-aegis/security/advisories
 - This file (summary)
 
 ---
@@ -425,7 +425,7 @@ Our security practices are informed by:
 
 We deeply appreciate the security research community's efforts to keep open source software secure. Your responsible disclosure helps protect our users and improve our software.
 
-**Found a vulnerability?** Report it: security@aegis.example
+**Found a vulnerability?** Report it: GitHub security advisory
 
 **Want to help?** Contribute: [CONTRIBUTOR_AGREEMENT.md](../docs/legal/CONTRIBUTOR_AGREEMENT.md)
 
@@ -437,7 +437,7 @@ We deeply appreciate the security research community's efforts to keep open sour
 
 We're committed to continuous improvement of our security practices.
 
-**Questions?** Contact us at contact@aegis.example
+**Questions?** Contact us at contact@
 
 </div>
 

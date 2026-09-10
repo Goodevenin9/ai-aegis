@@ -5,6 +5,7 @@ Tests secure credential storage using file-based storage.
 """
 
 import json
+import os
 import pytest
 from unittest.mock import patch, MagicMock
 
@@ -27,8 +28,11 @@ class TestCredentialsService:
         data = json.loads(creds_file.read_text())
         assert data["api_key"] == "test_api_key"
         assert data["v"] == 1
-        # Check file permissions (owner read/write only)
-        assert oct(creds_file.stat().st_mode & 0o777) == "0o600"
+        # POSIX mode bits do not represent Windows ACLs.  The production
+        # writer still requests 0600, but this assertion is only meaningful
+        # on POSIX filesystems.
+        if os.name != "nt":
+            assert oct(creds_file.stat().st_mode & 0o777) == "0o600"
 
     @patch("aegis.app.services.credentials._get_credentials_file")
     def test_get_api_key_success(self, mock_get_file, tmp_path):

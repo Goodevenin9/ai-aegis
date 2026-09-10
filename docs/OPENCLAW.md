@@ -32,7 +32,7 @@ openclaw gateway
 Enable block mode to actively stop threats and unauthorized tool calls before they reach the LLM. This starts a proxy that intercepts LLM traffic. The plugin continues monitoring; the proxy adds blocking.
 
 ```bash
-# 1. Enable block mode from the dashboard toggle (or svconfig.yml: block_mode: true)
+# 1. Enable block mode from the dashboard toggle (or aegis.yml: block_mode: true)
 # 2. The proxy starts automatically on port 8742
 # 3. Restart OpenClaw with proxy env vars:
 
@@ -90,7 +90,7 @@ Copy all four plugin files from the [source](../src/aegis/plugins/openclaw/) int
 - `openclaw.plugin.json` — plugin manifest
 - `package.json` — plugin metadata
 - `index.ts` — main plugin entry (runtime guards, fetch-to-Aegis)
-- `config.ts` — config resolver (env vars + svconfig.yml reads)
+- `config.ts` — config resolver (env vars + aegis.yml reads)
 
 > **Why two TypeScript files?** OpenClaw's plugin scanner flags files that both read `process.env` and make network requests as a potential credential-harvesting pattern. Splitting config reads into `config.ts` keeps `index.ts` network-only and lets the plugin load cleanly.
 

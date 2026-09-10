@@ -77,13 +77,13 @@ class APIModeConfig(ModeConfig):
     """
     Configuration specific to API mode.
 
-    The default API URL points to the production endpoint: https://scan.aegis.example
+    The default API URL points to the local self-hosted control plane.
     Development builds automatically configure a separate development endpoint during the build process.
 
     This can be overridden via AEGIS_API_URL environment variable.
     """
 
-    api_url: str = "https://scan.aegis.example"  # Default to production, overridden during build
+    api_url: str = "http://127.0.0.1:8780"
     api_key: Optional[str] = None
     endpoint: str = "/analyze"
     user_tier: str = "community"  # User tier: community, professional, enterprise

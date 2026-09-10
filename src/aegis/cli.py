@@ -40,7 +40,7 @@ Examples:
   aegis config --show          # Show current configuration
   aegis rules --list           # List available rules
 
-For more information, visit: https://aegis.example
+For more information, visit: https://github.com/Goodevenin9/ai-aegis
             """,
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
@@ -511,7 +511,7 @@ def main():
         _handle_enroll()
         return 0
 
-    # `sv inspect-uplink` (#113) — terminal-first parallel of the Cloud
+    # `aegis inspect-uplink` (#113) — terminal-first parallel of the Cloud
     # Activity page. Forwards to the same handler as `aegis-app
     # inspect-uplink` so both binaries print the in/out uplink summary.
     if len(sys.argv) > 1 and sys.argv[1] == "inspect-uplink":

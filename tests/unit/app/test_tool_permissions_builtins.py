@@ -47,7 +47,7 @@ def _builtins_from_js(path: Path) -> set[str]:
     permissive on the character class but pinned to the BUILTIN_TOOLS
     block specifically.
     """
-    src = path.read_text()
+    src = path.read_text(encoding="utf-8")
     m = re.search(r"BUILTIN_TOOLS\s*=\s*new\s+Set\(\s*\[(.+?)\]\s*\)", src, re.DOTALL)
     assert m, f"could not locate BUILTIN_TOOLS in {path}"
     return set(re.findall(r"'([A-Za-z_]+)'", m.group(1)))

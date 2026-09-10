@@ -202,8 +202,8 @@ main() {
     print_error "3. Try manual install: $PYTHON_CMD -m pip install --user ai-aegis"
     print_error ""
     print_error "If you continue to have issues, please:"
-    print_error "• Check our documentation: https://github.com/Secure-Vector/ai-threat-monitor"
-    print_error "• Report the issue: https://github.com/Secure-Vector/ai-threat-monitor/issues"
+    print_error "• Check our documentation: https://github.com/Goodevenin9/ai-aegis"
+    print_error "• Report the issue: https://github.com/Goodevenin9/ai-aegis/issues"
     print_error "• Include your Python version and OS details"
 
     exit 1

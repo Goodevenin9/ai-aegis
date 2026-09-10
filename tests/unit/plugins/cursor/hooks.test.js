@@ -117,7 +117,7 @@ test('hooks.json template registers all nine events with the root placeholder', 
   ]);
   for (const [event, entries] of Object.entries(manifest.hooks)) {
     assert.equal(entries.length, 1, `${event} should register exactly one entry`);
-    assert.ok(entries[0].command.includes('__SV_PLUGIN_ROOT__'), `${event} command must use the root placeholder`);
+    assert.ok(entries[0].command.includes('__AEGIS_PLUGIN_ROOT__'), `${event} command must use the root placeholder`);
     assert.ok(entries[0].command.startsWith('node '), `${event} command must run node`);
     assert.equal(typeof entries[0].timeout, 'number');
   }
@@ -126,7 +126,7 @@ test('hooks.json template registers all nine events with the root placeholder', 
 test('every hook script named in the template exists in the plugin tree', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(PLUGIN, 'hooks/hooks.json'), 'utf8'));
   for (const entries of Object.values(manifest.hooks)) {
-    const m = entries[0].command.match(/__SV_PLUGIN_ROOT__\/(hooks\/[a-z-]+\.js)/);
+    const m = entries[0].command.match(/__AEGIS_PLUGIN_ROOT__\/(hooks\/[a-z-]+\.js)/);
     assert.ok(m, `unparseable command: ${entries[0].command}`);
     assert.ok(fs.existsSync(path.join(PLUGIN, m[1])), `${m[1]} missing from plugin tree`);
   }

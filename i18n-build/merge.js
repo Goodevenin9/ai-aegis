@@ -53,7 +53,7 @@ lines.push('/**');
 lines.push(' * Aegis i18n dictionary — English → 中文. AUTO-GENERATED from i18n-build/.');
 lines.push(' * Loaded by js/i18n.js. Do not edit by hand.');
 lines.push(' */');
-lines.push('window.SV_DICT = {');
+lines.push('window.AEGIS_DICT = {');
 for (const k of Object.keys(exact).sort((a, b) => b.length - a.length)) {
     lines.push('    ' + jsString(k) + ': ' + jsString(exact[k]) + ',');
 }
@@ -62,7 +62,7 @@ lines.push('');
 lines.push('/**');
 lines.push(' * Dynamic string patterns: { re, zh }. Matched while lang === "zh".');
 lines.push(' */');
-lines.push('window.SV_PATTERNS = [');
+lines.push('window.AEGIS_PATTERNS = [');
 for (const p of patterns) {
     lines.push('    { re: ' + jsString(p.re) + ', zh: ' + jsString(p.zh) + ' },');
 }

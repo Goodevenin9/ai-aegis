@@ -210,7 +210,7 @@ const CostsPage = {
 
         const panel = document.createElement('div');
         panel.style.cssText = 'margin-bottom: 14px; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 12px;';
-        panel.dataset.svRuntimeAccent = '#8b949e'; // Claude Code — same hue as the observability pages
+        panel.dataset.aegisRuntimeAccent = '#8b949e'; // Claude Code — same hue as the observability pages
 
         const header = document.createElement('div');
         header.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 10px;';
@@ -218,7 +218,7 @@ const CostsPage = {
         // this runtime, replacing the old alert-looking left border.
         const accentDot = document.createElement('span');
         accentDot.style.cssText = 'width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; background: '
-            + (panel.dataset.svRuntimeAccent || 'var(--accent-primary)') + ';';
+            + (panel.dataset.aegisRuntimeAccent || 'var(--accent-primary)') + ';';
         header.appendChild(accentDot);
         const title = document.createElement('strong');
         title.textContent = 'Claude Code · Session Tokens';
@@ -519,7 +519,7 @@ const CostsPage = {
         // the Tool Permissions Codex category — visual consistency
         // across every surface that surfaces Codex-attributed data.
         panel.style.cssText = 'margin-bottom: 14px; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 12px;';
-        panel.dataset.svRuntimeAccent = '#8b949e'; // Codex — same hue as the observability pages
+        panel.dataset.aegisRuntimeAccent = '#8b949e'; // Codex — same hue as the observability pages
 
         const header = document.createElement('div');
         header.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 10px;';
@@ -527,7 +527,7 @@ const CostsPage = {
         // this runtime, replacing the old alert-looking left border.
         const accentDot = document.createElement('span');
         accentDot.style.cssText = 'width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; background: '
-            + (panel.dataset.svRuntimeAccent || 'var(--accent-primary)') + ';';
+            + (panel.dataset.aegisRuntimeAccent || 'var(--accent-primary)') + ';';
         header.appendChild(accentDot);
         const title = document.createElement('strong');
         title.textContent = 'Codex · Session Tokens';
@@ -808,7 +808,7 @@ const CostsPage = {
         // dashboard token-trend series — consistent across every surface
         // that shows Copilot-attributed data.
         panel.style.cssText = 'margin-bottom: 14px; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 12px;';
-        panel.dataset.svRuntimeAccent = '#8b949e'; // Copilot CLI
+        panel.dataset.aegisRuntimeAccent = '#8b949e'; // Copilot CLI
 
         const header = document.createElement('div');
         header.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 10px;';
@@ -816,7 +816,7 @@ const CostsPage = {
         // this runtime, replacing the old alert-looking left border.
         const accentDot = document.createElement('span');
         accentDot.style.cssText = 'width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; background: '
-            + (panel.dataset.svRuntimeAccent || 'var(--accent-primary)') + ';';
+            + (panel.dataset.aegisRuntimeAccent || 'var(--accent-primary)') + ';';
         header.appendChild(accentDot);
         const title = document.createElement('strong');
         title.textContent = 'Copilot CLI · Session Tokens';
@@ -1076,7 +1076,7 @@ const CostsPage = {
         // dashboard token-trend series — consistent across every surface
         // that shows Hermes-attributed data.
         panel.style.cssText = 'margin-bottom: 14px; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border-default); border-radius: 12px;';
-        panel.dataset.svRuntimeAccent = '#8b949e'; // Hermes
+        panel.dataset.aegisRuntimeAccent = '#8b949e'; // Hermes
 
         const header = document.createElement('div');
         header.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-bottom: 10px;';
@@ -1084,7 +1084,7 @@ const CostsPage = {
         // this runtime, replacing the old alert-looking left border.
         const accentDot = document.createElement('span');
         accentDot.style.cssText = 'width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; background: '
-            + (panel.dataset.svRuntimeAccent || 'var(--accent-primary)') + ';';
+            + (panel.dataset.aegisRuntimeAccent || 'var(--accent-primary)') + ';';
         header.appendChild(accentDot);
         const title = document.createElement('strong');
         title.textContent = 'Hermes · Session Tokens';
@@ -2057,13 +2057,13 @@ const CostsPage = {
         syncBtn.id = 'sync-pricing-btn';
         syncBtn.textContent = this.syncInProgress ? 'Syncing…' : 'Sync Prices';
         syncBtn.disabled = this.syncInProgress;
-        syncBtn.title = 'Fetches the latest model_pricing.yml from Wanshanghao/ai-aegis (master) and updates the local database. Pricing is also refreshed from the bundled YAML on app startup.';
+        syncBtn.title = 'Fetches the latest model_pricing.yml from Goodevenin9/ai-aegis (master) and updates the local database. Pricing is also refreshed from the bundled YAML on app startup.';
         syncBtn.addEventListener('click', () => this._syncPricing());
         toolbar.appendChild(syncBtn);
 
         const syncInfo = document.createElement('span');
         syncInfo.style.cssText = 'font-size: 12px; color: var(--text-muted); margin-left: 8px;';
-        syncInfo.textContent = 'Pulls from Wanshanghao/ai-aegis. Also auto-updates on app restart.';
+        syncInfo.textContent = 'Pulls from Goodevenin9/ai-aegis. Also auto-updates on app restart.';
         toolbar.appendChild(syncInfo);
 
         if (this.lastSyncedAt) {

@@ -17,7 +17,7 @@ Legal/UX boundaries from the idea page's pre-implementation review:
   deny without requestable=1 is an org decision — creation returns 403 and
   nothing enters the queue.
 - **Human-only approval.** Approve/deny/revoke require the per-run UI token
-  (X-SV-UI-Token header) that only the web UI fetches and attaches. Guard
+  (X-Aegis-UI-Token header) that only the web UI fetches and attaches. Guard
   plugins never call /ui-token; the create endpoint is the only JIT surface
   meant for agents. The token is minted fresh per server run.
 - **Time-boxed only.** Durations are 15m / 1h / session — no unbounded grant.
@@ -190,9 +190,9 @@ async def list_requests(
 async def approve_request(
     request_id: str,
     body: JitApprove,
-    x_sv_ui_token: Optional[str] = Header(None),
+    x_aegis_ui_token: Optional[str] = Header(None),
 ):
-    _require_ui_token(x_sv_ui_token)
+    _require_ui_token(x_aegis_ui_token)
     try:
         db = get_database()
         repo = JitAccessRepository(db)
@@ -218,9 +218,9 @@ async def approve_request(
 async def deny_request(
     request_id: str,
     body: JitDeny,
-    x_sv_ui_token: Optional[str] = Header(None),
+    x_aegis_ui_token: Optional[str] = Header(None),
 ):
-    _require_ui_token(x_sv_ui_token)
+    _require_ui_token(x_aegis_ui_token)
     try:
         db = get_database()
         ok = await JitAccessRepository(db).deny_request(request_id, body.reason)
@@ -251,9 +251,9 @@ async def list_grants():
 @router.post("/jit/grants/{grant_id}/revoke")
 async def revoke_grant(
     grant_id: str,
-    x_sv_ui_token: Optional[str] = Header(None),
+    x_aegis_ui_token: Optional[str] = Header(None),
 ):
-    _require_ui_token(x_sv_ui_token)
+    _require_ui_token(x_aegis_ui_token)
     try:
         db = get_database()
         ok = await JitAccessRepository(db).revoke_grant(grant_id)

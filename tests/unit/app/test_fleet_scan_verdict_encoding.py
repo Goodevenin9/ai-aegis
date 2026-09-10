@@ -60,7 +60,7 @@ def _scan_row(kind: str = "scan", **overrides) -> dict:
         "detected_types": ["prompt_injection", "jailbreak"],
         "worst_rule_severity": "critical",
         "conversation_id": "sess-1",
-        "device_id": "sv-device-1",
+        "device_id": "aegis-device-1",
     }
     payload.update(overrides)
     return {"kind": kind, "payload": payload}
@@ -151,7 +151,7 @@ def test_identity_and_dedupe_fields():
     assert row["scan_id"] == "scan-abc123"
     assert row["row_hash"] == "scan-abc123"  # dedupe key for engine replay-safety
     assert row["session_id"] == "sess-1"
-    assert row["device_id"] == "sv-device-1"
+    assert row["device_id"] == "aegis-device-1"
     assert row["timestamp"] == "2026-08-05T21:00:00+00:00"
     assert row["detected_types"] == ["prompt_injection", "jailbreak"]
 
@@ -175,7 +175,7 @@ def test_tool_audit_rows_unchanged_and_interleaved():
             "trace_id": "trace-1",
             "session_id": "sess-1",
             "runtime_kind": "claude-code",
-            "device_id": "sv-device-1",
+            "device_id": "aegis-device-1",
         },
     }
     rows = _decode(encode_fleet_jsonl([tool_row, _scan_row()]))

@@ -26,7 +26,7 @@ setup(
     description="Real-time AI threat monitoring. Protect your apps from prompt injection, leaks, and attacks in just a few lines of code.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/Wanshanghao/ai-aegis",
+    url="https://github.com/Goodevenin9/ai-aegis",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     classifiers=[
@@ -69,19 +69,17 @@ setup(
             "keyring>=23.0.0",  # Secure credential storage (OS keychain)
             "httpx>=0.24.0",  # Async HTTP client for cloud API
             "websockets>=12.0",  # WebSocket proxy for OpenClaw integration
+            "langgraph>=1.2,<2; python_version >= '3.10'",  # P2 durable security Agent graph
+            "python-multipart>=0.0.20",  # Bounded evidence uploads
+            "pypdf>=6,<7",  # Security-policy PDF extraction
+            "python-docx>=1.2,<2",  # DOCX security-policy extraction
+            "Pillow>=11,<13",  # Safe image metadata/decoding for OCR
+            "pytesseract>=0.3.13",  # Optional local screenshot OCR adapter
             # Pydantic + FastAPI evaluate route annotations at registration time
             # using ast-based union resolution; on 3.9 they need this backport to
             # handle PEP 604 `X | None` strings produced by `from __future__ import
             # annotations`. No-op on 3.10+.
             'eval_type_backport>=0.2.0; python_version<"3.10"',
-            # Aegis Guardian — the local ML detection model, installed as
-            # a normal pip dependency (no vendored runtime in this repo). The app
-            # imports it from `svguardian`; `pip install -U` updates the model
-            # like any other dependency. The runtime is pure-Python (zero ML
-            # deps). Range pins a compatible major (semver). The model package
-            # requires Python >=3.10, so it's marker-gated: on 3.9 the app still
-            # installs and runs (Guardian fail-open → regex rules only).
-            'securevector-guardian-model>=1.2,<2; python_version >= "3.10"',
         ],
         "dev": [
             "pytest>=6.0",
@@ -112,13 +110,41 @@ setup(
             "sqlalchemy>=2.0.0",
             "watchdog>=3.0.0",
             "platformdirs>=3.0.0",
+            "langgraph>=1.2,<2; python_version >= '3.10'",
+            "python-multipart>=0.0.20",
+            "pypdf>=6,<7",
+            "python-docx>=1.2,<2",
+            "Pillow>=11,<13",
+            "pytesseract>=0.3.13",
             "psutil>=5.8",
             "memory-profiler>=0.60",
             'eval_type_backport>=0.2.0; python_version<"3.10"',
-            'securevector-guardian-model>=1.2,<2; python_version >= "3.10"',  # Guardian ML model (Python >=3.10)
+        ],
+        "control-plane": [
+            "fastapi>=0.100.0",
+            "uvicorn[standard]>=0.20.0",
+        ],
+        "demo": [
+            # Headless web demo: the visible P2 features must be executable,
+            # not mock cards. Desktop/keyring/watchdog dependencies remain out.
+            "fastapi>=0.100.0",
+            "uvicorn>=0.20.0",
+            "aiosqlite>=0.19.0",
+            "sqlalchemy>=2.0.0",
+            "platformdirs>=3.0.0",
+            "httpx>=0.24.0",
+            "python-multipart>=0.0.20",
+            "langgraph>=1.2,<2; python_version >= '3.10'",
+            "pypdf>=6,<7",
+            "python-docx>=1.2,<2",
+            "Pillow>=11,<13",
+            "pytesseract>=0.3.13",
         ],
     },
     include_package_data=True,
+    data_files=[
+        ("aegis/benchmarks", ["benchmarks/chinese_agent_security_p1.jsonl"]),
+    ],
     package_data={
         "aegis": [
             "rules/**/*.yml",
@@ -152,6 +178,8 @@ setup(
             # explicitly or the wheel ships the plugin without its manifest.
             "plugins/cursor/**/*",
             "plugins/cursor/.cursor-plugin/*",
+            "guardian/model.runtime.json.gz",
+            "guardian/model.runtime.json.gz.sha256",
         ],
         "": ["NOTICE"],
     },
@@ -162,13 +190,14 @@ setup(
             "aegis-mcp=aegis.mcp.__main__:sync_main",
             "aegis-app=aegis.app.main:main",
             "aegis-proxy=aegis.integrations.openclaw_llm_proxy:main",
+            "aegis-control-plane=aegis.control_plane.__main__:main",
         ],
     },
     keywords="ai security llm prompt-injection threat-detection threat-monitoring openai claude aegis",
     project_urls={
-        "Bug Reports": "https://github.com/Wanshanghao/ai-aegis/issues",
-        "Source": "https://github.com/Wanshanghao/ai-aegis",
-        "Documentation": "https://docs.aegis.example/ai-threat-monitor",
-        "Homepage": "https://aegis.example",
+        "Bug Reports": "https://github.com/Goodevenin9/ai-aegis/issues",
+        "Source": "https://github.com/Goodevenin9/ai-aegis",
+        "Documentation": "https://github.com/Goodevenin9/ai-aegis/tree/master/docs",
+        "Homepage": "https://github.com/Goodevenin9/ai-aegis",
     },
 )

@@ -2,8 +2,8 @@
 // the v1.0 frontend source (pages/*.js, components/*.js).
 global.window = {};
 require('../src/aegis/app/assets/web/js/i18n-dict.js');
-const DICT = window.SV_DICT;
-const PATTERNS = window.SV_PATTERNS;
+const DICT = window.AEGIS_DICT;
+const PATTERNS = window.AEGIS_PATTERNS;
 const hasNonAscii = s => /[⺀-⻿　-〿㐀-䶿一-鿿豈-﫿＀-￯]/.test(s);
 function translateText(text) {
     if (typeof text !== 'string' || !text.length) return null;

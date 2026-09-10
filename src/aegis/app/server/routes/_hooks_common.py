@@ -32,24 +32,24 @@ def _load_server_config() -> dict:
         cfg = load_config()
         return cfg.get("server", {}) or {}
     except Exception as e:
-        logger.debug("Could not load svconfig, using defaults: %s", e)
+        logger.debug("Could not load aegis config, using defaults: %s", e)
         return {}
 
 
-def resolve_sv_url() -> str:
-    """Resolve the local app's base URL from svconfig + env vars.
+def resolve_aegis_url() -> str:
+    """Resolve the local app's base URL from aegis config + env vars.
 
     Lookup order:
-      1. ``SV_WEB_PORT`` env var (fallback default 8741)
-      2. ``server.host`` / ``server.port`` in the svconfig file (overrides env)
+      1. ``AEGIS_WEB_PORT`` env var (fallback default 8741)
+      2. ``server.host`` / ``server.port`` in the aegis config file (overrides env)
     """
-    sv_port = os.environ.get("SV_WEB_PORT", "8741")
-    sv_host = "127.0.0.1"
+    aegis_port = os.environ.get("AEGIS_WEB_PORT", "8741")
+    aegis_host = "127.0.0.1"
     server_cfg = _load_server_config()
     if server_cfg:
-        sv_host = server_cfg.get("host", sv_host)
-        sv_port = str(server_cfg.get("port", sv_port))
-    return f"http://{sv_host}:{sv_port}"
+        aegis_host = server_cfg.get("host", aegis_host)
+        aegis_port = str(server_cfg.get("port", aegis_port))
+    return f"http://{aegis_host}:{aegis_port}"
 
 
 def ensure_bundled_dir(

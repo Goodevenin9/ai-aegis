@@ -24,6 +24,7 @@ from aegis.app.services.credentials import (
 )
 from aegis.app.services.enrollment import EnrollmentError, enroll
 from aegis.app.services.cloud_proxy import get_cloud_proxy, CloudProxyError
+from aegis.app.services.cloud_config import CONTROL_PLANE_URL
 from aegis.app.services.trial_signup import (
     TrialSignupError,
     poll_trial_token,
@@ -51,7 +52,7 @@ class GeneralSettingsResponse(BaseModel):
     # and the UI must render the toggle disabled (user cannot opt into cloud).
     residency_locked: bool = False
     # Loaded Guardian model version + availability — surfaced in Settings so the
-    # version is transparent and `pip install -U securevector-guardian-model`
+    # version is transparent and `pip install -U bundled AI Aegis Guardian`
     # (once split out) + restart visibly bumps it.
     guardian_model_version: Optional[str] = None
     guardian_ml_available: bool = False
@@ -84,7 +85,7 @@ class CloudSettingsResponse(BaseModel):
 class CredentialsRequest(BaseModel):
     """Request to configure credentials."""
 
-    api_key: str = Field(..., min_length=1, description="API Key from app.aegis.example")
+    api_key: str = Field(..., min_length=1, description="API key issued by the AI Aegis control plane")
     bearer_token: Optional[str] = Field(
         None, description="Bearer token (optional, defaults to api_key)"
     )
@@ -115,6 +116,16 @@ class MessageResponse(BaseModel):
     """Simple message response."""
 
     message: str
+
+
+@router.get("/system/deployment")
+async def get_deployment_endpoints() -> dict:
+    """Expose non-secret deployment URLs so the web UI never hardcodes a host."""
+    return {
+        "control_plane_url": CONTROL_PLANE_URL,
+        "control_plane_docs_url": f"{CONTROL_PLANE_URL.rstrip('/')}/docs",
+        "self_hosted": True,
+    }
 
 
 @router.get("/settings", response_model=GeneralSettingsResponse)
@@ -235,7 +246,7 @@ async def update_general_settings(request: GeneralSettingsUpdate) -> GeneralSett
                         proxy_host = proxy_cfg.get("host", "127.0.0.1")
                         proxy_port = proxy_cfg.get("port", 8742)
                         import os as _os
-                        proxy_port = int(_os.environ.get("SV_PROXY_PORT", proxy_port))
+                        proxy_port = int(_os.environ.get("AEGIS_PROXY_PORT", proxy_port))
 
                         # Patch pi-ai files before starting proxy
                         try:
@@ -330,15 +341,15 @@ async def configure_credentials(request: CredentialsRequest) -> CredentialsRespo
     """
     Configure cloud credentials. Routes by token-prefix:
 
-    - `svet_*` → org enrollment (POST /api/v1/devices/enroll, persists JWT
+    - `aet_*` → org enrollment (POST /api/v1/devices/enroll, persists JWT
       + signing key + org binding; starts cloud sync subsystem).
-    - `svpk_*` or legacy unprefixed → personal API key (existing flow,
+    - `aepk_*` or legacy unprefixed → personal API key (existing flow,
       saves to credential store + enables cloud mode).
     """
     token_type = detect_token_type(request.api_key)
 
-    # ---- svet_* — org enrollment path ----
-    if token_type == "svet":
+    # ---- aet_* — org enrollment path ----
+    if token_type == "aet":
         try:
             result = await enroll(request.api_key)
         except EnrollmentError as exc:
@@ -369,7 +380,7 @@ async def configure_credentials(request: CredentialsRequest) -> CredentialsRespo
             message=f"Enrolled as {result.user_email} ({result.org_name}).",
         )
 
-    # ---- svpk_* / legacy — personal API key path ----
+    # ---- aepk_* / legacy — personal API key path ----
     try:
         if not save_credentials(request.api_key):
             raise HTTPException(
@@ -484,7 +495,7 @@ async def start_cloud_trial() -> TrialStartResponse:
 async def poll_cloud_trial(request: TrialPollRequest) -> TrialPollResponse:
     """
     One-click cloud trial, step 2: poll the token exchange. On completion the
-    minted personal `svpk_` key is persisted via the existing credentials
+    minted personal `aepk_` key is persisted via the existing credentials
     service and cloud mode flips on — the same settings block the manual
     paste path uses, so both paths converge.
     """

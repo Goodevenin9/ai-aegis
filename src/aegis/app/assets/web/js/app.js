@@ -16,9 +16,11 @@ const App = {
         'agent-map': AgentMapPage,
         'agent-runs': AgentRunsPage,
         'agent-timeline': AgentTimelinePage,
+        'session-security': SessionSecurityPage,
+        'security-operations': SecurityOperationsPage,
         'storylines': StorylinesPage,
-        // Kept routable as an alias: opens Threat Monitor on the Blocked facet.
-        'blocked-ledger': { render: (c) => { ThreatsPage.activeFacet = 'blocked'; return ThreatsPage.render(c); } },
+        // Dedicated blocked-action ledger; legacy deep links remain routable.
+        'blocked-ledger': BlockedLedgerPage,
         rules: RulesPage,
         'proxy-langchain': { render: (c) => IntegrationPage.render(c, 'proxy-langchain') },
         'proxy-langgraph': { render: (c) => IntegrationPage.render(c, 'proxy-langgraph') },
@@ -86,24 +88,28 @@ const App = {
         this.loadTheme();
 
         // Fetch live proxy port, web port, and host once — used by applyDynamicPorts()
-        window.__SV_WEB_PORT = parseInt(window.location.port) || 8741;
-        window.__SV_PROXY_PORT = window.__SV_WEB_PORT + 1; // optimistic fallback
-        window.__SV_HOST = window.location.hostname || 'localhost';
+        window.__AEGIS_WEB_PORT = parseInt(window.location.port) || 8741;
+        window.__AEGIS_PROXY_PORT = window.__AEGIS_WEB_PORT + 1; // optimistic fallback
+        window.__AEGIS_HOST = window.location.hostname || 'localhost';
+        const deployment = await API.getDeploymentEndpoints();
+        window.__AEGIS_CONTROL_PLANE_URL = deployment.control_plane_url;
+        window.__AEGIS_CONTROL_PLANE_DOCS_URL = deployment.control_plane_docs_url;
         try {
             const status = await API.getProxyStatus();
-            if (status && status.port) window.__SV_PROXY_PORT = status.port;
+            if (status && status.port) window.__AEGIS_PROXY_PORT = status.port;
         } catch (_) {}
+
+        // Resolve the URL before rendering the grouped rail. Otherwise a
+        // direct deep link initially looks like Dashboard and its real active
+        // destination can remain hidden inside a collapsed section.
+        let initialPage = this.getPageFromURL();
+        Sidebar.currentPage = initialPage;
 
         // Render components. Global banners render per page-load (see
         // loadPage) — banner policy keeps them to ONE banner, ONE place
         // (the Dashboard), so no init-time render here.
         Sidebar.render();
         Header.render();
-        // Top navigation row renders after the rail (it mirrors Sidebar.navItems)
-        // and subscribes to the aegis:navigate event before the first loadPage.
-        // NOTE: TopNav/Sidebar/Header are top-level `const`s — they live in the
-        // global lexical scope, NOT on `window`, so `window.TopNav` is undefined.
-        if (typeof TopNav !== 'undefined') TopNav.init();
 
         // Handle browser back/forward
         window.addEventListener('popstate', (e) => {
@@ -112,7 +118,6 @@ const App = {
         });
 
         // Load initial page from URL or default to dashboard
-        let initialPage = this.getPageFromURL();
         initialPage = await this.maybeAutoLaunchWizard(initialPage);
         await this.loadPage(initialPage);
 
@@ -172,8 +177,16 @@ const App = {
      * Get page name from current URL
      */
     getPageFromURL() {
-        const path = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
-        return this.pages[path] ? path : 'dashboard';
+        const segments = window.location.pathname
+            .replace(/^\//, '')
+            .replace(/\/$/, '')
+            .split('/')
+            .filter(Boolean);
+        // Support reverse proxies that mount the UI below a path prefix
+        // (for example /aegis/dashboard) while keeping root deployments and
+        // direct deep links unchanged.
+        const path = [...segments].reverse().find(segment => this.pages[segment]);
+        return path || 'dashboard';
     },
 
     /**
@@ -483,7 +496,7 @@ const App = {
         codeWrap.style.cssText = 'display: flex; align-items: center; background: var(--bg-tertiary); border-radius: 4px; margin-bottom: 10px; min-width: 0;';
         const codeText = document.createElement('div');
         codeText.style.cssText = 'font-size: 11px; font-family: monospace; color: var(--accent-primary); padding: 6px 10px; word-break: break-all; flex: 1; min-width: 0;';
-        const envValue = `OPENAI_BASE_URL=http://localhost:${window.__SV_PROXY_PORT || 8742}/openai/v1`;
+        const envValue = `OPENAI_BASE_URL=http://localhost:${window.__AEGIS_PROXY_PORT || 8742}/openai/v1`;
         codeText.textContent = envValue;
         const copyBtn = document.createElement('button');
         copyBtn.style.cssText = 'background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px 8px; font-size: 11px; flex-shrink: 0; transition: color 0.15s;';
@@ -661,8 +674,8 @@ const App = {
      * code blocks, env-var examples, and URLs show the correct port.
      */
     applyDynamicPorts(container) {
-        const proxyPort = window.__SV_PROXY_PORT;
-        const webPort   = window.__SV_WEB_PORT;
+        const proxyPort = window.__AEGIS_PROXY_PORT;
+        const webPort   = window.__AEGIS_WEB_PORT;
         if (!proxyPort && !webPort) return;
         const defaultProxy = 8742;
         const defaultWeb   = 8741;

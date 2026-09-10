@@ -58,7 +58,7 @@ async function main() {
   const text = prompt.length > SCAN_TEXT_LIMIT ? prompt.slice(0, SCAN_TEXT_LIMIT) : prompt;
   if (text.length === 0) return;
 
-  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || process.env.SV_BASE_URL || DEFAULT_BASE_URL;
+  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL;
   postJsonAndForget(`${baseUrl}/analyze`, {
     text,
     source: SOURCE,
@@ -69,6 +69,16 @@ async function main() {
       session_id: safeSessionId(event.sessionId || event.session_id),
     },
   });
+  const sessionId = safeSessionId(event.sessionId || event.session_id);
+  if (sessionId) {
+    postJsonAndForget(`${baseUrl}/api/runtime/events`, {
+      session_id: sessionId,
+      runtime_kind: RUNTIME_KIND,
+      event_type: 'before_prompt_build',
+      text,
+      metadata: { source: 'userPromptSubmitted' },
+    });
+  }
   // No stdout control on this event — nothing to emit.
 }
 

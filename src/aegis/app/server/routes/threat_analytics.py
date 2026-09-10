@@ -53,7 +53,7 @@ async def threat_analytics(request: ThreatAnalyticsRequest) -> ThreatAnalyticsRe
     Bearer token. Otherwise, uses local pattern matching.
 
     This endpoint mirrors the cloud API path at:
-    https://api.aegis.example/api/threat-analytics/
+    http://127.0.0.1:8780/api/threat-analytics/
     """
     start_time = time.perf_counter()
     analysis_source = "local"

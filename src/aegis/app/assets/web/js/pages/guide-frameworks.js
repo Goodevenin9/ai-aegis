@@ -82,9 +82,9 @@ pip install aegis-sdk-langchain --no-deps     # or -langgraph / -crewai / -herme
 
 # point at your engine endpoint (the URL from \`terraform output\`)
 export AEGIS_ENGINE_ENDPOINT=https://<your-engine-endpoint>`));
-        root.appendChild(callout('Engine, not cloud.', 'AEGIS_ENGINE_ENDPOINT is where tool calls go for analysis: your local app OR your self-host / Terraform engine. It is NOT the Aegis cloud (scan.aegis.example). The legacy AEGIS_SDK_APP_URL still works as a fallback.'));
-        root.appendChild(p('Auth is optional. A private (in-VPC) endpoint needs no credential: the default, and the least friction. Only if you expose the endpoint publicly and gate it (Terraform ingress_token: enforced by a v4.9.0+ engine; older images set but ignore it) do you set a key; use a free Aegis account key or an SVET token: it gates inbound access only and forwards no data:'));
-        root.appendChild(code(`export AEGIS_API_KEY=<Aegis account key or SVET token>   # optional: public gated endpoint only`));
+        root.appendChild(callout('Engine and control plane are separate.', 'AEGIS_ENGINE_ENDPOINT is where tool calls go for analysis: your local app or your deployed engine. AEGIS_CONTROL_PLANE_URL points to your fleet-management service.'));
+        root.appendChild(p('Authentication is optional for a private engine endpoint. If you expose the engine publicly, set AEGIS_INGRESS_TOKEN on the server and provide the same value as AEGIS_API_KEY on clients:'));
+        root.appendChild(code(`export AEGIS_API_KEY=<your engine ingress token>   # public gated endpoint only`));
 
         // --- LangChain ---
         root.appendChild(h2('2. Wire it up'));

@@ -21,7 +21,7 @@ Every MCP tool call (`mcp__<server>__<tool>`) that the host issues passes throug
 
 - [Claude Code](https://www.anthropic.com/code) ≥ the version that supports plugins with `.claude-plugin/plugin.json` manifests
 - Node.js 18+ (the host uses its own Node runtime; no separate install required)
-- A running local [Aegis AI Threat Monitor](https://github.com/Wanshanghao/ai-aegis) app on `http://127.0.0.1:8741` (or override via `SV_BASE_URL` env var)
+- A running local [Aegis AI Threat Monitor](https://github.com/Goodevenin9/ai-aegis) app on `http://127.0.0.1:8741` (or override via `AEGIS_ENGINE_ENDPOINT` env var)
 
 ## Installation
 
@@ -85,10 +85,10 @@ The canonical list lives in `lib/normalize.js` as the `BUILTIN_TOOLS` Set. Names
 
 ## Configuration
 
-The plugin reads `AEGIS_ENGINE_ENDPOINT` (the unified engine-endpoint variable, shared with the SDKs and the other plugins) — or the legacy `SV_BASE_URL` — from the environment if set; otherwise defaults to `http://127.0.0.1:8741`. This is the **engine** (your local app or a self-hosted / Terraform deployment), **not** the Aegis cloud. To point at a non-default engine:
+The plugin reads `AEGIS_ENGINE_ENDPOINT` (the unified engine-endpoint variable, shared with the SDKs and the other plugins) — or the legacy `AEGIS_ENGINE_ENDPOINT` — from the environment if set; otherwise defaults to `http://127.0.0.1:8741`. This is the **engine** (your local app or a self-hosted / Terraform deployment), **not** the Aegis cloud. To point at a non-default engine:
 
 ```bash
-export AEGIS_ENGINE_ENDPOINT="https://<your-engine-endpoint>"   # legacy: SV_BASE_URL
+export AEGIS_ENGINE_ENDPOINT="https://<your-engine-endpoint>"   # legacy: AEGIS_ENGINE_ENDPOINT
 # then launch Claude Code
 ```
 
@@ -121,11 +121,11 @@ Example output: `Aegis Guard · 2 threats detected · 5 tool calls (3 allow / 2 
 
 ```python
 import subprocess, sys
-sv = subprocess.run(
+aegis = subprocess.run(
     ["node", "/Users/me/.aegis/staging/claude-code-plugin/hooks/statusline.js"],
     input=sys.stdin.read(), capture_output=True, text=True, timeout=1
 ).stdout.strip()
-print(f"{your_existing_line}  {sv}" if sv else your_existing_line)
+print(f"{your_existing_line}  {aegis}" if aegis else your_existing_line)
 ```
 
 Override the app URL with `AEGIS_URL=http://127.0.0.1:9999` if you bind the local app to a non-default port.

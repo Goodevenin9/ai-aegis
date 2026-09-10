@@ -44,6 +44,14 @@ const API = {
         return this.request('/health');
     },
 
+    async getDeploymentEndpoints() {
+        return this.request('/api/system/deployment').catch(() => ({
+            control_plane_url: 'http://127.0.0.1:8780',
+            control_plane_docs_url: 'http://127.0.0.1:8780/docs',
+            self_hosted: true,
+        }));
+    },
+
     // ==================== Analyze ====================
 
     async analyze(content) {
@@ -51,6 +59,183 @@ const API = {
             method: 'POST',
             body: JSON.stringify({ text: content }),
         });
+    },
+
+    // P0 session security — durable intent/behaviour timeline and drift curve.
+    async getRuntimeSessions(limit = 100) {
+        return this.request(`/api/runtime/sessions?limit=${encodeURIComponent(limit)}`)
+            .catch(() => ({ sessions: [], total: 0 }));
+    },
+
+    async getRuntimeSession(sessionId, runtimeKind = 'unknown') {
+        return this.request(
+            `/api/runtime/sessions/${encodeURIComponent(sessionId)}` +
+            `?runtime_kind=${encodeURIComponent(runtimeKind)}`,
+        ).catch(() => null);
+    },
+
+    async getRuntimePipelineConfig() {
+        return this.request('/api/runtime/config').catch(() => ({ config: null, persistent: false }));
+    },
+
+    async updateRuntimePipelineConfig(config) {
+        return this.request('/api/runtime/config', {
+            method: 'PUT', body: JSON.stringify(config),
+        });
+    },
+
+    async getRuntimeManifests() {
+        return this.request('/api/runtime/manifests')
+            .catch(() => ({ manifests: [], known_capabilities: [] }));
+    },
+
+    async updateRuntimeManifest(runtimeKind, manifestId, manifest) {
+        return this.request(
+            `/api/runtime/manifests/${encodeURIComponent(runtimeKind)}/${encodeURIComponent(manifestId)}`,
+            { method: 'PUT', body: JSON.stringify(manifest) },
+        );
+    },
+
+    async getRuntimeEvaluationDataset() {
+        return this.request('/api/runtime/evaluations/dataset').catch(() => null);
+    },
+
+    async runRuntimeEvaluation(includeDetails = false) {
+        return this.request('/api/runtime/evaluations', {
+            method: 'POST',
+            body: JSON.stringify({
+                variants: ['aegis_single_turn', 'deepseek_judge_recorded', 'five_stage'],
+                include_details: includeDetails,
+            }),
+        });
+    },
+
+    async grantRuntimeTrust(grant) {
+        return this._jitDecision('/api/runtime/trust/grants', grant);
+    },
+
+    // ==================== P2 Security Operations ====================
+
+    async uploadSecurityEvidence(file) {
+        const form = new FormData();
+        form.append('file', file);
+        const call = async () => {
+            const response = await fetch('/api/security-operations/evidence/upload', {
+                method: 'POST',
+                headers: { 'X-Aegis-UI-Token': await this._getJitToken() },
+                body: form,
+            });
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({ detail: 'Upload failed' }));
+                throw new Error(error.detail || `HTTP ${response.status}`);
+            }
+            return response.json();
+        };
+        try { return await call(); }
+        catch (error) {
+            if (!/UI token/i.test(String(error && error.message))) throw error;
+            this._jitToken = null;
+            return call();
+        }
+    },
+
+    async listSecurityEvidence() {
+        return this.request('/api/security-operations/evidence').catch(() => ({ evidence: [] }));
+    },
+
+    async indexSecurityEvidence(evidenceId, data) {
+        return this._jitDecision(
+            `/api/security-operations/evidence/${encodeURIComponent(evidenceId)}/index`, data,
+        );
+    },
+
+    async searchSecurityKnowledge(query, documentTypes = []) {
+        return this.request('/api/security-operations/rag/search', {
+            method: 'POST',
+            body: JSON.stringify({ query, document_types: documentTypes, limit: 5 }),
+        });
+    },
+
+    async startSecurityAgent(data) {
+        return this._jitDecision('/api/security-operations/agent/runs', data);
+    },
+
+    async getSecurityAgentRun(runId) {
+        return this.request(
+            `/api/security-operations/agent/runs/${encodeURIComponent(runId)}`,
+        );
+    },
+
+    async listSecurityAgentRuns() {
+        return this.request('/api/security-operations/agent/runs');
+    },
+
+    async testSecurityAgentModel() {
+        return this._jitDecision('/api/security-operations/agent/model/test', {});
+    },
+
+    async cancelSecurityAgent(runId) {
+        return this._jitDecision(
+            `/api/security-operations/agent/runs/${encodeURIComponent(runId)}/cancel`, {},
+        );
+    },
+
+    async downloadSecurityAgentRun(runId, format = 'markdown') {
+        const token = await this._getJitToken();
+        const endpoint = `/api/security-operations/agent/runs/${encodeURIComponent(runId)}/export` +
+            `?format=${encodeURIComponent(format)}`;
+        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+            headers: { 'X-Aegis-UI-Token': token },
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ detail: 'Export failed' }));
+            throw new Error(error.detail || `HTTP ${response.status}`);
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `aegis-report.${format === 'json' ? 'json' : 'md'}`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+    },
+
+    async resumeSecurityAgent(runId, data) {
+        return this._jitDecision(
+            `/api/security-operations/agent/runs/${encodeURIComponent(runId)}/resume`, data,
+        );
+    },
+
+    async listAgentMemories() {
+        return this.request('/api/security-operations/memories').catch(() => ({ memories: [] }));
+    },
+
+    async createAgentMemory(data) {
+        return this._jitDecision('/api/security-operations/memories', data);
+    },
+
+    async deleteAgentMemory(memoryId) {
+        const token = await this._getJitToken();
+        return this.request(`/api/security-operations/memories/${encodeURIComponent(memoryId)}`, {
+            method: 'DELETE', headers: { 'X-Aegis-UI-Token': token },
+        });
+    },
+
+    async listAntibodies() {
+        return this.request('/api/runtime/immunity/antibodies').catch(() => ({ antibodies: [] }));
+    },
+
+    async learnAntibodyFromSession(data) {
+        return this._jitDecision('/api/runtime/immunity/from-session', data);
+    },
+
+    async transitionAntibody(antibodyId, target, approvedBy = null) {
+        return this._jitDecision(
+            `/api/runtime/immunity/antibodies/${encodeURIComponent(antibodyId)}/transition`,
+            { target, approved_by: approvedBy },
+        );
     },
 
     // ==================== Threat Analytics ====================
@@ -562,7 +747,7 @@ const API = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-SV-UI-Token': await this._getJitToken(),
+                'X-Aegis-UI-Token': await this._getJitToken(),
             },
             body: JSON.stringify(body || {}),
         });

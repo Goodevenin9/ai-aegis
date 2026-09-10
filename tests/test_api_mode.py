@@ -25,7 +25,7 @@ class TestAPIModeConfig:
         """Test that default API URL is set to production"""
         config = APIModeConfig()
         # Default URL should be production
-        assert config.api_url == "https://scan.aegis.example"
+        assert config.api_url == "http://127.0.0.1:8780"
 
     def test_api_url_override(self):
         """Test that API URL can be manually overridden"""
@@ -254,7 +254,7 @@ class TestAPIAnalyzerEndpoint:
         call_args = mock_post.call_args
         url = call_args.args[0]
 
-        assert url == "https://scan.aegis.example/analyze"
+        assert url == "http://127.0.0.1:8780/analyze"
 
     @patch("requests.Session.post")
     def test_batch_endpoint_url(self, mock_post):
@@ -285,7 +285,7 @@ class TestAPIAnalyzerEndpoint:
         call_args = mock_post.call_args
         url = call_args.args[0]
 
-        assert url == "https://scan.aegis.example/analyze/batch"
+        assert url == "http://127.0.0.1:8780/analyze/batch"
 
 
 class TestAPIAnalyzerResponses:

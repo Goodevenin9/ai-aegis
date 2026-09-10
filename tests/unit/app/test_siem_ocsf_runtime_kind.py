@@ -45,7 +45,7 @@ def test_tool_audit_event_includes_runtime_kind_when_present():
             "seq": 109,
             "prev_hash": "abc",
             "row_hash": "def",
-            "device_id": "sv-test",
+            "device_id": "aegis-test",
             "runtime_kind": kind,
         })
         assert event["unmapped"]["runtime_kind"] == kind, event
@@ -81,7 +81,7 @@ def test_scan_event_includes_runtime_kind_at_standard_tier():
             "confidence_score": 0.9,
             "timestamp": "2026-06-01T12:00:00Z",
             "runtime_kind": "codex",
-            "matched_rule_ids": ["sv_community_001"],
+            "matched_rule_ids": ["aegis_community_001"],
         }, redaction=tier)
         assert event["unmapped"]["runtime_kind"] == "codex", (tier, event)
 

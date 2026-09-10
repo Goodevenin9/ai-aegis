@@ -21,7 +21,7 @@
 
 const { normalize } = require('../lib/normalize.js');
 const {
-  decideForCandidates, decideEgress, maybeFileJitRequest, toCursorOutput,
+  decideForCandidates, decideEgress, applyRuntimePipeline, maybeFileJitRequest, toCursorOutput,
   auditDecision, sessionIdFrom, readAllStdin, DEFAULT_BASE_URL,
 } = require('../lib/decide.js');
 
@@ -40,7 +40,7 @@ async function main() {
       process.stdout.write(JSON.stringify(out));
       return;
     }
-    const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || process.env.SV_BASE_URL || DEFAULT_BASE_URL;
+    const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL;
     const sessionId = sessionIdFrom(event);
     let decision = { decision: 'allow' };
     try {
@@ -53,6 +53,9 @@ async function main() {
           baseUrl, TOOL_NAME, { command: (event && event.command) || '' }, sessionId,
         );
       }
+      decision = await applyRuntimePipeline(
+        baseUrl, TOOL_NAME, { command: (event && event.command) || '' }, sessionId, decision,
+      );
     } catch {
       decision = { decision: 'allow' };
     }

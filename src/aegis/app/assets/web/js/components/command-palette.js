@@ -3,8 +3,8 @@
  *
  * Pure navigation chrome (idea-local-app-ux-refresh #5): no new data, no new
  * endpoints. The item list is derived from Sidebar.navItems at open time so
- * the palette can never drift from the real nav; section labels (Observe /
- * Govern / Connect) ride along for context. Recent pages float first on an
+ * the palette can never drift from the real nav; the rail's task-oriented
+ * section labels ride along for context. Recent pages float first on an
  * empty query (localStorage, ids only — no content).
  *
  * Keys: Cmd+K / Ctrl+K toggle · ↑↓ move · Enter go · Esc close.
@@ -26,23 +26,9 @@ const CommandPalette = {
     _catalogue() {
         const out = [];
         const nav = (window.Sidebar && Sidebar.navItems) || [];
-        // Mirror of the sidebar's SECTION_BEFORE — the palette shows the same
-        // three verbs so both surfaces read as one system.
-        const sectionOf = (id) => {
-            // 'blocked-ledger' and 'redactions' are facets of Threat Monitor now,
-            // but stay searchable here: users look for them by name, and the
-            // ids remain routable straight to the right facet.
-            if (['dashboard', 'threats', 'agent-activity', 'agent-map', 'storylines', 'tool-activity',
-                'blocked-ledger', 'redactions', 'costs'].includes(id)) return 'Visibility';
-            if (['tool-permissions', 'rules', 'egress', 'skill-scanner', 'guardian-ml',
-                'cost-settings', 'governance', 'mcp-policies'].includes(id)) return 'Govern';
-            if (['connect-wizard', 'guide-connect-agents', 'integrations'].includes(id) || id.startsWith('proxy-')) return 'Connect';
-            if (['siem-export', 'cloud-activity'].includes(id)) return 'Cloud & Forwarders';
-            return '';
-        };
         const push = (id, label, extra) => {
             if (!id || id.startsWith('gs-')) return; // guide anchors need section scroll — skip
-            out.push({ id, label, section: sectionOf(id), keywords: (extra || '') + ' ' + id });
+            out.push({ id, label, section: Sidebar.sectionFor(id), keywords: (extra || '') + ' ' + id });
         };
         nav.forEach(item => {
             if (item.id && !(item.subItems && !item.navigable)) push(item.id, item.label, item.tooltip);
@@ -108,8 +94,8 @@ const CommandPalette = {
             .ag-palette { width: min(560px, calc(100vw - 40px)); margin-top: 12vh;
                 background: var(--bg-card, #131a30); border: 1px solid var(--border-default, #283152);
                 border-radius: 14px; box-shadow: 0 24px 64px rgba(0,0,0,.5); overflow: hidden;
-                animation: svPaletteIn .18s cubic-bezier(.2,.9,.3,1.2) both; }
-            @keyframes svPaletteIn { from { opacity: 0; transform: translateY(-10px) scale(.98); }
+                animation: aegisPaletteIn .18s cubic-bezier(.2,.9,.3,1.2) both; }
+            @keyframes aegisPaletteIn { from { opacity: 0; transform: translateY(-10px) scale(.98); }
                 to { opacity: 1; transform: none; } }
             @media (prefers-reduced-motion: reduce) { .ag-palette { animation: none; } }
             .ag-palette-input { width: 100%; box-sizing: border-box; padding: 15px 18px; border: 0;

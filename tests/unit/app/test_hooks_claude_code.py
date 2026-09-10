@@ -35,9 +35,31 @@ EXPECTED_FILES = {
 
 @pytest.fixture
 def app(tmp_path, monkeypatch):
-    """Wire the router into a fresh FastAPI app + isolate staging to tmp."""
+    """Wire the router into a fresh app and isolate every user-config path."""
     staging = tmp_path / "staging" / "claude-code-plugin"
+    claude_plugins = tmp_path / ".claude" / "plugins"
     monkeypatch.setattr(hooks_claude_code, "STAGING_DIR", staging)
+    monkeypatch.setattr(hooks_claude_code, "AEGIS_DIR", tmp_path / ".aegis")
+    monkeypatch.setattr(hooks_claude_code, "CLAUDE_PLUGINS_DIR", claude_plugins)
+    monkeypatch.setattr(
+        hooks_claude_code,
+        "CLAUDE_INSTALLED_PLUGINS_JSON",
+        claude_plugins / "installed_plugins.json",
+    )
+    monkeypatch.setattr(
+        hooks_claude_code,
+        "CLAUDE_KNOWN_MARKETPLACES_JSON",
+        claude_plugins / "known_marketplaces.json",
+    )
+    monkeypatch.setattr(
+        hooks_claude_code, "CLAUDE_PLUGIN_CACHE_ROOT", claude_plugins / "cache"
+    )
+    monkeypatch.setattr(
+        hooks_claude_code, "CLAUDE_SETTINGS_JSON", tmp_path / ".claude" / "settings.json"
+    )
+    monkeypatch.setattr(
+        hooks_claude_code, "LEGACY_STAGING_DIR", tmp_path / ".retired-product"
+    )
     instance = FastAPI()
     instance.include_router(hooks_claude_code.router, prefix="/api")
     return instance
@@ -84,7 +106,7 @@ def test_status_reports_installed_after_install(client):
 def test_install_substitutes_local_app_url(client, monkeypatch):
     monkeypatch.setattr(
         hooks_claude_code._hooks_common,
-        "resolve_sv_url",
+        "resolve_aegis_url",
         lambda: "http://127.0.0.1:9999",
     )
     client.post("/api/hooks/claude-code/install")
@@ -93,7 +115,7 @@ def test_install_substitutes_local_app_url(client, monkeypatch):
     # (env / docs); the JS handlers read from env, so they don't carry it.
     # Inspect README — it documents the default URL and should be patched.
     staging = hooks_claude_code.STAGING_DIR
-    readme = (staging / "README.md").read_text()
+    readme = (staging / "README.md").read_text(encoding="utf-8")
     # The substitution should leave NO 127.0.0.1:8741 in the staged README:
     assert "127.0.0.1:8741" not in readme, (
         "URL substitution failed — staged README still contains the bundled-default URL"
@@ -171,6 +193,62 @@ def test_backup_once_no_op_when_source_missing(tmp_path):
 
     backup = f.with_suffix(f.suffix + ".before-aegis")
     assert not backup.exists()
+
+
+def test_legacy_plugin_registration_is_removed_without_touching_other_plugins(
+    tmp_path, monkeypatch
+):
+    import json
+
+    plugins_dir = tmp_path / ".claude" / "plugins"
+    cache_root = plugins_dir / "cache"
+    installed = plugins_dir / "installed_plugins.json"
+    markets = plugins_dir / "known_marketplaces.json"
+    settings = tmp_path / ".claude" / "settings.json"
+    legacy_staging = tmp_path / ".retired-product"
+    legacy_cache = (
+        cache_root
+        / hooks_claude_code.LEGACY_MARKETPLACE_SLUG
+        / hooks_claude_code.LEGACY_PLUGIN_NAME
+        / "4.8.0"
+    )
+    legacy_cache.mkdir(parents=True)
+    legacy_staging.mkdir()
+    plugins_dir.mkdir(parents=True, exist_ok=True)
+    installed.write_text(
+        '{"version":2,"plugins":{"%s":[],"keep@official":[]}}'
+        % hooks_claude_code.LEGACY_INSTALL_KEY,
+        encoding="utf-8",
+    )
+    markets.write_text(
+        '{"%s":{},"official":{}}' % hooks_claude_code.LEGACY_MARKETPLACE_SLUG,
+        encoding="utf-8",
+    )
+    settings.write_text(
+        '{"enabledPlugins":{"%s":true,"keep@official":true}}'
+        % hooks_claude_code.LEGACY_INSTALL_KEY,
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(hooks_claude_code, "CLAUDE_PLUGIN_CACHE_ROOT", cache_root)
+    monkeypatch.setattr(hooks_claude_code, "CLAUDE_INSTALLED_PLUGINS_JSON", installed)
+    monkeypatch.setattr(hooks_claude_code, "CLAUDE_KNOWN_MARKETPLACES_JSON", markets)
+    monkeypatch.setattr(hooks_claude_code, "CLAUDE_SETTINGS_JSON", settings)
+    monkeypatch.setattr(hooks_claude_code, "LEGACY_STAGING_DIR", legacy_staging)
+    monkeypatch.setattr(
+        hooks_claude_code,
+        "_atomic_write_json",
+        lambda path, data: path.write_text(
+            json.dumps(data), encoding="utf-8"
+        ),
+    )
+
+    assert hooks_claude_code._remove_legacy_plugin_identity() is True
+    assert "keep@official" in installed.read_text(encoding="utf-8")
+    assert "official" in markets.read_text(encoding="utf-8")
+    assert "keep@official" in settings.read_text(encoding="utf-8")
+    assert hooks_claude_code.LEGACY_INSTALL_KEY not in installed.read_text(encoding="utf-8")
+    assert not legacy_cache.exists()
+    assert not legacy_staging.exists()
 
 
 def test_aggregate_session_usage_skips_synthetic_model(tmp_path):

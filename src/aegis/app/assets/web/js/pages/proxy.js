@@ -519,7 +519,7 @@ const ProxyPage = {
             // Build multi-provider command showing OpenAI + Anthropic + selected provider (if different)
             const envLines = [];
             // Always show the two most common providers
-            const _pp = window.__SV_PROXY_PORT || 8742;
+            const _pp = window.__AEGIS_PROXY_PORT || 8742;
             envLines.push(`OPENAI_BASE_URL=http://localhost:${_pp}/openai`);
             envLines.push(`ANTHROPIC_BASE_URL=http://localhost:${_pp}/anthropic`);
             // Add selected provider if it uses a different env var
@@ -571,11 +571,11 @@ const ProxyPage = {
 
         const jsonCode = document.createElement('code');
         jsonCode.style.cssText = 'display: block; background: var(--bg-secondary); padding: 10px 12px; border-radius: 4px; font-size: 11px; font-family: monospace; white-space: pre; line-height: 1.5; margin-bottom: 10px; overflow-x: auto;';
-        const _pp2 = window.__SV_PROXY_PORT || 8742;
+        const _pp2 = window.__AEGIS_PROXY_PORT || 8742;
         jsonCode.textContent =
 `"models": {
   "providers": {
-    "gemini-sv": {
+    "gemini-aegis": {
       "baseUrl": "http://localhost:${_pp2}/gemini/v1beta",
       "api": "google-generative-ai",
       "apiKey": "YOUR_GEMINI_API_KEY",
@@ -596,7 +596,7 @@ const ProxyPage = {
 
         const aliasCode = document.createElement('code');
         aliasCode.style.cssText = 'display: block; background: var(--bg-secondary); padding: 10px 12px; border-radius: 4px; font-size: 11px; font-family: monospace; white-space: pre; line-height: 1.5; margin-bottom: 10px;';
-        aliasCode.textContent = '"gemini-sv/gemini-2.0-flash": { "alias": "gemini-sv" }';
+        aliasCode.textContent = '"gemini-aegis/gemini-2.0-flash": { "alias": "gemini-aegis" }';
         container.appendChild(aliasCode);
 
         // Step 2c - Switch model in TUI
@@ -607,7 +607,7 @@ const ProxyPage = {
 
         const switchCode = document.createElement('code');
         switchCode.style.cssText = 'display: block; background: var(--bg-secondary); padding: 10px 12px; border-radius: 4px; font-size: 12px; font-family: monospace; margin-bottom: 8px;';
-        switchCode.textContent = '/model gemini-sv';
+        switchCode.textContent = '/model gemini-aegis';
         container.appendChild(switchCode);
 
         // Revert note
@@ -617,7 +617,7 @@ const ProxyPage = {
         revertBold.textContent = 'To revert:';
         revertNote.appendChild(revertBold);
         revertNote.appendChild(document.createTextNode(
-            ' Remove the "models.providers.gemini-sv" block from openclaw.json and switch back to /model gemini (direct).'
+            ' Remove the "models.providers.gemini-aegis" block from openclaw.json and switch back to /model gemini (direct).'
         ));
         container.appendChild(revertNote);
     },
@@ -650,7 +650,7 @@ const ProxyPage = {
         const revertGeminiBold = document.createElement('strong');
         revertGeminiBold.textContent = 'Gemini users:';
         revertDesc.appendChild(revertGeminiBold);
-        revertDesc.appendChild(document.createTextNode(' Also remove the "models.providers.gemini-sv" block from ~/.openclaw/openclaw.json.'));
+        revertDesc.appendChild(document.createTextNode(' Also remove the "models.providers.gemini-aegis" block from ~/.openclaw/openclaw.json.'));
         revertCard.appendChild(revertDesc);
 
         // Revert button
@@ -903,7 +903,7 @@ const ProxyPage = {
                     const data = await response.json();
                     this.proxyStatus = 'running';
                     this.currentIntegration = data.integration;
-                    Toast.success(`Proxy started (${provider}) on port ${window.__SV_PROXY_PORT || 8742}`);
+                    Toast.success(`Proxy started (${provider}) on port ${window.__AEGIS_PROXY_PORT || 8742}`);
                 } else {
                     throw new Error('Failed to start proxy');
                 }

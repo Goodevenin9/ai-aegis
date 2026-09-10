@@ -253,7 +253,7 @@ const SiemExportPage = {
             title: 'Microsoft Sentinel workbook',
             path: '/siem-templates/sentinel-workbook.json',
             filename: 'aegis-workbook.json',
-            githubBlob: 'https://github.com/Wanshanghao/ai-aegis/blob/master/docs/siem/sentinel/aegis-workbook.json',
+            githubBlob: 'https://github.com/Goodevenin9/ai-aegis/blob/master/docs/siem/sentinel/aegis-workbook.json',
             steps: [
                 'Open Microsoft Sentinel → <strong>Workbooks</strong> → <strong>+ Add workbook</strong>.',
                 'Click <strong>Advanced Editor</strong>.',
@@ -266,7 +266,7 @@ const SiemExportPage = {
             title: 'Splunk dashboard',
             path: '/siem-templates/splunk-dashboard.xml',
             filename: 'aegis-dashboard.xml',
-            githubBlob: 'https://github.com/Wanshanghao/ai-aegis/blob/master/docs/siem/splunk/aegis-dashboard.xml',
+            githubBlob: 'https://github.com/Goodevenin9/ai-aegis/blob/master/docs/siem/splunk/aegis-dashboard.xml',
             steps: [
                 'Open Splunk Web → <strong>Dashboards</strong> → <strong>Create a new dashboard</strong>.',
                 'Click <strong>Source</strong> (top-right of the editor).',
@@ -279,7 +279,7 @@ const SiemExportPage = {
             title: 'Grafana dashboard (Loki)',
             path: '/siem-templates/grafana-dashboard.json',
             filename: 'aegis-dashboard.json',
-            githubBlob: 'https://github.com/Wanshanghao/ai-aegis/blob/master/docs/siem/grafana/aegis-dashboard.json',
+            githubBlob: 'https://github.com/Goodevenin9/ai-aegis/blob/master/docs/siem/grafana/aegis-dashboard.json',
             steps: [
                 'Data flow: Aegis <strong>Local NDJSON file</strong> destination → <strong>Promtail / Alloy</strong> → <strong>Loki</strong> → Grafana.',
                 'Point Promtail/Alloy at your Aegis NDJSON file (default <code>~/.aegis/siem-events.jsonl</code>) with label <code>job=aegis</code>.',
@@ -293,7 +293,7 @@ const SiemExportPage = {
             title: 'Datadog dashboard',
             path: '/siem-templates/datadog-dashboard.json',
             filename: 'aegis-dashboard.json',
-            githubBlob: 'https://github.com/Wanshanghao/ai-aegis/blob/master/docs/siem/datadog/aegis-dashboard.json',
+            githubBlob: 'https://github.com/Goodevenin9/ai-aegis/blob/master/docs/siem/datadog/aegis-dashboard.json',
             steps: [
                 'Prereq: configure a Aegis destination with <strong>kind = datadog</strong>, pointing at <code>https://http-intake.logs.&lt;site&gt;/api/v2/logs</code>.',
                 'In Datadog, go to <strong>Logs → Configuration → Facets</strong> and create facets for the OCSF attributes used here: <code>@severity</code>, <code>@class_uid</code>, <code>@unmapped.action</code>, <code>@actor.user.name</code>, <code>@finding.techniques</code>, <code>@device.uid</code>.',

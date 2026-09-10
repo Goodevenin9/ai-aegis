@@ -1,0 +1,34 @@
+FROM python:3.11-slim
+
+ARG AEGIS_PIP_INDEX_URL=""
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    AEGIS_CONTROL_PLANE_HOST=0.0.0.0 \
+    AEGIS_CONTROL_PLANE_PORT=8780 \
+    AEGIS_CONTROL_PLANE_DB=/var/lib/aegis/control-plane.db
+
+WORKDIR /opt/ai-aegis
+COPY setup.py pyproject.toml MANIFEST.in README.md LICENSE NOTICE ./
+COPY benchmarks/ ./benchmarks/
+COPY src/ ./src/
+RUN if [ -n "$AEGIS_PIP_INDEX_URL" ]; then \
+        pip install --no-cache-dir --index-url "$AEGIS_PIP_INDEX_URL" ".[control-plane]"; \
+    else \
+        pip install --no-cache-dir ".[control-plane]"; \
+    fi \
+    && useradd -m -u 10001 -d /home/aegis-control aegis-control \
+    && mkdir -p /var/lib/aegis \
+    && chown -R aegis-control:aegis-control /var/lib/aegis
+
+USER aegis-control
+EXPOSE 8780
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8780/health', timeout=3)" || exit 1
+
+CMD ["aegis-control-plane"]
+
+LABEL org.opencontainers.image.title="AI Aegis Control Plane" \
+      org.opencontainers.image.description="Self-hosted device enrollment and signed policy distribution." \
+      org.opencontainers.image.source="https://github.com/Goodevenin9/ai-aegis" \
+      org.opencontainers.image.licenses="Apache-2.0"

@@ -1,0 +1,13 @@
+services:
+  engine:
+    ports:
+      - "127.0.0.1:${AEGIS_ENGINE_LOCAL_PORT:-8741}:8741"
+
+  control-plane:
+    ports:
+      - "127.0.0.1:${AEGIS_CONTROL_LOCAL_PORT:-8780}:8780"
+
+  # The server already owns 80/443 with nginx. Keeping Caddy behind an
+  # explicit profile prevents an accidental port collision on `compose up`.
+  caddy:
+    profiles: ["caddy"]

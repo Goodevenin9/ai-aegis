@@ -20,7 +20,7 @@ pip install ai-aegis
 pip install ai-aegis[mcp]
 ```
 
-Binary installers: [Windows](https://github.com/Wanshanghao/ai-aegis/releases/latest) | [macOS](https://github.com/Wanshanghao/ai-aegis/releases/latest) | [Linux](https://github.com/Wanshanghao/ai-aegis/releases/latest)
+Binary installers: [Windows](https://github.com/Goodevenin9/ai-aegis/releases/latest) | [macOS](https://github.com/Goodevenin9/ai-aegis/releases/latest) | [Linux](https://github.com/Goodevenin9/ai-aegis/releases/latest)
 
 ---
 
@@ -202,7 +202,7 @@ Optionally connect to Aegis Cloud for multi-stage ML-powered analysis designed t
 
 **What Cloud Mode adds:**
 - **Advanced ML-powered threat detection beyond regex**
-- Centralized dashboard at [app.aegis.example](https://app.aegis.example)
+- Self-hosted policy and device API (see [deployment guide](SELF_HOSTED_CONTROL_PLANE.md))
 - **Industry-specific rule creation**
 - **Notification system for webhook and email alerts**
 - Replaces local AI Analysis when active
@@ -210,12 +210,12 @@ Optionally connect to Aegis Cloud for multi-stage ML-powered analysis designed t
 
 ### Setup
 
-1. **Create Account** — Sign up at [app.aegis.example](https://app.aegis.example) (free tier available)
+1. **Deploy control plane** — Follow the [self-hosted deployment guide](SELF_HOSTED_CONTROL_PLANE.md)
 2. **Get API Key** — Go to Access Management, accept the Terms of Service and Privacy Policy, then create a new API key
-3. **Add Key** — Go to `localhost/settings` and add the key you just created on app.aegis.example
+3. **Add Key** — Go to `localhost/settings` and paste the `aepk_*` key issued by your control plane
 4. **Connect** — Click **Cloud Connect** in the header
 
-When connected, scans are routed to `scan.aegis.example` and results appear in both the local dashboard and the cloud dashboard.
+When connected, optional remote scans are routed to the URL in `AEGIS_CONTROL_PLANE_URL`; local analysis remains available as fallback.
 
 ---
 

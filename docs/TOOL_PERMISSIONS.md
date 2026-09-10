@@ -7,9 +7,9 @@ Aegis inspects every tool call your AI agent makes and records a decision on the
 Two inputs combine to produce the `action` column in Tool Activity:
 
 1. **The tool's permission policy** in Aegis — one of `allow`, `block`, or `log_only`. Configurable on the **Tool Permissions** page.
-2. **Block mode** — a global toggle (Dashboard → Block Mode, or `block_mode` in `svconfig.yml`) that turns on the proxy for active enforcement. With block mode off, `block` policies are demoted to `log_only` so nothing is actually rejected.
+2. **Block mode** — a global toggle (Dashboard → Block Mode, or `block_mode` in `aegis.yml`) that turns on the proxy for active enforcement. With block mode off, `block` policies are demoted to `log_only` so nothing is actually rejected.
 
-| Tool policy (SV) | Block mode | Recorded action | What actually happens |
+| Tool policy (AI Aegis) | Block mode | Recorded action | What actually happens |
 |---|---|---|---|
 | **allow** | either | `allow` | Tool call runs. Logged as allowed. |
 | **block** | **ON** (proxy running) | `block` | Proxy rejects the tool call before the LLM sees a result. Gateway log: `TOOL BLOCKED — <tool>`. |

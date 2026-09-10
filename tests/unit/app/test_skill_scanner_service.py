@@ -226,7 +226,12 @@ class TestSymlinkEscape:
     def test_symlink_outside_dir_yields_finding(self, tmp_path):
         # Create a symlink pointing outside the skill directory
         link = tmp_path / "escape_link.py"
-        link.symlink_to("/etc/passwd")
+        try:
+            link.symlink_to("/etc/passwd")
+        except OSError as exc:
+            if getattr(exc, "winerror", None) == 1314:
+                pytest.skip("Windows account lacks symbolic-link privilege")
+            raise
         result = _scan_dir(tmp_path)
         cats = [f.category for f in result.findings]
         assert "symlink_escape" in cats

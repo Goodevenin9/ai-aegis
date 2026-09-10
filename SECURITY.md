@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please report security issues privately via GitHub's [Private Security Advisory](https://github.com/Wanshanghao/ai-aegis/security/advisories/new) or by emailing **security@aegis.example**. Do **not** file public issues for security vulnerabilities.
+Please report security issues privately via GitHub's [Private Security Advisory](https://github.com/Goodevenin9/ai-aegis/security/advisories/new) or by emailing **GitHub security advisory**. Do **not** file public issues for security vulnerabilities.
 
 We aim to acknowledge reports within 2 business days and provide a fix or mitigation timeline within 14 days for high-severity issues.
 
@@ -27,11 +27,11 @@ In every case, "the binary was signed" was true but useless — there was no rec
 ```sh
 # Install the wheel locally, then:
 gh attestation verify $(python -c 'import aegis,os; print(os.path.dirname(aegis.__file__))')/.. \
-    --owner Secure-Vector
+    --owner Goodevenin9
 
 # Or verify the wheel file directly before installing:
 gh attestation verify aegis_ai_monitor-4.1.0-py3-none-any.whl \
-    --owner Secure-Vector
+    --owner Goodevenin9
 ```
 
 A successful verification reports the source commit, the GitHub Actions workflow that built the wheel, and the Sigstore Rekor entry index.
@@ -40,7 +40,7 @@ A successful verification reports the source commit, the GitHub Actions workflow
 
 ```sh
 cosign verify-blob \
-    --certificate-identity-regexp "https://github.com/Wanshanghao/ai-aegis/.github/workflows/release.yml@.*" \
+    --certificate-identity-regexp "https://github.com/Goodevenin9/ai-aegis/.github/workflows/release.yml@.*" \
     --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
     --bundle <attestation-bundle.json> \
     <wheel-file>
@@ -71,7 +71,7 @@ Provenance answers *"is this wheel from where it claims?"* — and only that que
 
 ### Reporting an attestation mismatch
 
-If `gh attestation verify` fails on a wheel claiming to be from us, **stop using the wheel immediately** and contact security@aegis.example. Include:
+If `gh attestation verify` fails on a wheel claiming to be from us, **stop using the wheel immediately** and contact GitHub security advisory. Include:
 - The exact wheel filename and SHA-256.
 - The full output of the verification command.
 - The PyPI version page URL.

@@ -1,5 +1,5 @@
 """
-Tests for svconfig.yml server port/host configuration.
+Tests for aegis.yml server port/host configuration.
 
 Validates that:
   1. save_config() writes server.port and server.host to YAML
@@ -32,7 +32,7 @@ class TestConfigServerSection:
         from aegis.app.utils.config_file import save_config, load_config
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            cfg_path = Path(tmpdir) / "svconfig.yml"
+            cfg_path = Path(tmpdir) / "aegis.yml"
             with patch("aegis.app.utils.config_file.get_config_path", return_value=cfg_path):
                 save_config(
                     block_mode=False,
@@ -91,7 +91,7 @@ class TestGetServerDefaults:
         from aegis.app.utils.config_file import get_server_defaults, DEFAULT_SERVER_HOST, DEFAULT_SERVER_PORT
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            missing = Path(tmpdir) / "svconfig.yml"
+            missing = Path(tmpdir) / "aegis.yml"
             with patch("aegis.app.utils.config_file.get_config_path", return_value=missing):
                 host, port = get_server_defaults()
 
@@ -99,13 +99,13 @@ class TestGetServerDefaults:
         assert port == DEFAULT_SERVER_PORT
 
     def test_reads_custom_port_from_yaml(self):
-        """Reads custom port from svconfig.yml server.port."""
+        """Reads custom port from aegis.yml server.port."""
         import yaml
         from aegis.app.utils.config_file import get_server_defaults
 
         cfg = {"server": {"host": "127.0.0.1", "port": 9500}}
         with tempfile.TemporaryDirectory() as tmpdir:
-            cfg_path = Path(tmpdir) / "svconfig.yml"
+            cfg_path = Path(tmpdir) / "aegis.yml"
             cfg_path.write_text(yaml.dump(cfg), encoding="utf-8")
             with patch("aegis.app.utils.config_file.get_config_path", return_value=cfg_path):
                 host, port = get_server_defaults()
@@ -113,13 +113,13 @@ class TestGetServerDefaults:
         assert port == 9500
 
     def test_reads_custom_host_from_yaml(self):
-        """Reads custom host from svconfig.yml server.host."""
+        """Reads custom host from aegis.yml server.host."""
         import yaml
         from aegis.app.utils.config_file import get_server_defaults
 
         cfg = {"server": {"host": "0.0.0.0", "port": 8741}}
         with tempfile.TemporaryDirectory() as tmpdir:
-            cfg_path = Path(tmpdir) / "svconfig.yml"
+            cfg_path = Path(tmpdir) / "aegis.yml"
             cfg_path.write_text(yaml.dump(cfg), encoding="utf-8")
             with patch("aegis.app.utils.config_file.get_config_path", return_value=cfg_path):
                 host, port = get_server_defaults()
@@ -133,7 +133,7 @@ class TestGetServerDefaults:
 
         cfg = {"server": {"host": "127.0.0.1", "port": "not-a-number"}}
         with tempfile.TemporaryDirectory() as tmpdir:
-            cfg_path = Path(tmpdir) / "svconfig.yml"
+            cfg_path = Path(tmpdir) / "aegis.yml"
             cfg_path.write_text(yaml.dump(cfg), encoding="utf-8")
             with patch("aegis.app.utils.config_file.get_config_path", return_value=cfg_path):
                 _, port = get_server_defaults()
@@ -147,7 +147,7 @@ class TestGetServerDefaults:
 
         cfg = {"security": {"block_mode": False}}
         with tempfile.TemporaryDirectory() as tmpdir:
-            cfg_path = Path(tmpdir) / "svconfig.yml"
+            cfg_path = Path(tmpdir) / "aegis.yml"
             cfg_path.write_text(yaml.dump(cfg), encoding="utf-8")
             with patch("aegis.app.utils.config_file.get_config_path", return_value=cfg_path):
                 host, port = get_server_defaults()

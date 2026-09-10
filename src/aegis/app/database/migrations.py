@@ -24,6 +24,7 @@ from aegis.app.database.models import (
     MIGRATION_V31_SQL,
     MIGRATION_V34_SQL,
     MIGRATION_V35_SQL,
+    MIGRATION_V47_SQL,
 )
 
 logger = logging.getLogger(__name__)
@@ -189,6 +190,9 @@ async def apply_migration(db: DatabaseConnection, version: int) -> None:
         42: migrate_to_v42,
         43: migrate_to_v43,
         44: migrate_to_v44,
+        45: migrate_to_v45,
+        46: migrate_to_v46,
+        47: migrate_to_v47,
     }
 
     if version in migrations:
@@ -693,7 +697,7 @@ async def migrate_to_v17(db: DatabaseConnection) -> None:
     )
     logger.info("Applied migration v17: block_threats defaulted to disabled")
 
-    # Also patch svconfig.yml so apply_config_to_db (called after migrations)
+    # Also patch aegis.yml so apply_config_to_db (called after migrations)
     # doesn't read block_mode: true and override the DB back to enabled.
     try:
         from aegis.app.utils.config_file import get_config_path
@@ -703,9 +707,9 @@ async def migrate_to_v17(db: DatabaseConnection) -> None:
             if "block_mode: true" in content:
                 content = content.replace("block_mode: true", "block_mode: false")
                 config_path.write_text(content, encoding="utf-8")
-                logger.info("Migration v17: patched svconfig.yml block_mode to false")
+                logger.info("Migration v17: patched aegis.yml block_mode to false")
     except Exception as e:
-        logger.warning(f"Migration v17: could not patch svconfig.yml: {e}")
+        logger.warning(f"Migration v17: could not patch aegis.yml: {e}")
 
 
 async def migrate_to_v18(db: DatabaseConnection) -> None:
@@ -794,7 +798,7 @@ async def _seed_trusted_publishers(db: DatabaseConnection) -> None:
 #     value. We committed to: hash-chained rows (catches casual tampering
 #     + disk corruption; doesn't stop a determined local attacker who
 #     recomputes the chain — off-host tamper evidence is the customer's
-#     choice via the SIEM forwarder, not a bundled-in SV cloud sync).
+#     choice via the SIEM forwarder, not a bundled-in vendor cloud sync).
 #
 # Design:
 #     Each row gets three new columns:
@@ -1693,7 +1697,7 @@ async def migrate_to_v42(db: DatabaseConnection) -> None:
     When ON, ``local_only_analysis`` is forced ON and the user cannot turn it
     off — for EU/regulated orgs that must never send prompt/output text to the
     cloud. The lock is resolved from an env/config override
-    (``SV_DATA_RESIDENCY=eu`` or ``SV_RESIDENCY_LOCKED=1``) today, and can be
+    (``AEGIS_DATA_RESIDENCY=eu`` or ``AEGIS_RESIDENCY_LOCKED=1``) today, and can be
     written here by the cloud enrollment response in future (llm-security-engine
     #189). Default OFF.
 
@@ -1932,6 +1936,108 @@ async def migrate_to_v44(db: DatabaseConnection) -> None:
         "'Agent egress governance — policy, per-destination audit, containment proofs')"
     )
     logger.info("Applied migration v44: egress policy + audit + containment proofs")
+
+
+async def migrate_to_v45(db: DatabaseConnection) -> None:
+    """v44 -> v45: persistent session security state and causal event stream."""
+
+    conn = await db.connect()
+    await conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS runtime_session_states (
+            session_key             TEXT PRIMARY KEY,
+            runtime_kind            TEXT NOT NULL,
+            session_id              TEXT NOT NULL,
+            state_json              TEXT NOT NULL,
+            drift_score             INTEGER NOT NULL DEFAULT 0,
+            risk_level              TEXT NOT NULL DEFAULT 'clear',
+            original_intent_preview TEXT,
+            created_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_runtime_states_updated "
+        "ON runtime_session_states (updated_at DESC)"
+    )
+    await conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS runtime_session_events (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_key  TEXT NOT NULL,
+            runtime_kind TEXT NOT NULL,
+            session_id   TEXT NOT NULL,
+            seq          INTEGER NOT NULL,
+            event_type   TEXT NOT NULL,
+            turn_index   INTEGER,
+            content      TEXT,
+            payload      TEXT NOT NULL DEFAULT '{}',
+            created_at   TIMESTAMP NOT NULL,
+            prev_hash    TEXT NOT NULL,
+            row_hash     TEXT NOT NULL,
+            UNIQUE (session_key, seq)
+        )
+        """
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_runtime_events_session "
+        "ON runtime_session_events (session_key, seq)"
+    )
+    await conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_runtime_events_time "
+        "ON runtime_session_events (created_at DESC)"
+    )
+    await conn.execute(
+        "INSERT OR IGNORE INTO schema_version (version, applied_at, description) "
+        "VALUES (45, CURRENT_TIMESTAMP, "
+        "'Persistent runtime session state and hash-chained intent/behaviour events')"
+    )
+    logger.info("Applied migration v45: runtime session state + causal event stream")
+
+
+async def migrate_to_v46(db: DatabaseConnection) -> None:
+    """v45 -> v46: P1 pipeline configuration and capability manifests."""
+
+    conn = await db.connect()
+    await conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS runtime_pipeline_config (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            config_json TEXT NOT NULL,
+            version INTEGER NOT NULL DEFAULT 1,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS runtime_capability_manifests (
+            runtime_kind TEXT NOT NULL,
+            manifest_id TEXT NOT NULL,
+            session_id TEXT NOT NULL DEFAULT '*',
+            capabilities_json TEXT NOT NULL,
+            project_root TEXT,
+            description TEXT NOT NULL DEFAULT '',
+            version INTEGER NOT NULL DEFAULT 1,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (runtime_kind, manifest_id, session_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_runtime_manifests_updated
+            ON runtime_capability_manifests (updated_at DESC);
+
+        INSERT OR IGNORE INTO schema_version (version, applied_at, description)
+        VALUES (46, CURRENT_TIMESTAMP,
+                'P1 five-stage configuration and capability manifests');
+        """
+    )
+    logger.info("Applied migration v46: P1 pipeline configuration + manifests")
+
+
+async def migrate_to_v47(db: DatabaseConnection) -> None:
+    """v46 -> v47: P2 security operations and governed Agent foundation."""
+
+    conn = await db.connect()
+    await conn.executescript(MIGRATION_V47_SQL)
+    logger.info("Applied migration v47: P2 security operations foundation")
 
 
 # Future migration functions would be defined here:

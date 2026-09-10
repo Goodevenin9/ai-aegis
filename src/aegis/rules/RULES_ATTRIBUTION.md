@@ -120,7 +120,7 @@ This document provides detailed attribution and legal information for all securi
 
 ### MITRE ATT&CK®
 
-Several rules carry `metadata.mitre_attack_ids` entries (e.g. `sv_community_output_003_pem_private_key_leak` cites `T1552.004` — *Unsecured Credentials: Private Keys*). These are **nominative references to MITRE ATT&CK technique identifiers**, not reproductions of MITRE's copyrighted technique descriptions.
+Several rules carry `metadata.mitre_attack_ids` entries (e.g. `aegis_community_output_003_pem_private_key_leak` cites `T1552.004` — *Unsecured Credentials: Private Keys*). These are **nominative references to MITRE ATT&CK technique identifiers**, not reproductions of MITRE's copyrighted technique descriptions.
 
 - **MITRE ATT&CK®** is © The MITRE Corporation, licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
 - The full attribution block lives in the project [`NOTICE`](../../../NOTICE) file at the repository root; this entry duplicates it here so per-rule auditors don't have to leave the rules directory to confirm compliance.
@@ -187,10 +187,10 @@ These rules are designed to assist with security and compliance but do not guara
 
 ## 📞 Contact Information
 
-- **General Questions**: support@aegis.example
-- **Security Issues**: security@aegis.example
-- **Legal Questions**: legal@aegis.example
-- **Rule Contributions**: rules@aegis.example
+- **General Questions**: GitHub issues
+- **Security Issues**: GitHub security advisory
+- **Legal Questions**: GitHub issues
+- **Rule Contributions**: GitHub issues
 
 ---
 

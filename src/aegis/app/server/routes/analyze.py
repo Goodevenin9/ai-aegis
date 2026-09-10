@@ -59,7 +59,7 @@ def _ml_enabled() -> bool:
 # screenshots returned by a tool, image attachments in MCP responses) are
 # random-looking long [A-Za-z0-9+/=] strings. The community rule pack is
 # text-shaped and occasionally trips on substrings of these blobs — most
-# visibly `sv_community_output_001_credential_leak` firing on PNG bytes
+# visibly `aegis_community_output_001_credential_leak` firing on PNG bytes
 # that happen to contain the substring `password`. We don't want to skip
 # the audit altogether (the user wants visibility that the scan happened),
 # but we also can't let random image bytes mint false positives. The fix:
@@ -449,7 +449,7 @@ async def analyze_text(request: AnalysisRequest, http_request: Request) -> Analy
         # secret leak hits a structured pattern and survives untouched.
         #
         # IMPORTANT — these fragments MUST be live substrings of the CURRENT
-        # `sv_community_output_001_credential_leak` patterns, or the filter
+        # `aegis_community_output_001_credential_leak` patterns, or the filter
         # silently goes dead (always returns False) and the FP flood comes
         # back. They are distinctive substrings of the bulleted/numbered
         # entropy-token heuristic, which is the only LOOSE-shape arm still
@@ -558,7 +558,7 @@ async def analyze_text(request: AnalysisRequest, http_request: Request) -> Analy
                     surviving_confidences.append(ml_conf)
                     matched_rules.append(
                         MatchedRule(
-                            rule_id=ml_rule.get("rule_id", "sv_guardian_model"),
+                            rule_id=ml_rule.get("rule_id", "aegis_guardian_model"),
                             rule_name=ml_rule.get("rule_name", "Aegis Guardian (ML)"),
                             category=ml_rule.get("category", "unknown"),
                             severity=ml_rule.get("severity", "medium"),

@@ -630,7 +630,7 @@ const RulesPage = {
         cell.className = 'patterns-expand-cell';
 
         // Protection rationale for new/agent-attack rules
-        const agentRuleIds = ['sv_community_020_github_mcp_injection', 'sv_community_021_tool_result_injection', 'sv_community_022_multiagent_authority_spoof', 'sv_community_023_permission_scope_escalation'];
+        const agentRuleIds = ['aegis_community_020_github_mcp_injection', 'aegis_community_021_tool_result_injection', 'aegis_community_022_multiagent_authority_spoof', 'aegis_community_023_permission_scope_escalation'];
         if (agentRuleIds.includes(rule.id) && rule.description) {
             const rationale = document.createElement('div');
             rationale.style.cssText = 'margin-bottom: 12px; padding: 12px 14px; border-radius: 6px; border: 1px solid rgba(245,158,11,0.3); background: rgba(245,158,11,0.06);';
@@ -947,7 +947,7 @@ const RulesPage = {
         upgradeBtn.className = 'btn btn-primary';
         upgradeBtn.textContent = 'Sign Up for Cloud';
         upgradeBtn.addEventListener('click', () => {
-            window.open('https://app.aegis.example', '_blank');
+            window.open(window.__AEGIS_CONTROL_PLANE_DOCS_URL, '_blank');
             Modal.close();
         });
         buttons.appendChild(upgradeBtn);
@@ -1806,7 +1806,7 @@ const RulesPage = {
             + '<li><strong>Keep Cloud Connect on.</strong> '
             +   'You get rule + policy sync and fleet governance. Prompt analysis stays on-device by default '
             +   '(local-only): only metadata leaves. Cloud ML analysis (Llama Guard-class scoring) is an opt-in '
-            +   'that sends prompt/output text to scan.aegis.example; it is off by default and hard-locked off '
+            +   'that sends prompt/output text to your AI Aegis control plane; it is off by default and hard-locked off '
             +   'under EU residency.'
             + '</li>'
             + '</ul>';

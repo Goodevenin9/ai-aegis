@@ -30,7 +30,7 @@ Cursor splits enforcement across event-typed hooks (not one unified PreToolUse),
 
 - [Cursor](https://cursor.com) 1.7+ with Hooks support
 - Node.js 18+ on PATH (the hook commands run `node`)
-- A running local [Aegis AI Threat Monitor](https://github.com/Wanshanghao/ai-aegis) app on `http://127.0.0.1:8741` (or override via `SV_BASE_URL`)
+- A running local [Aegis AI Threat Monitor](https://github.com/Goodevenin9/ai-aegis) app on `http://127.0.0.1:8741` (or override via `AEGIS_ENGINE_ENDPOINT`)
 
 ## Installation
 
@@ -54,15 +54,15 @@ Uninstall: `aegis-app --uninstall-plugin cursor` — removes the plugin director
 
 ## Configuration
 
-Set `AEGIS_ENGINE_ENDPOINT` (the unified engine-endpoint variable; legacy alias `SV_BASE_URL`) to point at a non-default **engine** — your local app or a self-hosted / Terraform deployment, not the Aegis cloud (the installer also rewrites the default URL at staging time to match your app's actual port):
+Set `AEGIS_ENGINE_ENDPOINT` (the unified engine-endpoint variable; legacy alias `AEGIS_ENGINE_ENDPOINT`) to point at a non-default **engine** — your local app or a self-hosted / Terraform deployment, not the Aegis cloud (the installer also rewrites the default URL at staging time to match your app's actual port):
 
 ```bash
-export AEGIS_ENGINE_ENDPOINT="https://<your-engine-endpoint>"   # legacy: SV_BASE_URL
+export AEGIS_ENGINE_ENDPOINT="https://<your-engine-endpoint>"   # legacy: AEGIS_ENGINE_ENDPOINT
 ```
 
 ## License
 
-Apache 2.0. Source at <https://github.com/Wanshanghao/ai-aegis> under `src/aegis/plugins/cursor/`.
+Apache 2.0. Source at <https://github.com/Goodevenin9/ai-aegis> under `src/aegis/plugins/cursor/`.
 
 ## Disclaimer
 

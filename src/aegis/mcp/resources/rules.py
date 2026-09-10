@@ -332,11 +332,11 @@ async def _load_category_rules(rules_dir: Path, category: str) -> Dict[str, Any]
 
     # Map category to file names (community rule files)
     category_files = {
-        "prompt_injection": ["sv_community_prompt_injection.yml"],
-        "data_exfiltration": ["sv_community_data_extraction.yml"],
-        "social_engineering": ["sv_community_social_engineering.yml"],
-        "content_safety": ["sv_community_harmful_content.yml"],
-        "data_leakage": ["sv_community_pii_detection.yml"],
+        "prompt_injection": ["aegis_community_prompt_injection.yml"],
+        "data_exfiltration": ["aegis_community_data_extraction.yml"],
+        "social_engineering": ["aegis_community_social_engineering.yml"],
+        "content_safety": ["aegis_community_harmful_content.yml"],
+        "data_leakage": ["aegis_community_pii_detection.yml"],
     }
 
     files_to_check = category_files.get(category, [f"{category}.yml", f"{category}.yaml"])

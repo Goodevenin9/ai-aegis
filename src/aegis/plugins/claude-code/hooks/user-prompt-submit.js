@@ -76,7 +76,7 @@ async function main() {
   const text = prompt.length > SCAN_TEXT_LIMIT ? prompt.slice(0, SCAN_TEXT_LIMIT) : prompt;
   if (text.length === 0) return;
 
-  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || process.env.SV_BASE_URL || DEFAULT_BASE_URL;
+  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL;
   postJsonAndForget(`${baseUrl}/analyze`, {
     text,
     source: 'claude-code-plugin',
@@ -93,6 +93,19 @@ async function main() {
       event: 'UserPromptSubmit',
       session_id: safeSessionId(event.session_id),
     },
+  });
+
+  // Intent flow is observed separately from the existing prompt scan. The
+  // server may ask DeepSeek for three discrete semantic labels on later turns,
+  // then queues those labels for the deterministic PreToolUse state machine.
+  // This remains fire-and-forget: semantic enrichment must never delay or
+  // block prompt submission.
+  postJsonAndForget(`${baseUrl}/api/runtime/intent`, {
+    text,
+    session_id: safeSessionId(event.session_id) || '__anonymous__',
+    runtime_kind: RUNTIME_KIND,
+    allowed_capabilities: (process.env.AEGIS_SESSION_CAPABILITIES || '')
+      .split(',').map((value) => value.trim()).filter(Boolean),
   });
 }
 

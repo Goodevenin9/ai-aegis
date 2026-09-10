@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 PRICING_REMOTE_URL = (
-    "https://raw.githubusercontent.com/Wanshanghao/ai-aegis/"
+    "https://raw.githubusercontent.com/Goodevenin9/ai-aegis/"
     "master/src/aegis/pricing/model_pricing.yml"
 )
 
@@ -625,7 +625,7 @@ async def export_costs_csv(
             ])
 
         date_str = datetime.utcnow().strftime("%Y-%m-%d")
-        filename = f"sv-costs-{date_str}.csv"
+        filename = f"aegis-costs-{date_str}.csv"
 
         output.seek(0)
         return StreamingResponse(

@@ -388,10 +388,10 @@ def _atomic_write_text(path: Path, content: str) -> None:
     resolved_parent = path.parent.resolve(strict=False)
     home = Path.home().resolve(strict=False)
     codex_root = (home / ".codex").resolve(strict=False)
-    sv_root = (home / ".aegis").resolve(strict=False)
+    aegis_root = (home / ".aegis").resolve(strict=False)
     if not (
         resolved_parent.is_relative_to(codex_root)
-        or resolved_parent.is_relative_to(sv_root)
+        or resolved_parent.is_relative_to(aegis_root)
     ):
         raise PermissionError(
             f"refusing to write outside allowed dirs (~/.codex or "
@@ -723,13 +723,13 @@ def _current_codex_install_path() -> Optional[Path]:
 # --- Plugin tree staging ----------------------------------------------------
 
 
-def _stage_plugin_tree(sv_url: str) -> list[str]:
+def _stage_plugin_tree(aegis_url: str) -> list[str]:
     """Stage the plugin tree at ``STAGING_DIR``.
 
     Layout written:
       * ``<staging>/.agents/plugins/marketplace.json`` — marketplace manifest
       * ``<staging>/plugins/<plugin>/...`` — plugin files copied from the
-        bundled source with the SV base URL substituted.
+        bundled source with the AI Aegis base URL substituted.
 
     Returns the list of plugin file paths (relative to the plugin root)
     that were successfully written.
@@ -743,8 +743,8 @@ def _stage_plugin_tree(sv_url: str) -> list[str]:
         source_dir=BUNDLED_PLUGIN_DIR,
         files=PLUGIN_FILES,
         substitutions={
-            "http://127.0.0.1:8741": sv_url,
-            "http://localhost:8741": sv_url,
+            "http://127.0.0.1:8741": aegis_url,
+            "http://localhost:8741": aegis_url,
         },
     )
 
@@ -798,12 +798,12 @@ async def install_plugin():
     their app port.
     """
     _hooks_common.ensure_bundled_dir(BUNDLED_PLUGIN_DIR, PLUGIN_FILES)
-    sv_url = _hooks_common.resolve_sv_url()
-    files_written = _stage_plugin_tree(sv_url)
+    aegis_url = _hooks_common.resolve_aegis_url()
+    files_written = _stage_plugin_tree(aegis_url)
 
     logger.info(
-        "Staged %d Codex plugin file(s) for %s at %s (sv_url=%s)",
-        len(files_written), PLUGIN_NAME, STAGING_DIR, sv_url,
+        "Staged %d Codex plugin file(s) for %s at %s (aegis_url=%s)",
+        len(files_written), PLUGIN_NAME, STAGING_DIR, aegis_url,
     )
 
     # Defense-in-depth: if staging copied zero files, the bundled plugin

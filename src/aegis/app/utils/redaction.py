@@ -99,7 +99,7 @@ SECRET_PATTERNS = [
 #     body into threat_intel_records.text_content and SIEM-forward it.
 INCOMING_ONLY_PATTERNS = [
     # PEM private-key blocks — keep the BEGIN/END envelope so the matching
-    # rule `sv_community_output_003_pem_private_key_leak` still fires on
+    # rule `aegis_community_output_003_pem_private_key_leak` still fires on
     # re-scan and the threat is still recorded; the body between is
     # replaced. Non-greedy; constrained to PRIVATE KEY variants only
     # (PUBLIC KEY envelopes are not secrets and stay verbatim).

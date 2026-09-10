@@ -1,17 +1,17 @@
 """
 Unit tests for credentials.detect_token_type — routes tokens to the right
-configuration path (svet_* enrollment vs svpk_*/legacy personal API key).
+configuration path (aet_* enrollment vs aepk_*/legacy personal API key).
 """
 
 from aegis.app.services.credentials import detect_token_type
 
 
-def test_svet_prefix_detected_as_enrollment():
-    assert detect_token_type("svet_-THtmIMwlE0Hxh52pSaFmaQg") == "svet"
+def test_aet_prefix_detected_as_enrollment():
+    assert detect_token_type("aet_-THtmIMwlE0Hxh52pSaFmaQg") == "aet"
 
 
-def test_svpk_prefix_detected_as_personal():
-    assert detect_token_type("svpk_AbCdEfGhIjKlMnOpQrStUv") == "svpk"
+def test_aepk_prefix_detected_as_personal():
+    assert detect_token_type("aepk_AbCdEfGhIjKlMnOpQrStUv") == "aepk"
 
 
 def test_legacy_unprefixed_detected_as_legacy():
@@ -29,4 +29,4 @@ def test_other_prefixes_treated_as_legacy():
     # Future prefix space stays open — anything we don't recognise falls
     # through to the legacy path. New prefixes require an explicit branch.
     assert detect_token_type("sk_test_something") == "legacy"
-    assert detect_token_type("svet") == "legacy"  # missing underscore
+    assert detect_token_type("aet") == "legacy"  # missing underscore

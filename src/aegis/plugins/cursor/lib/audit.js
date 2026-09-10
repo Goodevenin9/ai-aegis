@@ -72,7 +72,7 @@ function preview(value) {
  * consistent with what the before* hook decided). Returns the request_id so
  * the caller can correlate follow-up /analyze scans.
  */
-async function postCallAudit(baseUrl, { toolName, candidates, toolInput, sessionId }) {
+async function postCallAudit(baseUrl, { toolName, candidates, toolInput, toolOutput, sessionId }) {
   if (!Array.isArray(candidates) || candidates.length === 0) return null;
   const overrides = await fetchSyncedOverrides(baseUrl, RUNTIME_KIND);
   const match = pickMatch(candidates, overrides);
@@ -89,6 +89,20 @@ async function postCallAudit(baseUrl, { toolName, candidates, toolInput, session
     session_id: sessionId || null,
     request_id: requestId,
   });
+  if (sessionId) {
+    postJsonAndForget(`${baseUrl}/api/runtime/events`, {
+      session_id: sessionId,
+      runtime_kind: RUNTIME_KIND,
+      event_type: 'after_tool_call',
+      text: typeof toolOutput === 'string' ? toolOutput.slice(0, INCOMING_SCAN_LIMIT) : null,
+      metadata: {
+        tool_name: toolName,
+        tool_id: match ? match.tool_id : candidates[0],
+        action: match ? effectToAction(match.effect) : 'allow',
+        request_id: requestId,
+      },
+    });
+  }
   return requestId;
 }
 

@@ -107,7 +107,7 @@ const GuideClaudeCodePage = {
         });
         hooksTable.appendChild(tbody);
         root.appendChild(hooksTable);
-        const failopen = p('All hooks fail-open: any error path emits the equivalent of "allow" (or an empty response) and the plugin never breaks a Claude Code session. All HTTP targets the local app on loopback at http://127.0.0.1:8741 (override with the AEGIS_ENGINE_ENDPOINT env var; legacy SV_BASE_URL still works).');
+        const failopen = p('All hooks fail-open: any error path emits the equivalent of "allow" (or an empty response) and the plugin never breaks a Claude Code session. All HTTP targets the local app on loopback at http://127.0.0.1:8741 (override with the AEGIS_ENGINE_ENDPOINT env var; legacy AEGIS_ENGINE_ENDPOINT still works).');
         root.appendChild(failopen);
 
         // --- Latency (honest framing — no "zero-latency" marketing copy) ---
@@ -189,9 +189,9 @@ aegis-app --install-plugin claude-code
 
 # point the hooks at your engine endpoint (the URL from \`terraform output\`)
 export AEGIS_ENGINE_ENDPOINT=https://<your-engine-endpoint>`));
-        root.appendChild(note('Engine, not cloud.', 'AEGIS_ENGINE_ENDPOINT is the engine the hooks call for analysis: your local app OR your self-host / Terraform engine. It is NOT the Aegis cloud (scan.aegis.example). Legacy SV_BASE_URL / AEGIS_URL still work as fallbacks.'));
-        root.appendChild(p('Auth is optional. A private (in-VPC) endpoint needs no credential: the default and least friction. Only if you expose the endpoint publicly and gate it (Terraform ingress_token: enforced by a v4.9.0+ engine; older images set but ignore it) do you set a key; use a free Aegis account key or an SVET token: it gates inbound access only and forwards no data:'));
-        root.appendChild(code(`export AEGIS_API_KEY=<Aegis account key or SVET token>   # optional: public gated endpoint only`));
+        root.appendChild(note('Engine and control plane are separate.', 'AEGIS_ENGINE_ENDPOINT is the analysis engine called by hooks. AEGIS_CONTROL_PLANE_URL is the fleet-management service.'));
+        root.appendChild(p('Auth is optional for a private endpoint. For a public deployment, configure an Aegis API key at the gateway.'));
+        root.appendChild(code(`export AEGIS_API_KEY=<Aegis API key>   # public gated endpoint only`));
 
         root.appendChild(h2('Verify it works'));
         root.appendChild(p('1. Plugin status from the local app:'));
@@ -224,14 +224,14 @@ export AEGIS_ENGINE_ENDPOINT=https://<your-engine-endpoint>`));
         root.appendChild(p('Warm renders return in ~50 ms. Token usage (the slow leg, ~2–8 s server-side) is fetched in a detached background process and served from a 5-minute on-disk cache, so first-ever render shows everything except tokens: the next 1–2 statusline refreshes pick them up.'));
 
         root.appendChild(h3('Compose with an existing statusline (recommended)'));
-        root.appendChild(p('Shell out from your existing statusline script and append the SV line. Example for Python:'));
+        root.appendChild(p('Shell out from your existing statusline script and append the Aegis line. Example for Python:'));
         root.appendChild(code(`import subprocess, glob, os
 candidates = sorted(glob.glob(os.path.expanduser(
     "~/.claude/plugins/cache/aegis-local/aegis-guard/*/hooks/statusline.js")))
 if candidates:
-    sv = subprocess.run(["node", candidates[-1]], input=stdin_blob,
+    aegis = subprocess.run(["node", candidates[-1]], input=stdin_blob,
                         capture_output=True, text=True, timeout=2).stdout.strip()
-    if sv: print(your_existing_line + "\\n" + sv)`));
+    if aegis: print(your_existing_line + "\\n" + aegis)`));
 
         root.appendChild(h3('Replace your statusLine outright'));
         root.appendChild(p('This uses the version-stable staging copy, so it survives plugin upgrades (the cache path is versioned and would break on the next bump):'));
@@ -254,7 +254,7 @@ if candidates:
         </tr></thead>`;
         const cfgBody = document.createElement('tbody');
         const cfgRows = [
-            ['Local app port', 'svconfig.yml server.port, or SV_WEB_PORT env', '8741', 'Loopback port the plugin POSTs to'],
+            ['Local app port', 'aegis.yml server.port, or AEGIS_WEB_PORT env', '8741', 'Loopback port the plugin POSTs to'],
             ['Plugin target URL', 'AEGIS_ENGINE_ENDPOINT env var', 'http://127.0.0.1:8741', 'Override for non-default app deployments'],
             ['Tool permission rules', 'Tool Permissions page in the app', 'Default-allow + last-resort denies', 'Per-tool allow / deny / ask, cloud-syncable, local overrides'],
             ['Statusline cache TTL', 'hardcoded in hooks/statusline.js', '60s line / 5 min tokens', 'Avoids hammering the transcript-scan endpoint'],
@@ -288,7 +288,7 @@ rm -rf ~/.aegis/cost-probes`));
         root.appendChild(note('"App unreachable" / fail-open silently', 'confirm the local app is running with curl http://127.0.0.1:8741/health (200 OK expected). The plugin never breaks a Claude Code session: when the app is down every decision is allow and no audit row is written.'));
         root.appendChild(note('Audit rows show action=allow even with a synced cloud rule', 'confirm the rule is reaching the local app: GET /api/tool-permissions/synced-overrides. Total: 0 means the device isn\'t enrolled with cloud yet, pair via Settings → Cloud.'));
         root.appendChild(note('Tokens missing from the statusline after install', 'the token-usage endpoint scans Claude Code session transcripts on disk and takes 2–8 s the first time. The statusline caches the result for 5 min and refreshes in the background. First render shows everything except tokens; the next 1–2 statusline refreshes pick up the freshly-cached value.'));
-        root.appendChild(note('Statusline not visible at all', 'Claude Code\'s statusLine.command is set in ~/.claude/settings.json. If you already have a custom statusline (e.g. context-window usage), it overrides the SV emitter unless you compose them (see "Statusline integration").'));
+        root.appendChild(note('Statusline not visible at all', 'Claude Code\'s statusLine.command is set in ~/.claude/settings.json. If you already have a custom statusline (e.g. context-window usage), it overrides the Aegis emitter unless you compose them (see "Statusline integration").'));
         root.appendChild(note('Bash calls are scanned but my custom MCP tool isn\'t', '/analyze only runs on tools whose tool_input is natural-language prose (WebFetch, Skill, Task, Agent prompts). Shell-syntax-shaped inputs (Bash, PowerShell, Write, Edit, MultiEdit, NotebookEdit) are audited to the hash chain but NOT fed to the rule pack: that scope mismatch produced high-volume false positives.'));
         root.appendChild(note('macOS Gatekeeper blocks the app', 'install via pip rather than the .dmg. If you must use the .dmg, only download from the official GitHub releases page, verify SHA256SUMS.txt, then xattr -cr /Applications/Aegis.app in Terminal.'));
         root.appendChild(note('Plugin not in Claude Code\'s plugin list', 'auto-install writes to three config files (settings.json, known_marketplaces.json, installed_plugins.json): check each contains the aegis-local / aegis-guard entries. If they\'re absent, auto-install returned auto_installed: false; run the two paste-in commands shown on the Integrations page from inside your Claude Code session.'));

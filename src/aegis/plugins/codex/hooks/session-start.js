@@ -69,7 +69,7 @@ async function main() {
     event = raw ? JSON.parse(raw) : {};
   } catch { /* swallow — empty event is fine */ }
 
-  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || process.env.SV_BASE_URL || DEFAULT_BASE_URL;
+  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL;
 
   // Reachability probe — fail-quiet to stderr. The probe runs with the
   // default 100ms client-side timeout in lib/client.js, so a slow / down
@@ -92,7 +92,7 @@ async function main() {
         'Aegis Guard is installed but INACTIVE: the local Aegis app at '
         + baseUrl + ' is not reachable, so tool calls are NOT being enforced or audited '
         + 'this session (failing open). Install and start the free Aegis app to '
-        + 'activate policy enforcement + tamper-evident audit. See https://aegis.example\n',
+        + 'activate policy enforcement + tamper-evident audit. See https://github.com/Goodevenin9/ai-aegis\n',
       );
     }
   } catch { /* fail-open — never block session startup */ }

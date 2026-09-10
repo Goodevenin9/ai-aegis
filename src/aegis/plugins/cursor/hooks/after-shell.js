@@ -35,13 +35,14 @@ async function main() {
   } catch {
     return; // malformed stdin — nothing to audit
   }
-  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || process.env.SV_BASE_URL || DEFAULT_BASE_URL;
+  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL;
   try {
     const sessionId = sessionIdFrom(event);
     const requestId = await postCallAudit(baseUrl, {
       toolName: TOOL_NAME,
       candidates: normalize(TOOL_NAME),
       toolInput: event && event.command,
+      toolOutput: event && event.output,
       sessionId,
     });
     const output = event && typeof event.output === 'string' ? event.output : '';

@@ -12,7 +12,7 @@ from aegis.app.services.external_benchmark_evaluation import (
     load_injecagent,
     write_replay_reports,
 )
-from aegis.app.services.pretool_pipeline import IntentEvidence, SemanticLabels
+from aegis.app.services.pretool_pipeline import IntentEvidence
 
 
 def test_live_deepseek_schema_yields_direct_action_and_closed_evidence():
@@ -21,12 +21,14 @@ def test_live_deepseek_schema_yields_direct_action_and_closed_evidence():
         "theme_shifted": True,
         "permission_probing": False,
         "request_escalation": True,
+        "explicit_harm": True,
         "requested_capabilities": ["network_outbound"],
         "requested_radius": "external",
     }))
 
     assert action == "block"
     assert evidence.labels.theme_shifted is True
+    assert evidence.labels.explicit_harm is True
     assert evidence.requested_capabilities == frozenset({"network_outbound"})
 
 
@@ -128,11 +130,7 @@ def test_live_result_is_compared_as_judge_and_five_stage_evidence():
     )
     live = LiveSemanticDecision(
         "block",
-        IntentEvidence(
-            labels=SemanticLabels(theme_shifted=True, request_escalation=True),
-            requested_capabilities=frozenset({"network_outbound"}),
-            requested_radius="external",
-        ),
+        IntentEvidence(),
         "ok", input_tokens=100, output_tokens=20, latency_ms=50,
     )
 

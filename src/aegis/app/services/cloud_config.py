@@ -76,8 +76,16 @@ class AnalysisResult:
         }
 
 
-# Cloud API base URL
-CLOUD_API_BASE_URL = "https://scan.aegis.example"
+import os as _os
+
+# All services default to the bundled self-host control plane. Production
+# deployments set AEGIS_CONTROL_PLANE_URL once; individual endpoints remain
+# independently overridable for split-service installations.
+CONTROL_PLANE_URL = _os.getenv(
+    "AEGIS_CONTROL_PLANE_URL", "http://127.0.0.1:8780"
+).rstrip("/")
+
+CLOUD_API_BASE_URL = _os.getenv("AEGIS_SCAN_API_URL", CONTROL_PLANE_URL).rstrip("/")
 
 # Timeout for cloud API requests (seconds)
 CLOUD_API_TIMEOUT = 5.0
@@ -86,16 +94,11 @@ CLOUD_API_TIMEOUT = 5.0
 # for cloud → local rule syncs. The endpoint lives on the public API
 # domain shared by the rest of the Aegis platform:
 #
-#   https://api.aegis.example/api/rules/sync
+#   {AEGIS_CONTROL_PLANE_URL}/api/rules/sync
 #
-# Both develop and master ship with this same default. For internal
-# staging or local dev, set `SV_CLOUD_API_URL` at runtime — do not hard
-# code non-prod URLs into this file (this repo is public).
-import os as _os
-
 CLOUD_API_URL = _os.getenv(
-    "SV_CLOUD_API_URL",
-    "https://api.aegis.example",
+    "AEGIS_CLOUD_API_URL",
+    CONTROL_PLANE_URL,
 )
 
 # Allow more time for bundle fetches — the bundle is large (thousands of rules).
@@ -105,19 +108,17 @@ CLOUD_RULES_SYNC_TIMEOUT = 30.0
 # ---------------------------------------------------------------------------
 # Cloud service URL helpers
 # ---------------------------------------------------------------------------
-# auth.aegis.example hosts /api/v1/devices/enroll, /auth/token, etc.
-# engine.aegis.example hosts /policy/* (policy bundles + sync long-poll).
-# Both are overridable via env so staging / local dev can point elsewhere
-# without rebuilding the binary.
+# A single self-hosted deployment serves enrollment and policy sync. Operators
+# may split these services by setting the two endpoint variables separately.
 
 AUTH_SERVICE_URL = _os.getenv(
     "AEGIS_AUTH_URL",
-    "https://auth.aegis.example",
+    CONTROL_PLANE_URL,
 )
 
 LSE_URL = _os.getenv(
     "AEGIS_LSE_URL",
-    "https://engine.aegis.example",
+    CONTROL_PLANE_URL,
 )
 
 

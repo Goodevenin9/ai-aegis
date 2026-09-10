@@ -1,5 +1,6 @@
 {
   "exact": {
+    "Aegis": "灵盾 Aegis",
     "Toggle navigation menu": "切换导航菜单",
     "Take the guided setup tour": "开始引导式设置教程",
     "Switch to English": "切换到英文",
@@ -63,7 +64,7 @@
     "Failed to toggle cloud mode": "切换云模式失败",
     "Connect to Aegis Cloud for centralized rule & policy management, fleet visibility, and a real-time dashboard. Your prompt text stays on this device by default; cloud ML analysis is a separate, optional opt-in.": "连接 Aegis Cloud，实现集中式规则与策略管理、设备群可见性和实时仪表盘。默认情况下，你的提示词文本保留在本设备；云端 ML 分析是独立的可选加入项。",
     "Create Account": "创建账户",
-    "Sign up at app.aegis.example (free tier available)": "在 app.aegis.example 注册（提供免费版）",
+    "Open your AI Aegis control plane": "打开你的 AI Aegis 控制平面",
     "Get API Key": "获取 API 密钥",
     "Go to Access Management -> Create a new key": "前往 访问管理 → 创建新密钥",
     "Add API Key": "添加 API 密钥",
@@ -77,7 +78,7 @@
     "The desktop app works 100% locally. Even with Cloud Connect on, your prompts stay on this device by default:": "桌面应用 100% 在本地运行。即使开启云连接，默认情况下你的提示词也保留在本设备：",
     "Prompt input and output are analyzed on-device; by default none of that text is sent to Aegis Cloud.": "提示词的输入和输出均在设备端分析；默认情况下，这些文本不会发送到 Aegis Cloud。",
     "Rule sync, policy sync, fleet metadata, and governance keep working, and none of them send your prompts.": "规则同步、策略同步、设备群元数据与治理功能继续正常工作，均不会发送你的提示词。",
-    "Cloud ML analysis is a separate opt-in that sends prompt text to scan.aegis.example.": "云端 ML 分析是一个独立的可选加入项，会将提示词文本发送到 scan.aegis.example。",
+    "Remote analysis is an opt-in that sends prompt text to your configured AI Aegis control plane.": "远程分析是一项可选功能，会将提示词文本发送到你配置的 AI Aegis 控制平面。",
     "EU data-residency: when your organization enforces it, local-only analysis is hard-locked on and cannot be disabled. Cloud ML stays off and SIEM forwarders are capped to metadata-level detail, so prompt text does not leave this device.": "欧盟数据驻留：当你的组织强制执行时，仅本地分析将被硬锁定且无法禁用。云端 ML 保持关闭，SIEM 转发器仅限元数据级别细节，因此提示词文本不会离开本设备。",
     "Guardian ML: local AI threat detection. Click to turn on or off.": "Guardian ML：本地 AI 威胁检测。点击开启或关闭。",
     "Guardian ML: local ML threat detection": "Guardian ML：本地 ML 威胁检测",

@@ -39,12 +39,9 @@
 
 </div>
 
-> **二次开发声明**：本产品基于 Apache License 2.0 开源项目
-> [SecureVector AI Threat Monitor](https://github.com/Secure-Vector/ai-threat-monitor)
-> 二次开发，上游版权归 SecureVector 所有（详见 [NOTICE](NOTICE) 与 [LICENSE](LICENSE)）。
-> ML 检测层使用 SecureVector 发布的
-> [`securevector-guardian-model`](https://github.com/Secure-Vector/securevector-guardian-model)。
-> Aegis 团队的增量贡献包括前端中英文切换、品牌与产品化改造。
+> **开源与归属**：AI Aegis 采用 Apache License 2.0。项目包含经许可演进的
+> 上游代码和模型资产，法定版权、来源与变更说明统一记录在 [NOTICE](NOTICE)
+> 与 [LICENSE](LICENSE) 中；产品界面、命令、配置和插件均使用 AI Aegis 标识。
 
 <br>
 
@@ -87,7 +84,7 @@ pip install ai-aegis[app]
 aegis-app --web
 ```
 
-**Or download the app:** [Windows](https://github.com/Wanshanghao/ai-aegis/releases/download/v1.0.0/Aegis-v1.0.0-Windows-Setup.exe) · [Linux](https://github.com/Wanshanghao/ai-aegis/releases/download/v1.0.0/Aegis-1.0.0-x86_64.AppImage) · [DEB](https://github.com/Wanshanghao/ai-aegis/releases/download/v1.0.0/aegis_1.0.0_amd64.deb) · [RPM](https://github.com/Wanshanghao/ai-aegis/releases/download/v1.0.0/aegis-1.0.0-1.x86_64.rpm) · [macOS](https://github.com/Wanshanghao/ai-aegis/releases/download/v1.0.0/Aegis-1.0.0-macOS.dmg)
+**Or download the app:** [Windows](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/Aegis-v1.0.0-Windows-Setup.exe) · [Linux](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/Aegis-1.0.0-x86_64.AppImage) · [DEB](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/aegis_1.0.0_amd64.deb) · [RPM](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/aegis-1.0.0-1.x86_64.rpm) · [macOS](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/Aegis-1.0.0-macOS.dmg)
 
 **Step 2 — Open the app**
 
@@ -296,13 +293,13 @@ Built from real attack chains observed against production agent frameworks:
 
 ### Optional ML Detection Layer — Aegis Guardian
 
-Alongside the 72 regex rules, the app ships an **optional ML detection layer** — [**Aegis Guardian**](https://github.com/Secure-Vector/securevector-guardian-model), a stdlib-only semantic threat classifier. It runs in parallel with the rule engine and catches obfuscated, paraphrased, buried, or encoded attacks that literal patterns miss, folding its verdict into the same allow / alert / block decision. The model is fully local and runs offline — no cloud round-trip, no prompt text leaves your machine.
+Alongside the 72 regex rules, the app ships **Aegis Guardian**, a bundled stdlib-only semantic threat classifier. It runs in parallel with the rule engine and catches obfuscated, paraphrased, buried, or encoded attacks that literal patterns miss. The model is fully local and runs offline — no cloud round-trip and no prompt text leaves your machine.
 
-**Install — comes with the app.** Guardian is the [`securevector-guardian-model`](https://github.com/Secure-Vector/securevector-guardian-model) package, installed automatically as a dependency: `pip install ai-aegis[app]` pulls it in (pure Python, zero ML dependencies). `pip install -U securevector-guardian-model` + restart updates the model independently of app releases, and the loaded version is shown in **Settings → Guardian ML Detection**. The model runtime (~1.8 MB) is fetched once on first use and cached locally for offline use thereafter; for air-gapped installs, pre-place it and point `SV_GUARDIAN_RUNTIME` at the file.
+**Install — comes with the app.** The inference code and verified model asset are included in the AI Aegis wheel, so a fresh install is immediately offline-capable. Updating `ai-aegis` updates the model with the application. Air-gapped deployments may override the asset path with `AEGIS_GUARDIAN_RUNTIME`.
 
 **On by default.** Toggle it from **Settings → Guardian ML Detection** (default ON), or force it off globally with the `AEGIS_ML_ENABLED=false` environment flag. With Guardian disabled the regex rules keep running unchanged, and the layer is fail-open — any model error silently falls back to rules-only so it never breaks the analyze path.
 
-**What to expect when it's on.** The model is pure Python (zero dependencies, no GPU, no network), so it runs on any machine. It analyzes **in parallel** with the regex rules, adding roughly **~0.15 ms per typical analysis** (a prompt, tool call, or response — sub-millisecond), a few ms for ~1 KB of text, and up to ~100 ms only for very large documents (bounded, never unbounded). One-time startup is ~200 ms + ~34 MB RAM. Older/slower CPUs scale proportionally, but everyday inputs stay sub-millisecond. Full benchmark: [model performance](https://github.com/Secure-Vector/securevector-guardian-model#performance--what-to-expect).
+**What to expect when it's on.** The model is pure Python (zero runtime ML dependencies, no GPU, no network). It analyzes in parallel with regex rules; long documents are windowed with bounded work. The loaded bundle version and availability are visible under **Settings → Guardian ML Detection**.
 
 <br>
 
@@ -318,7 +315,7 @@ Every scan and audit row is stamped with a stable `device_id` so a customer runn
    - macOS → `IOPlatformUUID` via `ioreg`
    - Linux → `/etc/machine-id` (fallback `/var/lib/dbus/machine-id`)
    - Windows → `HKLM\SOFTWARE\Microsoft\Cryptography\MachineGuid`
-2. SHA-256 hash it with a namespace prefix (`aegis-device-v1:<raw>`) and truncate to 24 hex chars → `sv-a1b2c3d4e5f6...`
+2. SHA-256 hash it with a namespace prefix (`aegis-device-v1:<raw>`) and truncate to 24 hex chars → `aegis-a1b2c3d4e5f6...`
 3. Cache the result in `~/Library/Application Support/ThreatMonitor/.device_id` (0o600) so the OS fetch happens once per install.
 4. If the OS refuses (rare: locked-down container, unusual Linux image), fall back to a random UUID cached to the same file.
 
@@ -462,17 +459,17 @@ No Python required. Download and run.
 
 | Platform | Download |
 |----------|----------|
-| Windows | [Aegis-v1.0.0-Windows-Setup.exe](https://github.com/Wanshanghao/ai-aegis/releases/download/v1.0.0/Aegis-v1.0.0-Windows-Setup.exe) |
-| macOS | [Aegis-1.0.0-macOS.dmg](https://github.com/Wanshanghao/ai-aegis/releases/download/v1.0.0/Aegis-1.0.0-macOS.dmg) |
-| Linux (AppImage) | [Aegis-1.0.0-x86_64.AppImage](https://github.com/Wanshanghao/ai-aegis/releases/download/v1.0.0/Aegis-1.0.0-x86_64.AppImage) |
-| Linux (DEB) | [aegis_1.0.0_amd64.deb](https://github.com/Wanshanghao/ai-aegis/releases/download/v1.0.0/aegis_1.0.0_amd64.deb) |
-| Linux (RPM) | [aegis-1.0.0-1.x86_64.rpm](https://github.com/Wanshanghao/ai-aegis/releases/download/v1.0.0/aegis-1.0.0-1.x86_64.rpm) |
+| Windows | [Aegis-v1.0.0-Windows-Setup.exe](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/Aegis-v1.0.0-Windows-Setup.exe) |
+| macOS | [Aegis-1.0.0-macOS.dmg](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/Aegis-1.0.0-macOS.dmg) |
+| Linux (AppImage) | [Aegis-1.0.0-x86_64.AppImage](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/Aegis-1.0.0-x86_64.AppImage) |
+| Linux (DEB) | [aegis_1.0.0_amd64.deb](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/aegis_1.0.0_amd64.deb) |
+| Linux (RPM) | [aegis-1.0.0-1.x86_64.rpm](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/aegis-1.0.0-1.x86_64.rpm) |
 
-[All Releases](https://github.com/Wanshanghao/ai-aegis/releases) · [SHA256 Checksums](https://github.com/Wanshanghao/ai-aegis/releases/download/v1.0.0/SHA256SUMS.txt)
+[All Releases](https://github.com/Goodevenin9/ai-aegis/releases) · [SHA256 Checksums](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/SHA256SUMS.txt)
 
 > **Security:** Only download installers from this official GitHub repository. Always verify SHA256 checksums before installation. Aegis is not responsible for binaries obtained from third-party sources.
 
-> **macOS binary note:** **Only download from this official GitHub repository** and verify the [SHA256 checksum](https://github.com/Wanshanghao/ai-aegis/releases/download/v1.0.0/SHA256SUMS.txt) before installing. (Prefer pip? `pip install ai-aegis[app]` always works too.)
+> **macOS binary note:** **Only download from this official GitHub repository** and verify the [SHA256 checksum](https://github.com/Goodevenin9/ai-aegis/releases/download/v1.0.0/SHA256SUMS.txt) before installing. (Prefer pip? `pip install ai-aegis[app]` always works too.)
 
 ### Other install options
 
@@ -486,24 +483,15 @@ No Python required. Download and run.
 
 ### Deploy to your own cloud (self-host)
 
-Want it as shared infrastructure instead of one laptop? Run the engine in **your own cloud tenant** — one `terraform apply` stands it up with a live HTTPS dashboard, so a whole team's agents point at a single instance. Open-source modules (Apache 2.0), one per provider:
-
-| Cloud | Terraform module |
-|---|---|
-| **AWS** | [terraform-aws-aegis](https://github.com/Secure-Vector/terraform-aws-aegis) |
-| **Azure** | [terraform-azurerm-aegis](https://github.com/Secure-Vector/terraform-azurerm-aegis) |
-| **Google Cloud** | [terraform-google-aegis](https://github.com/Secure-Vector/terraform-google-aegis) |
-| **Oracle Cloud** | [terraform-oci-aegis](https://github.com/Secure-Vector/terraform-oci-aegis) |
-
-Your data stays in your tenant. `terraform output` gives you the endpoint URL — then point your agents at it with the lightweight SDK (LangChain / LangGraph / CrewAI / Hermes, `--no-deps` install) and/or the Aegis Guard plugin. See each SDK / plugin's docs for the one env var to set.
+Run the engine and managed-device control plane in **your own server or cloud tenant** with the included Docker Compose deployment. It provides real device enrollment, signed policy distribution and application receipts. See [Self-hosted Control Plane](docs/SELF_HOSTED_CONTROL_PLANE.md), then point agents at the engine with `AEGIS_ENGINE_ENDPOINT`.
 
 <br>
 
 ## Configuration
 
-Aegis writes `svconfig.yml` to your app data directory on first run with sensible defaults.
+Aegis writes `aegis.yml` to your app data directory on first run with sensible defaults.
 
-The config path is printed at startup — `~/.local/share/aegis/threat-monitor/svconfig.yml` (Linux), `~/Library/Application Support/Aegis/ThreatMonitor/svconfig.yml` (macOS), `%LOCALAPPDATA%/Aegis/ThreatMonitor/svconfig.yml` (Windows). Key settings (all editable from the dashboard, which writes back to this file):
+The config path is printed at startup — `~/.local/share/aegis/threat-monitor/aegis.yml` (Linux), `~/Library/Application Support/Aegis/ThreatMonitor/aegis.yml` (macOS), `%LOCALAPPDATA%/Aegis/ThreatMonitor/aegis.yml` (Windows). Key settings (all editable from the dashboard, which writes back to this file):
 
 ```yaml
 server:   { host: 127.0.0.1, port: 8741 }        # change port if 8741 is taken
@@ -523,7 +511,7 @@ If your org distributes signed MCP tool-policy bundles from Aegis Cloud, enroll 
 **2. User enrolls locally:**
 
 ```bash
-aegis-app enroll svet_<token>
+aegis-app enroll aet_<token>
 ```
 
 The local app POSTs `/api/v1/devices/enroll`, persists `org_id` + signing key + auth credentials to `~/Library/Application Support/.credentials` (macOS — equivalent path on Linux/Windows), and starts the cloud sync loop on next launch.
@@ -604,9 +592,9 @@ Every request is scanned for prompt injection. Every response is scanned for dat
 |--------|---------|
 | **PyPI** | `pip install --upgrade ai-aegis[app]` |
 | **Source** | `git pull && pip install -e ".[app]"` |
-| **Windows** | Download latest [.exe installer](https://github.com/Wanshanghao/ai-aegis/releases/latest) and run it (overwrites previous version) |
-| **macOS** | Download latest [.dmg](https://github.com/Wanshanghao/ai-aegis/releases/latest), drag to Applications |
-| **Linux AppImage** | Download latest [.AppImage](https://github.com/Wanshanghao/ai-aegis/releases/latest) and replace the old file |
+| **Windows** | Download latest [.exe installer](https://github.com/Goodevenin9/ai-aegis/releases/latest) and run it (overwrites previous version) |
+| **macOS** | Download latest [.dmg](https://github.com/Goodevenin9/ai-aegis/releases/latest), drag to Applications |
+| **Linux AppImage** | Download latest [.AppImage](https://github.com/Goodevenin9/ai-aegis/releases/latest) and replace the old file |
 | **Linux DEB** | `sudo dpkg -i aegis_<version>_amd64.deb` |
 | **Linux RPM** | `sudo rpm -U aegis-<version>.x86_64.rpm` |
 
@@ -627,7 +615,7 @@ After updating, restart Aegis.
 ## Contributing
 
 ```bash
-git clone https://github.com/Wanshanghao/ai-aegis.git
+git clone https://github.com/Goodevenin9/ai-aegis.git
 cd aegis-ai-threat-monitor
 pip install -e ".[dev]"
 pytest tests/ -v
@@ -651,6 +639,6 @@ The starter SIEM dashboard templates under [`docs/siem/`](docs/siem/) (Splunk XM
 
 <div align="center">
 
-**[Get Started](#install)** · **[Documentation](docs/)** · **[GitHub Issues](https://github.com/Wanshanghao/ai-aegis/issues)**
+**[Get Started](#install)** · **[Documentation](docs/)** · **[GitHub Issues](https://github.com/Goodevenin9/ai-aegis/issues)**
 
 </div>

@@ -1,0 +1,8 @@
+﻿benchmark,case_count,malicious_count,benign_count,variant,attack_detection_recall,hard_prevention_rate,benign_false_positive_rate,benign_hard_block_rate,confirm_rate,balanced_accuracy,precision,f1,median_latency_ms,p95_latency_ms,p99_latency_ms,llm_calls,llm_failures,input_tokens,output_tokens,estimated_llm_cost_usd
+agentharm_public,352,176,176,always_allow,0.0,0.0,0.0,0.0,0.0,0.5,0.0,0.0,0.0001,0.0001,0.0003,0,0,0,0,0.0
+agentharm_public,352,176,176,always_block,1.0,1.0,1.0,1.0,0.0,0.5,0.5,0.6667,0.0001,0.0001,0.0002,0,0,0,0,0.0
+agentharm_public,352,176,176,aegis_single_turn_local,0.0,0.0,0.0,0.0,0.0,0.5,0.0,0.0,6.7173,15.6179,22.8303,0,0,0,0,0.0
+agentharm_public,352,176,176,five_stage_rules,0.0,0.0,0.0,0.0,0.0,0.5,0.0,0.0,0.4755,1.0348,1.4968,0,0,0,0,0.0
+agentharm_public,352,176,176,five_stage_semantic,0.0,0.0,0.0,0.0,0.0,0.5,0.0,0.0,0.4844,1.0435,1.4603,0,0,0,0,0.0
+agentharm_public,352,176,176,deepseek_judge_live,0.9545,0.9545,0.3807,0.2727,0.054,0.7869,0.7149,0.8175,561.9485,904.7247,1204.6726,352,0,281411,22198,0.045613
+agentharm_public,352,176,176,five_stage_deepseek_live,0.9545,0.9545,0.5284,0.3352,0.0966,0.7131,0.6437,0.7689,562.408,905.2515,1205.3265,352,0,281411,22198,0.045613

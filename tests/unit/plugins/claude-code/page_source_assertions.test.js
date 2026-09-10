@@ -79,12 +79,12 @@ test('CATEGORY_ORDER includes claude_code', () => {
 });
 
 
-test('source-of-decision badge function (_svRenderSourceBadge) is wired into createToolCard', () => {
+test('source-of-decision badge function (_aegisRenderSourceBadge) is wired into createToolCard', () => {
   const src = readPage();
   assert.match(
     src,
-    /_svRenderSourceBadge/,
-    'expected the source-of-decision badge hook (_svRenderSourceBadge) to be present',
+    /_aegisRenderSourceBadge/,
+    'expected the source-of-decision badge hook (_aegisRenderSourceBadge) to be present',
   );
   // Both labels must be addressable from JS so the badge renders the
   // right text. Don't pin formatting — just check the strings exist.
@@ -98,9 +98,9 @@ test('source-of-decision badge re-renders after override AND after reset', () =>
   // must call the renderer. Without both, the badge would lie about state
   // until the user reloads.
   const src = readPage();
-  const calls = src.match(/row\._svRenderSourceBadge\(\)/g) || [];
+  const calls = src.match(/row\._aegisRenderSourceBadge\(\)/g) || [];
   assert.ok(
     calls.length >= 2,
-    `expected ≥2 invocations of row._svRenderSourceBadge() (override + reset); got ${calls.length}`,
+    `expected ≥2 invocations of row._aegisRenderSourceBadge() (override + reset); got ${calls.length}`,
   );
 });

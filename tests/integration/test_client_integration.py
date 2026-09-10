@@ -30,7 +30,7 @@ from aegis.utils.exceptions import SecurityException, ValidationError
 class TestClientIntegration:
     """Integration tests for AegisClient"""
 
-    @pytest.mark.skip(reason="sv_community_prompt_injection.yml has a YAML parse error; skipping until fixed")
+    @pytest.mark.skip(reason="aegis_community_prompt_injection.yml has a YAML parse error; skipping until fixed")
     def test_end_to_end_threat_detection(self):
         """Test complete threat detection workflow"""
         client = AegisClient(mode=OperationMode.LOCAL, raise_on_threat=True)
@@ -55,7 +55,7 @@ class TestClientIntegration:
 
             # Verify exception contains proper information
             assert "Threat detected" in str(exc_info.value)
-            assert "SV-1001" in str(exc_info.value)
+            assert "AEGIS-1001" in str(exc_info.value)
 
         # Analyze safe prompts
         for prompt in safe_prompts:
@@ -339,7 +339,7 @@ class TestErrorHandlingIntegration:
             # Should have structured error code
             assert hasattr(e, "error_code")
             assert hasattr(e, "code")
-            assert e.code.startswith("SV-")
+            assert e.code.startswith("AEGIS-")
 
             # Should have context information
             assert hasattr(e, "context")
@@ -354,7 +354,7 @@ class TestErrorHandlingIntegration:
         except ValidationError as e:
             error_str = str(e)
             # Should contain actionable information
-            assert "SV-" in error_str  # Error code
+            assert "AEGIS-" in error_str  # Error code
             assert "solutions" in error_str.lower() or "possible" in error_str.lower()
 
     def test_batch_validation_integration(self):
@@ -366,7 +366,7 @@ class TestErrorHandlingIntegration:
             client.analyze_batch("not a list")
 
         assert "List[str]" in str(exc_info.value)
-        assert "SV-" in str(exc_info.value)
+        assert "AEGIS-" in str(exc_info.value)
 
         # Test mixed types in batch
         with pytest.raises(ValidationError) as exc_info:

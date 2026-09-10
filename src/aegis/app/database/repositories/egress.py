@@ -205,7 +205,7 @@ class EgressRepository:
     # allowlist changes nothing: publish interdiction and the metadata endpoint
     # are severe enough to cost an explicit policy edit. A UI that offers a
     # one-click allow here would be offering a button that does not work.
-    NON_PROMOTABLE_RULES = ("sv.egress.package_publish", "sv.egress.cloud_metadata",
+    NON_PROMOTABLE_RULES = ("aegis.egress.package_publish", "aegis.egress.cloud_metadata",
                             "policy.denylist")
 
     async def destination_inventory(self, days: int = 30) -> list:

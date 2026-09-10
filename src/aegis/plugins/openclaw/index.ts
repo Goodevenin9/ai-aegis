@@ -28,7 +28,7 @@ import { resolveConfig, PluginConfig } from "./config";
 // Aegis API client
 // ---------------------------------------------------------------------------
 
-class SVClient {
+class AegisClient {
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
 
@@ -347,7 +347,7 @@ export default {
 
   register(api: any): void {
     const cfg = resolveConfig(api.config ?? {});
-    const sv = new SVClient(cfg.url, cfg.apiKey);
+    const aegis = new AegisClient(cfg.url, cfg.apiKey);
     const tag = "[aegis-guard]";
 
     console.log(`${tag} Initialising — url=${cfg.url} threshold=${cfg.threshold}`);
@@ -360,15 +360,15 @@ export default {
 
         const sessionKey = event?.sessionKey || "openclaw-agent";
         const [result, { enforcementEnabled }] = await Promise.all([
-          sv.analyze(content, "inbound", {
+          aegis.analyze(content, "inbound", {
             sender: event?.from,
             session: sessionKey,
             provider: event?.metadata?.provider,
           }),
-          sv.getSettings(),
+          aegis.getSettings(),
         ]);
 
-        sv.fetchToolPermissions().then(({ toolCount, overrideCount }) => {
+        aegis.fetchToolPermissions().then(({ toolCount, overrideCount }) => {
           console.log(`${tag} Tool permissions: ${toolCount} tools, ${overrideCount} overrides, enforcement=${enforcementEnabled}`);
         }).catch(() => {});
 
@@ -406,7 +406,7 @@ export default {
         }
 
         if (text) {
-          sv.analyze(text, "outbound", {
+          aegis.analyze(text, "outbound", {
             tool: toolName,
             session: sessionKey,
           }).then((result) => {
@@ -433,7 +433,7 @@ export default {
         const text = extractUserMessage(event);
         if (text) {
           const sessionKey = event?.sessionKey || event?.sessionId || event?.agentId || "openclaw-agent";
-          sv.analyze(text, "inbound", {
+          aegis.analyze(text, "inbound", {
             session: sessionKey,
             source: "before_agent_start",
           }).then((result) => {
@@ -447,7 +447,7 @@ export default {
           }).catch(() => {});
         }
 
-        const { blockMode } = await sv.getSettings();
+        const { blockMode } = await aegis.getSettings();
         if (blockMode) return;
         return { prependContext: SECURITY_DIRECTIVES };
       } catch (err) {
@@ -462,10 +462,10 @@ export default {
     //
     // Uses a process-wide Set to avoid re-auditing across multiple
     // agent_end calls and plugin re-initializations.
-    if (!(globalThis as any).__sv_seen_tools__) {
-      (globalThis as any).__sv_seen_tools__ = new Set<string>();
+    if (!(globalThis as any).__aegis_seen_tools__) {
+      (globalThis as any).__aegis_seen_tools__ = new Set<string>();
     }
-    const seenToolIds: Set<string> = (globalThis as any).__sv_seen_tools__;
+    const seenToolIds: Set<string> = (globalThis as any).__aegis_seen_tools__;
 
     api.on("agent_end", async (event: any, ctx: any) => {
       try {
@@ -503,21 +503,21 @@ export default {
           byName.set(tc.name, tc.args);
         }
 
-        const { blockMode } = await sv.getSettings();
+        const { blockMode } = await aegis.getSettings();
         for (const [toolName, args] of byName) {
           // Tool permissions govern WHETHER the tool may run; egress governs
           // WHERE it reaches. Consult egress only when the name-based verdict
           // did not already block, so one call yields one decision.
-          let verdict = await sv.toolVerdict(toolName);
+          let verdict = await aegis.toolVerdict(toolName);
           if (!verdict || verdict.action !== "block") {
-            const egress = await sv.egressVerdict(toolName, args);
+            const egress = await aegis.egressVerdict(toolName, args);
             if (egress) verdict = egress;
           }
           if (!verdict) continue;
           const auditVerdict = (!blockMode && verdict.action === "block")
             ? { ...verdict, action: "log_only" as const, reason: `${verdict.reason} (audit only — enable proxy to block)` }
             : verdict;
-          sv.recordToolAudit(toolName, auditVerdict, sessionKey, args);
+          aegis.recordToolAudit(toolName, auditVerdict, sessionKey, args);
           if (verdict.action === "block") {
             const mode = blockMode ? "BLOCKED" : "AUDIT (would block)";
             console.warn(`${tag} TOOL ${mode} — ${toolName}: ${verdict.reason}`);
@@ -546,7 +546,7 @@ export default {
         const cachedTokens = usage.cacheRead || 0;
         const agentId = ctx?.sessionKey || ctx?.agentId || event?.sessionId || "openclaw-agent";
 
-        sv.recordCost(provider, modelId, inputTokens, outputTokens, cachedTokens, agentId);
+        aegis.recordCost(provider, modelId, inputTokens, outputTokens, cachedTokens, agentId);
       } catch (err) {
         console.warn(`${tag} cost-tracker error:`, (err as Error).message);
       }

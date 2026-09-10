@@ -1,0 +1,267 @@
+{
+  "model": {
+    "configured": true,
+    "model": "deepseek-v4-flash",
+    "connection_status": "online",
+    "calls": 3,
+    "input_tokens": 1016,
+    "output_tokens": 395,
+    "failures": 0,
+    "last_latency_ms": 931.19,
+    "last_http_status": 200,
+    "remaining_calls": 197,
+    "budget_scope": "server_process"
+  },
+  "run": {
+    "run_id": "run-add937d578f8445d8e31a44cafd1859b",
+    "tenant_id": "local",
+    "task_type": "auto",
+    "status": "completed",
+    "error": null,
+    "approval_hash": null,
+    "created_at": "2026-09-09 16:54:32",
+    "updated_at": "2026-09-09 16:54:37",
+    "completed_at": "2026-09-09T16:54:37.718788+00:00",
+    "request": {
+      "document_types": [],
+      "evidence_ids": [
+        "ev-31216abe7e564647a11866de12ac883c"
+      ],
+      "policy_changes": {},
+      "query": "帮我看看这个智能体是不是被带偏了，请依据记录解释，不要编造。",
+      "requested_task": "auto",
+      "session_keys": []
+    },
+    "state": {
+      "analysis": {
+        "findings": [
+          {
+            "confidence": "medium",
+            "evidence_id": "ev-31216abe7e564647a11866de12ac883c",
+            "finding": "记录显示用户请求仅为总结README，但工具尝试将项目文件发送到外部地址，行为与用户意图不符，疑似被带偏或存在恶意注入。"
+          }
+        ],
+        "hypotheses": [
+          {
+            "contradicting_evidence_ids": [],
+            "hypothesis": "智能体可能被提示注入或内部逻辑缺陷误导，导致执行了未授权的数据外发尝试。",
+            "supporting_evidence_ids": [
+              "ev-31216abe7e564647a11866de12ac883c"
+            ]
+          },
+          {
+            "contradicting_evidence_ids": [
+              "ev-31216abe7e564647a11866de12ac883c"
+            ],
+            "hypothesis": "记录可能不完整或存在误报，实际行为可能另有原因。",
+            "supporting_evidence_ids": []
+          }
+        ],
+        "limitations": [
+          "证据仅包含单条文本摘要，缺乏详细日志或上下文，无法确认具体触发机制。",
+          "记录为合成数据，可能不代表真实事件。",
+          "未提供时间戳或更多操作序列，难以全面评估。"
+        ],
+        "model_mode": "deepseek",
+        "recommendations": [
+          "建议获取完整审计日志，检查工具调用链和输入来源。",
+          "对智能体进行安全测试，验证是否存在提示注入漏洞。",
+          "加强外发数据检测和拦截策略，确保类似尝试被阻止。"
+        ]
+      },
+      "evidence": [
+        {
+          "evidence_id": "ev-31216abe7e564647a11866de12ac883c",
+          "evidence_type": "audit_log",
+          "metadata": {
+            "extraction": "text",
+            "redaction_count": 0,
+            "size_bytes": 139,
+            "truncated": false,
+            "untrusted": true
+          },
+          "source_name": "synthetic-incident.txt",
+          "text_excerpt": "演示记录：用户只要求总结 README。工具尝试将项目文件发送到外部地址。安全网关已拒绝，未发生外发。"
+        }
+      ],
+      "request": {
+        "document_types": [],
+        "evidence_ids": [
+          "ev-31216abe7e564647a11866de12ac883c"
+        ],
+        "policy_changes": {},
+        "query": "帮我看看这个智能体是不是被带偏了，请依据记录解释，不要编造。",
+        "requested_task": "auto",
+        "session_keys": []
+      },
+      "result": {
+        "analysis": {
+          "findings": [],
+          "hypotheses": [
+            {
+              "contradicting_evidence_ids": [],
+              "hypothesis": "智能体可能被提示注入或内部逻辑缺陷误导，导致执行了未授权的数据外发尝试。",
+              "supporting_evidence_ids": [
+                "ev-31216abe7e564647a11866de12ac883c"
+              ]
+            },
+            {
+              "contradicting_evidence_ids": [
+                "ev-31216abe7e564647a11866de12ac883c"
+              ],
+              "hypothesis": "记录可能不完整或存在误报，实际行为可能另有原因。",
+              "supporting_evidence_ids": []
+            }
+          ],
+          "limitations": [
+            "证据仅包含单条文本摘要，缺乏详细日志或上下文，无法确认具体触发机制。",
+            "记录为合成数据，可能不代表真实事件。",
+            "未提供时间戳或更多操作序列，难以全面评估。"
+          ],
+          "model_mode": "deepseek",
+          "recommendations": [
+            "建议获取完整审计日志，检查工具调用链和输入来源。",
+            "对智能体进行安全测试，验证是否存在提示注入漏洞。",
+            "加强外发数据检测和拦截策略，确保类似尝试被阻止。"
+          ],
+          "unverified_findings": [
+            {
+              "confidence": "medium",
+              "evidence_id": "ev-31216abe7e564647a11866de12ac883c",
+              "finding": "记录显示用户请求仅为总结README，但工具尝试将项目文件发送到外部地址，行为与用户意图不符，疑似被带偏或存在恶意注入。"
+            }
+          ]
+        },
+        "citations": [
+          "ev-31216abe7e564647a11866de12ac883c"
+        ],
+        "degraded": false,
+        "evaluation": {},
+        "model_draft": {
+          "grounded": true
+        },
+        "model_mode": "deepseek",
+        "retrieval": [],
+        "summary": "根据现有记录，用户请求仅为总结README，但工具尝试将项目文件发送到外部地址，行为与用户意图不符，疑似被带偏或存在恶意注入。建议获取完整日志以进一步确认。",
+        "verified_facts": [
+          {
+            "evidence_ids": [
+              "ev-31216abe7e564647a11866de12ac883c"
+            ],
+            "fact": "已加载证据 ev-31216abe7e564647a11866de12ac883c"
+          }
+        ]
+      },
+      "run_id": "run-add937d578f8445d8e31a44cafd1859b",
+      "status": "completed",
+      "task_type": "incident_investigation",
+      "verified_facts": [
+        {
+          "evidence_ids": [
+            "ev-31216abe7e564647a11866de12ac883c"
+          ],
+          "fact": "已加载证据 ev-31216abe7e564647a11866de12ac883c"
+        }
+      ]
+    },
+    "result": {
+      "analysis": {
+        "findings": [],
+        "hypotheses": [
+          {
+            "contradicting_evidence_ids": [],
+            "hypothesis": "智能体可能被提示注入或内部逻辑缺陷误导，导致执行了未授权的数据外发尝试。",
+            "supporting_evidence_ids": [
+              "ev-31216abe7e564647a11866de12ac883c"
+            ]
+          },
+          {
+            "contradicting_evidence_ids": [
+              "ev-31216abe7e564647a11866de12ac883c"
+            ],
+            "hypothesis": "记录可能不完整或存在误报，实际行为可能另有原因。",
+            "supporting_evidence_ids": []
+          }
+        ],
+        "limitations": [
+          "证据仅包含单条文本摘要，缺乏详细日志或上下文，无法确认具体触发机制。",
+          "记录为合成数据，可能不代表真实事件。",
+          "未提供时间戳或更多操作序列，难以全面评估。"
+        ],
+        "model_mode": "deepseek",
+        "recommendations": [
+          "建议获取完整审计日志，检查工具调用链和输入来源。",
+          "对智能体进行安全测试，验证是否存在提示注入漏洞。",
+          "加强外发数据检测和拦截策略，确保类似尝试被阻止。"
+        ],
+        "unverified_findings": [
+          {
+            "confidence": "medium",
+            "evidence_id": "ev-31216abe7e564647a11866de12ac883c",
+            "finding": "记录显示用户请求仅为总结README，但工具尝试将项目文件发送到外部地址，行为与用户意图不符，疑似被带偏或存在恶意注入。"
+          }
+        ]
+      },
+      "citations": [
+        "ev-31216abe7e564647a11866de12ac883c"
+      ],
+      "degraded": false,
+      "evaluation": {},
+      "model_draft": {
+        "grounded": true
+      },
+      "model_mode": "deepseek",
+      "retrieval": [],
+      "summary": "根据现有记录，用户请求仅为总结README，但工具尝试将项目文件发送到外部地址，行为与用户意图不符，疑似被带偏或存在恶意注入。建议获取完整日志以进一步确认。",
+      "verified_facts": [
+        {
+          "evidence_ids": [
+            "ev-31216abe7e564647a11866de12ac883c"
+          ],
+          "fact": "已加载证据 ev-31216abe7e564647a11866de12ac883c"
+        }
+      ]
+    },
+    "events": [
+      {
+        "seq": 1,
+        "node_name": "route",
+        "event_type": "completed",
+        "created_at": "2026-09-09 16:54:33",
+        "payload": {
+          "route_source": "llm",
+          "task_type": "incident_investigation"
+        }
+      },
+      {
+        "seq": 2,
+        "node_name": "collect_evidence",
+        "event_type": "completed",
+        "created_at": "2026-09-09 16:54:33",
+        "payload": {
+          "evidence_count": 1,
+          "memory_count": 0
+        }
+      },
+      {
+        "seq": 3,
+        "node_name": "evidence_investigator",
+        "event_type": "completed",
+        "created_at": "2026-09-09 16:54:36",
+        "payload": {
+          "finding_count": 1
+        }
+      },
+      {
+        "seq": 4,
+        "node_name": "report_composer",
+        "event_type": "completed",
+        "created_at": "2026-09-09 16:54:37",
+        "payload": {
+          "citation_count": 1
+        }
+      }
+    ]
+  },
+  "scope": "synthetic isolated evidence, no tools executed"
+}

@@ -2,7 +2,7 @@
 # Aegis AI Threat Monitor - macOS Installer
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/Wanshanghao/ai-aegis/master/src/aegis/app/installers/macos/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Goodevenin9/ai-aegis/master/src/aegis/app/installers/macos/install.sh | bash
 #
 # Or download and run:
 #   chmod +x install.sh

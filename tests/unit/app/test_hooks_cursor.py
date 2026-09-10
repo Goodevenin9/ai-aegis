@@ -104,7 +104,7 @@ def test_install_creates_local_plugin_with_bundled_hooks(client, cursor_home):
     for event, entries in bundled["hooks"].items():
         assert len(entries) == 1, event
         cmd = entries[0]["command"]
-        assert "__SV_PLUGIN_ROOT__" not in cmd
+        assert "__AEGIS_PLUGIN_ROOT__" not in cmd
         assert str(plugin_dir) in cmd
 
     # Install does NOT create a global hooks.json — the plugin owns the hooks.
@@ -170,7 +170,7 @@ def test_reinstall_is_idempotent(client, cursor_home):
 
 
 def test_uninstall_removes_plugin_and_legacy_and_is_idempotent(client, cursor_home):
-    # Pre-existing foreign global hook + a legacy SV entry to prove uninstall
+    # Pre-existing foreign global hook + a legacy Aegis entry to prove uninstall
     # tears down legacy artifacts too, surgically.
     foreign = {"command": "/usr/local/bin/my-own-hook.sh"}
     (cursor_home / "hooks.json").write_text(json.dumps({
@@ -187,7 +187,7 @@ def test_uninstall_removes_plugin_and_legacy_and_is_idempotent(client, cursor_ho
 
     # Plugin dir gone.
     assert not (cursor_home / "plugins" / "local" / mod.PLUGIN_NAME).exists()
-    # Legacy SV global entry gone, foreign survives.
+    # Legacy Aegis global entry gone, foreign survives.
     data = _hooks(cursor_home)
     assert data["hooks"]["beforeShellExecution"] == [foreign]
 
@@ -232,5 +232,5 @@ def test_staged_files_carry_substituted_url(client, cursor_home):
     the resolved URL IS the default, so the default survives staging — the
     substitution plumbing itself is covered by test_hooks_common.py)."""
     assert client.post("/api/hooks/cursor/install").status_code == 200
-    staged = (mod.STAGING_DIR / "lib" / "client.js").read_text()
+    staged = (mod.STAGING_DIR / "lib" / "client.js").read_text(encoding="utf-8")
     assert "http://127.0.0.1:" in staged

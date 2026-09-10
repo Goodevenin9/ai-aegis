@@ -6,9 +6,9 @@ Aegis ships a first-class plugin for Claude Code: real-time tool-permission enfo
 
 | Hook | Mode | Description |
 |---|---|---|
-| `PreToolUse` | blocking; loopback HTTP with **100 ms fail-open ceiling** | Enforces cloud-synced and local tool-permission rules. Returns `permissionDecision: allow / deny / ask` with a reason that propagates to the audit row. The 100 ms cap (in `lib/client.js`) means a slow or unreachable local app can't stall Claude Code beyond that per call — the hook returns `allow` and the call proceeds. |
+| `PreToolUse` | blocking; bounded loopback HTTP, fail-open | Enforces cloud/local tool permissions and egress, then runs the deterministic Boundary → Capability → Radius → Drift → Friction pipeline. DeepSeek is never called on this hot path. Returns `permissionDecision: allow / deny / ask`; confirm/block events enter the existing hash-chain audit. |
 | `PostToolUse` | fire-and-forget | Writes the call to the SHA-256 hash-chained `tool_call_audit` table tagged `runtime_kind=claude-code`. For prose-shaped tool inputs (WebFetch, Skill, Task, Agent), also forwards to `/analyze` for prompt-injection / data-leak scanning. |
-| `UserPromptSubmit` | fire-and-forget | Forwards every incoming prompt to `/analyze` for jailbreak / injection detection by the rule engine. Prompts are redacted via the shared `lib/redact.js` patterns (`sk-`/`pk-`, `gh[pousr]_` GitHub tokens, `AKIA` AWS keys, JWT triples, and labelled kv-pairs for `password`/`secret`/`token`/`api_key`/`bearer`) and capped at 8000 bytes before POST. |
+| `UserPromptSubmit` | fire-and-forget | Forwards prompts to `/analyze` and to the session intent observer. When explicitly enabled, DeepSeek emits only `theme_shifted / permission_probing / request_escalation` booleans for the later Drift state transition; it cannot decide or score. |
 | `Stop` | diagnostic | Captures shape-only Stop-event metadata to `~/.aegis/cost-probes/`. Used to investigate Claude Code's Stop payload empirically; targeted for removal in a future release. |
 
 All hooks fail-open: any error path emits the equivalent of "allow" (or an empty response) and the plugin never breaks a Claude Code session. All HTTP targets the local app at `http://127.0.0.1:8741` (overridable via the `AEGIS_URL` env var).
@@ -17,7 +17,7 @@ All hooks fail-open: any error path emits the equivalent of "allow" (or an empty
 
 Policy enforcement (`PreToolUse`) is **synchronous** — every tool call waits on a loopback HTTP request to the local app before it proceeds. Threat detection (`UserPromptSubmit` and the `PostToolUse` → `/analyze` leg) is **fire-and-forget** and adds no user-visible latency, but it is also **not preventive**: by the time a threat is flagged, the prompt has already gone to the model or the tool has already returned.
 
-**Hard ceiling: 100 ms.** That's the fail-open timeout in `lib/client.js`. If the local app is unreachable or slow, the hook returns `allow` at 100 ms and the tool call proceeds — so a misbehaving local app cannot stall Claude Code beyond 100 ms per tool call.
+Each loopback gate has its own fail-open ceiling in `lib/client.js`: synced overrides 100 ms, egress 400 ms when applicable, and the five-stage pipeline 200 ms. DeepSeek enrichment is asynchronous on `UserPromptSubmit` and therefore never consumes the blocking `PreToolUse` budget.
 
 ## Install
 
@@ -108,16 +108,16 @@ Aegis Guard · 2 threats detected · 5 tool calls (3 allow / 2 block) · 7d 1.4M
 
 The script returns in ~50 ms (background-refreshes the slow token-usage data) and fails silently if the local app is down.
 
-**Compose with an existing statusline (recommended):** shell out from your Python / shell statusline script and append the SV line. Example for Python:
+**Compose with an existing statusline (recommended):** shell out from your Python / shell statusline script and append the Aegis line. Example for Python:
 
 ```python
 import subprocess, glob, os
 candidates = sorted(glob.glob(os.path.expanduser(
     "~/.claude/plugins/cache/aegis-local/aegis-guard/*/hooks/statusline.js")))
 if candidates:
-    sv = subprocess.run(["node", candidates[-1]], input=stdin_blob,
+    aegis = subprocess.run(["node", candidates[-1]], input=stdin_blob,
                         capture_output=True, text=True, timeout=2).stdout.strip()
-    if sv: print(your_existing_line + "\n" + sv)
+    if aegis: print(your_existing_line + "\n" + aegis)
 ```
 
 **Replace your statusLine outright:**
@@ -136,7 +136,7 @@ Set `NO_COLOR=1` to disable the cyan/red ANSI styling.
 
 | Setting | Where | Default | Purpose |
 |---|---|---|---|
-| Local app port | `svconfig.yml` `server.port`, or `SV_WEB_PORT` env | `8741` | Loopback port the plugin POSTs to |
+| Local app port | `aegis.yml` `server.port`, or `AEGIS_WEB_PORT` env | `8741` | Loopback port the plugin POSTs to |
 | Plugin target URL | `AEGIS_URL` env var | `http://127.0.0.1:8741` | Override for non-default app deployments |
 | Tool permission rules | `/tool-permissions` page in the app UI | Default-allow with last-resort denies | Per-tool allow / deny / ask, with cloud-syncable rules and local overrides |
 | Statusline cache TTL | n/a — hardcoded | 5 min for token usage | Avoids hammering the transcript-scan endpoint |
@@ -186,7 +186,7 @@ If `total: 0`, your local app isn't enrolled with the cloud yet — open the Set
 
 **Tokens missing from the statusline after install.** The token-usage endpoint scans Claude Code session transcripts on disk (`~/.claude/projects/<slug>/<session>.jsonl`) and takes 2–8 s on the first call after a restart. The statusline emitter caches the result for 5 min and refreshes in the background. First-ever render shows everything except tokens; the next 1–2 statusline refreshes (`refreshInterval` default is 5 s) pick up the freshly-cached value.
 
-**Statusline not visible at all.** Claude Code's `statusLine.command` is set in your `~/.claude/settings.json`. If you already have a custom statusline (e.g. context-window usage), it overrides the SV emitter unless you compose them. See "Statusline integration" above.
+**Statusline not visible at all.** Claude Code's `statusLine.command` is set in your `~/.claude/settings.json`. If you already have a custom statusline (e.g. context-window usage), it overrides the Aegis emitter unless you compose them. See "Statusline integration" above.
 
 **`Bash` calls are scanned but my custom MCP tool isn't.** `/analyze` only runs on tools whose `tool_input` is *natural-language prose* (WebFetch, Skill, Task, Agent prompts). Shell-syntax-shaped inputs (Bash, PowerShell, Write, Edit, MultiEdit, NotebookEdit) are audited to the hash chain but **not** fed to the rule pack — that scope mismatch produced high-volume false positives. Custom MCP tools that emit prose get scanned; tools that take structured inputs don't.
 

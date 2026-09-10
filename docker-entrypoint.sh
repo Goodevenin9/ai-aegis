@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # Aegis engine container entrypoint.
 #
-# 1. If AEGIS_ENROLL_TOKEN (svet_*) is set, enroll into the org fleet
+# 1. If AEGIS_ENROLL_TOKEN (aet_*) is set, enroll into the org fleet
 #    before serving — best-effort: a failure must NOT stop the engine, which
 #    still runs fully self-hosted (local rules + Guardian).
 # 2. Serve the web UI/API headless on 0.0.0.0:$PORT. Cloud platforms inject
@@ -11,7 +11,7 @@ set -eu
 PORT="${PORT:-8741}"
 
 if [ -n "${AEGIS_ENROLL_TOKEN:-}" ]; then
-    echo "[entrypoint] AEGIS_ENROLL_TOKEN present — enrolling (svet_*)..."
+    echo "[entrypoint] AEGIS_ENROLL_TOKEN present — enrolling (aet_*)..."
     if aegis-app enroll -y; then
         echo "[entrypoint] Enrollment OK — fleet + policy sync active."
     else

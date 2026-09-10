@@ -12,8 +12,8 @@ POST /api/system/device-id/reset
 
 GET /api/v1/policy-sync/status
     Header badge data. Returns whether this device is currently in
-    org-enrolled (svet_*) mode — and therefore receiving signed policy
-    bundles from the cloud — vs personal-mode (svpk_* / legacy / no
+    org-enrolled (aet_*) mode — and therefore receiving signed policy
+    bundles from the cloud — vs personal-mode (aepk_* / legacy / no
     credentials) where Cloud Connect behaves exactly as it always has.
 
     Mental model: "Policy Sync" is a strictly additive layer that turns
@@ -96,7 +96,7 @@ class PolicySyncStatusResponse(BaseModel):
     """
     Header-badge state for Cloud → Local policy sync.
 
-    `enrolled` is the source of truth. Devices installed without an svet_*
+    `enrolled` is the source of truth. Devices installed without an aet_*
     mint token (personal API key, legacy unprefixed, or no credentials)
     return `enrolled: false` and behave exactly as before — there is no
     partial cloud-policy mode.
@@ -129,7 +129,7 @@ async def policy_sync_status() -> PolicySyncStatusResponse:
                 "Policy Sync is OFF. This device is not enrolled in any "
                 "organization — Cloud Connect behaves as a personal "
                 "subscription. To turn Policy Sync ON, an admin must mint "
-                "an svet_ enrollment token and you must run "
+                "an aet_ enrollment token and you must run "
                 "`aegis-app enroll <token>`."
             ),
         )
@@ -388,7 +388,7 @@ async def policy_sync_refresh() -> PolicySyncRefreshResponse:
 
 # ---------------------------------------------------------------------------
 # Cloud Activity — single aggregated read for the Cloud Activity page + the
-# `sv inspect-uplink` CLI. Pure visibility: what the cloud pushes DOWN
+# `aegis inspect-uplink` CLI. Pure visibility: what the cloud pushes DOWN
 # (synced policies) and what this device pushes UP (enrollment-sourced
 # forwarders + the OCSF event classes emitted). Read-only; reuses the #112
 # enrollment + device_lifecycle + external_forwarders data already on the box.
@@ -535,7 +535,7 @@ def _derive_connection_state(health_raw: dict) -> str:
 async def cloud_activity() -> CloudActivityResponse:
     """Aggregated Cloud Activity snapshot.
 
-    Backs both the Cloud Activity sidebar page and `sv inspect-uplink`.
+    Backs both the Cloud Activity sidebar page and `aegis inspect-uplink`.
     Always safe to call: when the device isn't enrolled it returns
     ``enrolled: false`` with empty inbound/outbound sections (the page
     renders an enrolled-only gate in that case). Read-only.

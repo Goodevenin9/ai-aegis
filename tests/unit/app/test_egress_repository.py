@@ -51,7 +51,7 @@ class TestDestinationInventory:
         repo = await _repo(tmp_path)
         await repo.log_attempts([_verdict(
             "upload.pypi.org", action="block", operation="write",
-            rule_id="sv.egress.package_publish",
+            rule_id="aegis.egress.package_publish",
         )])
         row = (await repo.destination_inventory())[0]
         assert row["promotable"] is False
@@ -61,7 +61,7 @@ class TestDestinationInventory:
         repo = await _repo(tmp_path)
         await repo.log_attempts([_verdict(
             "169.254.169.254", action="block", operation="read",
-            rule_id="sv.egress.cloud_metadata",
+            rule_id="aegis.egress.cloud_metadata",
         )])
         assert (await repo.destination_inventory())[0]["promotable"] is False
 
@@ -81,7 +81,7 @@ class TestDestinationInventory:
             _verdict("upload.pypi.org"),
             _verdict("upload.pypi.org"),
             _verdict("upload.pypi.org", action="block", operation="write",
-                     rule_id="sv.egress.package_publish"),
+                     rule_id="aegis.egress.package_publish"),
         ])
         row = (await repo.destination_inventory())[0]
         assert row["calls"] == 3

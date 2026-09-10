@@ -804,7 +804,7 @@ def setup_proxy(provider: str = "openai") -> None:
         print(f"         aegis-app --proxy --provider {provider}")
         print()
         print(f"    2. Start OpenClaw with proxy routing:")
-        print(f"         {env_var}=http://localhost:{os.environ.get('SV_PROXY_PORT', '8742')}{base_path} openclaw gateway")
+        print(f"         {env_var}=http://localhost:{os.environ.get('AEGIS_PROXY_PORT', '8742')}{base_path} openclaw gateway")
         print()
         print(f"  NOTE: Re-run after updating OpenClaw (npm update -g openclaw)")
         print()
@@ -1122,7 +1122,7 @@ ENROLLMENT_DISCLOSURE_BULLETS = [
     + "prompt text, model output, tool arguments, or the text a rule matched.",
     "Destinations come from your enrollment response. They are NOT hardcoded; "
     + "they arrive from your enrollment authority and are badged 'managed' locally.",
-    "You can inspect everything, any time. Run `sv inspect-uplink` or open the "
+    "You can inspect everything, any time. Run `aegis inspect-uplink` or open the "
     + "Cloud Activity page to see exactly what flows in and out.",
 ]
 
@@ -1188,7 +1188,7 @@ def _handle_inspect_uplink() -> None:
 
     if not snap.enrolled:
         print("This device is NOT enrolled — nothing flows to or from the cloud.")
-        print("Enroll with: aegis-app enroll <svet_token>")
+        print("Enroll with: aegis-app enroll <aet_token>")
         sys.exit(0)
 
     e = snap.enrollment
@@ -1241,7 +1241,7 @@ def _handle_inspect_uplink() -> None:
 def _handle_enroll() -> None:
     """Handle the `aegis-app enroll <token>` subcommand.
 
-    Redeems an `svet_*` enrollment token against the Aegis cloud, persists
+    Redeems an `aet_*` enrollment token against the Aegis cloud, persists
     org-binding credentials + Supabase JWT + policy bundle signing key to disk,
     then exits cleanly. The next launch of `aegis-app` (no args) will
     detect the enrolled credentials and start the cloud-sync loop.
@@ -1260,7 +1260,7 @@ def _handle_enroll() -> None:
     sub.add_argument(
         "token",
         nargs="?",
-        help="The svet_<...> enrollment token (or set AEGIS_ENROLL_TOKEN)",
+        help="The aet_<...> enrollment token (or set AEGIS_ENROLL_TOKEN)",
     )
     sub.add_argument(
         "-y",
@@ -1279,10 +1279,10 @@ def _handle_enroll() -> None:
         )
         sys.exit(2)
 
-    if not token.startswith("svet_"):
+    if not token.startswith("aet_"):
         print(
-            "Error: enrollment tokens must start with `svet_`. "
-            "Personal API keys (`svpk_*` or legacy) use Cloud Connect in the UI, not enroll.",
+            "Error: enrollment tokens must start with `aet_`. "
+            "Personal API keys (`aepk_*` or legacy) use Cloud Connect in the UI, not enroll.",
             file=sys.stderr,
         )
         sys.exit(2)
@@ -1294,7 +1294,7 @@ def _handle_enroll() -> None:
     #   2. opt-in forwarding  -> services/device_lifecycle.register_enrollment_destinations
     #   3. metadata-only      -> services/device_lifecycle.encode_lifecycle_event (raw_data=None)
     #   4. admin destinations -> enrollment response `forwarder_destinations`
-    #   5. inspectability     -> `sv inspect-uplink` / Cloud Activity page
+    #   5. inspectability     -> `aegis inspect-uplink` / Cloud Activity page
     if not _confirm_enrollment_disclosure(auto_yes=args.yes):
         print("Enrollment cancelled. No changes were made.")
         sys.exit(0)
@@ -1425,20 +1425,21 @@ def _handle_plugin_command(args) -> None:
 def main() -> None:
     """Main entry point."""
     # Guardian ML runtime: installers (PyInstaller) bundle the model weights at
-    # models/guardian.runtime.json.gz inside the frozen tree (sys._MEIPASS). Point
-    # svguardian at it so the local ML layer works fully offline from first launch
+    # aegis/guardian/model.runtime.json.gz inside the frozen tree. Point the
+    # bundled runtime at it so the local ML layer works offline from first launch
     # — no GitHub fetch, survives air-gapped machines. This only sets WHERE the
     # weights are; whether Guardian actually runs is still gated by the Settings
     # toggle (guardian_ml_enabled, default ON) and AEGIS_ML_ENABLED. An
-    # explicit SV_GUARDIAN_RUNTIME (air-gapped override) always wins.
-    if getattr(sys, "frozen", False) and not os.environ.get("SV_GUARDIAN_RUNTIME"):
+    # explicit AEGIS_GUARDIAN_RUNTIME (air-gapped override) always wins.
+    if getattr(sys, "frozen", False) and not os.environ.get("AEGIS_GUARDIAN_RUNTIME"):
         _bundled_runtime = os.path.join(
             getattr(sys, "_MEIPASS", os.path.dirname(sys.executable)),
-            "models",
-            "guardian.runtime.json.gz",
+            "aegis",
+            "guardian",
+            "model.runtime.json.gz",
         )
         if os.path.exists(_bundled_runtime):
-            os.environ["SV_GUARDIAN_RUNTIME"] = _bundled_runtime
+            os.environ["AEGIS_GUARDIAN_RUNTIME"] = _bundled_runtime
 
     # Dispatch enroll subcommand before the main parser runs
     if len(sys.argv) > 1 and sys.argv[1] == "enroll":
@@ -1581,7 +1582,7 @@ Examples:
         _handle_plugin_command(args)
         return
 
-    # If --port / --host were not explicitly passed, prefer values from svconfig.yml
+    # If --port / --host were not explicitly passed, prefer values from aegis.yml
     explicit_args = {a.lstrip("-").replace("-", "_") for a in sys.argv[1:] if a.startswith("-")}
     if "port" not in explicit_args or "host" not in explicit_args:
         try:
@@ -1627,8 +1628,8 @@ Examples:
             args.proxy_port = args.port + 1
 
     # Expose ports to the FastAPI process via env vars so proxy routes use the right ports
-    os.environ['SV_PROXY_PORT'] = str(args.proxy_port)
-    os.environ['SV_WEB_PORT'] = str(args.port)
+    os.environ['AEGIS_PROXY_PORT'] = str(args.proxy_port)
+    os.environ['AEGIS_WEB_PORT'] = str(args.port)
 
     if args.version:
         print(f"Aegis Local Threat Monitor v{__version__}")
@@ -1798,8 +1799,8 @@ Examples:
         )
         if _new_port is None:
             print(f"\n  ⚠  Couldn't find a free port near {_orig_port}.")
-            print("     Close whatever is using it, or set server.port in svconfig.yml")
-            print(f"     (~/Library/Application Support/Aegis/ThreatMonitor/svconfig.yml).\n")
+            print("     Close whatever is using it, or set server.port in aegis.yml")
+            print(f"     (~/Library/Application Support/Aegis/ThreatMonitor/aegis.yml).\n")
             sys.exit(1)
         args.port = _new_port
         if _keep_offset:
@@ -1833,9 +1834,9 @@ Examples:
     # Write runtime state so a separately-started proxy can auto-detect the web app port
     try:
         import json, pathlib
-        _sv_home = pathlib.Path.home() / '.aegis'
-        _sv_home.mkdir(exist_ok=True)
-        (_sv_home / 'runtime.json').write_text(
+        _aegis_home = pathlib.Path.home() / '.aegis'
+        _aegis_home.mkdir(exist_ok=True)
+        (_aegis_home / 'runtime.json').write_text(
             json.dumps({"web_port": args.port, "proxy_port": args.proxy_port})
         )
     except Exception:

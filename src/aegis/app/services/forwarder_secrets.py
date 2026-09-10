@@ -79,7 +79,7 @@ def save_secret(value: str) -> Optional[str]:
     """Persist a secret and return its `secret_ref` (opaque UUID-ish token)."""
     if not value:
         return None
-    ref = "sv_fwd_" + _secrets.token_urlsafe(24)
+    ref = "aegis_fwd_" + _secrets.token_urlsafe(24)
     store = _read_all()
     store[ref] = value
     if not _write_all(store):

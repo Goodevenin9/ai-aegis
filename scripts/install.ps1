@@ -242,8 +242,8 @@ function Main {
     Write-Error "3. Run: python -m pip install ai-aegis"
     Write-Error ""
     Write-Error "If you continue to have issues:"
-    Write-Error "• Check our documentation: https://github.com/Secure-Vector/ai-threat-monitor"
-    Write-Error "• Report the issue: https://github.com/Secure-Vector/ai-threat-monitor/issues"
+    Write-Error "• Check our documentation: https://github.com/Goodevenin9/ai-aegis"
+    Write-Error "• Report the issue: https://github.com/Goodevenin9/ai-aegis/issues"
     Write-Error "• Include your Python version and Windows version"
     Write-Error ""
     Write-Error "Alternative: Try user installation:"
@@ -258,6 +258,6 @@ try {
 }
 catch {
     Write-Error "Installation script failed: $($_.Exception.Message)"
-    Write-Error "Please report this issue at: https://github.com/Secure-Vector/ai-threat-monitor/issues"
+    Write-Error "Please report this issue at: https://github.com/Goodevenin9/ai-aegis/issues"
     exit 1
 }

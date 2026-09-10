@@ -78,7 +78,7 @@ def _engine_rule(conf):
         is_threat=True, threat_type="data_leakage", risk_score=90,
         confidence=conf,
         matched_rules=[{
-            "id": "sv_test_rule",
+            "id": "aegis_test_rule",
             "name": "Test Rule",
             "category": "data_leakage",
             "severity": "critical",
@@ -97,7 +97,7 @@ def _guardian_hit(conf, category="prompt_injection"):
         "risk_score": int(conf * 100),
         "confidence": conf,
         "matched_rules": [{
-            "rule_id": "sv_guardian_model",
+            "rule_id": "aegis_guardian_model",
             "rule_name": "Aegis Guardian (ML)",
             "category": category,
             "severity": "high",
@@ -193,7 +193,7 @@ def test_ml_alone_above_bar_blocks(monkeypatch):
     assert body["is_threat"] is True
     assert len(body["matched_rules"]) == 1
     assert body["matched_rules"][0]["source"] == "model"
-    assert body["matched_rules"][0]["rule_id"] == "sv_guardian_model"
+    assert body["matched_rules"][0]["rule_id"] == "aegis_guardian_model"
 
 
 def test_ml_alone_below_bar_stays_quiet(monkeypatch):

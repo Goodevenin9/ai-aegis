@@ -28,7 +28,7 @@ class APIAnalyzer:
     """
     API analyzer for enhanced threat detection using Aegis's cloud service.
 
-    Communicates with api.aegis.example to perform advanced ML-based threat detection
+    Communicates with an AI Aegis control plane for remote threat detection
     with extended rule sets and cloud-based analysis capabilities.
     """
 

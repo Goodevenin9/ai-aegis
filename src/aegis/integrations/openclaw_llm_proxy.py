@@ -73,8 +73,14 @@ ALLOWED_TARGET_HOSTS = {
 ALLOWED_AEGIS_HOSTS = {
     "localhost",
     "127.0.0.1",
-    "scan.aegis.example",  # Cloud API
 }
+
+for _endpoint_env in ("AEGIS_SCAN_API_URL", "AEGIS_CONTROL_PLANE_URL"):
+    _configured_endpoint = os.environ.get(_endpoint_env, "")
+    if _configured_endpoint:
+        _configured_host = urlparse(_configured_endpoint).hostname
+        if _configured_host:
+            ALLOWED_AEGIS_HOSTS.add(_configured_host)
 
 
 def validate_url(url: str, allowed_hosts: set, url_type: str) -> str:
@@ -482,15 +488,19 @@ class LLMProxy:
         return {"scan_llm_responses": True, "block_threats": self.block_threats, "cloud_mode_enabled": False, "cloud_api_key": None, "tool_permissions_enabled": True, "local_only_analysis": True}
 
     async def _scan_cloud_direct(self, text: str, api_key: str, action_taken: str = "logged") -> Optional[dict]:
-        """Scan directly via cloud API (scan.aegis.example), skipping localhost hop.
+        """Scan through the configured AI Aegis control plane, skipping localhost hop.
 
         Returns scan result dict on success, None on failure (caller should fallback to local).
         """
         try:
             client = await self.get_http_client()
             payload = {"prompt": text, "user_tier": "professional"}
+            cloud_url = os.environ.get(
+                "AEGIS_SCAN_API_URL",
+                os.environ.get("AEGIS_CONTROL_PLANE_URL", "http://127.0.0.1:8780"),
+            ).rstrip("/")
             response = await client.post(
-                "https://scan.aegis.example/analyze",
+                f"{cloud_url}/analyze",
                 json=payload,
                 headers={"X-Api-Key": api_key},
                 timeout=5.0,
@@ -1078,6 +1088,8 @@ class LLMProxy:
                         if self.verbose:
                             logger.warning(f"[llm-proxy] Rate limit check failed for {tc.function_name}: {e}")
 
+            await self._apply_runtime_pipeline(tc, decision, session_id)
+
             decisions.append(decision)
 
             if decision.action == "block":
@@ -1210,6 +1222,71 @@ class LLMProxy:
                 ]
 
         return response_dict, blocked_tools, decisions
+
+    async def _record_runtime_event(
+        self,
+        event_type: str,
+        session_id: "str | None",
+        text: "str | None" = None,
+        metadata: "dict | None" = None,
+    ) -> None:
+        """Best-effort adapter from proxy traffic to the normalized intent stream."""
+
+        if not session_id:
+            return
+        try:
+            client = await self.get_http_client()
+            await client.post(
+                f"{self.aegis_url}/api/runtime/events",
+                json={
+                    "session_id": session_id,
+                    "runtime_kind": self.integration,
+                    "event_type": event_type,
+                    "text": text[:16000] if text else None,
+                    "metadata": metadata or {},
+                },
+                timeout=1.0,
+            )
+        except Exception:
+            pass
+
+    async def _apply_runtime_pipeline(self, tool_call, decision, session_id: "str | None") -> None:
+        """Let the five-stage pipeline strengthen the proxy's native verdict."""
+
+        if not session_id or getattr(decision, "action", "allow") == "block":
+            return
+        raw_arguments = getattr(tool_call, "arguments", "") or ""
+        try:
+            tool_input = json.loads(raw_arguments) if isinstance(raw_arguments, str) else raw_arguments
+        except (TypeError, ValueError):
+            tool_input = {"raw": str(raw_arguments)[:8000]}
+        if not isinstance(tool_input, dict):
+            tool_input = {"value": tool_input}
+        base = "ask" if getattr(decision, "action", "allow") == "log_only" else "allow"
+        try:
+            client = await self.get_http_client()
+            response = await client.post(
+                f"{self.aegis_url}/api/runtime/pretool/decide",
+                json={
+                    "tool_name": tool_call.function_name,
+                    "tool_input": tool_input,
+                    "session_id": session_id,
+                    "runtime_kind": self.integration,
+                    "base_decision": base,
+                    "headless": True,
+                },
+                timeout=1.0,
+            )
+            if response.status_code != 200:
+                return
+            result = response.json()
+            if result.get("action") == "block":
+                decision.action = "block"
+                decision.reason = result.get("reason") or "Blocked by five-stage session pipeline"
+                if hasattr(decision, "risk"):
+                    decision.risk = result.get("drift_score", decision.risk)
+        except Exception:
+            pass
 
     def extract_response_text(self, body: dict) -> str:
         """Extract text content from any LLM API response body.
@@ -1384,6 +1461,10 @@ class LLMProxy:
             # Strip client metadata tags (e.g. OpenClaw [message_id: ...]) to avoid false positives
             input_text = re.sub(r'\[message_id:\s*[^\]]+\]', '', input_text).strip()
             if input_text:
+                await self._record_runtime_event(
+                    "llm_input", session_id, input_text,
+                    {"provider": self.provider, "path": path},
+                )
                 self.stats["scanned"] += 1
                 preview = input_text[:200].replace('\n', ' ')
                 print(f"[llm-proxy] 🔍 Scanning input ({len(input_text)} chars): {preview}...")
@@ -1491,6 +1572,7 @@ class LLMProxy:
                     client, method, target, headers, body_bytes,
                     input_context=input_context,
                     agent_id=agent_id,
+                    session_id=session_id,
                 )
             else:
                 # Handle regular request
@@ -1508,6 +1590,10 @@ class LLMProxy:
                         response_dict = json.loads(response_text)
                         output_text = self.extract_response_text(response_dict)
                         if output_text:
+                            await self._record_runtime_event(
+                                "llm_output", session_id, output_text,
+                                {"provider": self.provider, "status_code": response.status_code},
+                            )
                             settings = await self.check_settings()
                             if settings.get("scan_llm_responses"):
                                 # Strip sensitive tokens that are echoed from input context
@@ -1584,7 +1670,8 @@ class LLMProxy:
 
     async def handle_streaming_request(
         self, client: httpx.AsyncClient, method: str, url: str,
-        headers: dict, body: bytes, input_context: str = "", agent_id: str = "unknown-agent"
+        headers: dict, body: bytes, input_context: str = "", agent_id: str = "unknown-agent",
+        session_id: "str | None" = None,
     ) -> Response:
         """Handle streaming LLM response.
 
@@ -1599,14 +1686,19 @@ class LLMProxy:
 
         if should_scan or should_check_tools:
             # Buffer full response to scan output and/or enforce tool permissions
-            return await self._handle_streaming_buffered(client, method, url, headers, body, input_context, agent_id)
+            return await self._handle_streaming_buffered(
+                client, method, url, headers, body, input_context, agent_id, session_id,
+            )
         else:
             # PASSTHROUGH MODE: Stream through without buffering
-            return await self._handle_streaming_passthrough(client, method, url, headers, body, input_context, agent_id)
+            return await self._handle_streaming_passthrough(
+                client, method, url, headers, body, input_context, agent_id, session_id,
+            )
 
     async def _handle_streaming_buffered(
         self, client: httpx.AsyncClient, method: str, url: str,
-        headers: dict, body: bytes, input_context: str = "", agent_id: str = "unknown-agent"
+        headers: dict, body: bytes, input_context: str = "", agent_id: str = "unknown-agent",
+        session_id: "str | None" = None,
     ) -> Response:
         """Buffer streaming response, scan, then deliver or block."""
         accumulated_text = ""
@@ -1615,14 +1707,12 @@ class LLMProxy:
         settings = await self.check_settings()
         will_block = settings.get("block_threats", False)
 
-        # Session id for tool-permission attribution on the buffered-stream path
-        # (mirrors the non-streaming path's self._derive_session_id(body_dict)).
-        # Parsed from the request body; None if there's nothing to anchor on.
-        try:
-            _req_body = json.loads(body) if body else None
-        except Exception:
-            _req_body = None
-        session_id = self._derive_session_id(_req_body) if _req_body else None
+        if session_id is None:
+            try:
+                _req_body = json.loads(body) if body else None
+            except Exception:
+                _req_body = None
+            session_id = self._derive_session_id(_req_body) if _req_body else None
 
         print("[llm-proxy] 🛡️ Buffering stream for output scan...")
 
@@ -1642,6 +1732,10 @@ class LLMProxy:
 
         # Scan accumulated text (strip echoed sensitive tokens from input context)
         if accumulated_text:
+            await self._record_runtime_event(
+                "llm_output", session_id, accumulated_text,
+                {"provider": self.provider, "streaming": True},
+            )
             scan_text = self.strip_echoed_sensitive_tokens(accumulated_text, input_context)
             action = "blocked" if will_block else "logged"
             result = await self.scan_message(scan_text, is_llm_response=True, action_taken=action)
@@ -1842,6 +1936,7 @@ class LLMProxy:
         self, client: httpx.AsyncClient, method: str, url: str,
         headers: dict, body: bytes, input_context: str = "",
         agent_id: str = "unknown-agent",
+        session_id: "str | None" = None,
     ) -> StreamingResponse:
         """Stream through in real-time; record cost and scan after stream exhausts."""
         accumulated_text = ""
@@ -1875,6 +1970,10 @@ class LLMProxy:
 
             # Scan accumulated text after stream completes (logging only)
             if accumulated_text:
+                await self._record_runtime_event(
+                    "llm_output", session_id, accumulated_text,
+                    {"provider": self.provider, "streaming": True},
+                )
                 settings = await self.check_settings()
                 if settings.get("scan_llm_responses"):
                     scan_text = self.strip_echoed_sensitive_tokens(accumulated_text, input_context)

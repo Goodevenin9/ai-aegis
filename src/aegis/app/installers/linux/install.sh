@@ -2,7 +2,7 @@
 # Aegis AI Threat Monitor - Linux Installer
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/Wanshanghao/ai-aegis/master/src/aegis/app/installers/linux/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Goodevenin9/ai-aegis/master/src/aegis/app/installers/linux/install.sh | bash
 #
 # Or download and run:
 #   chmod +x install.sh
@@ -131,7 +131,7 @@ ESCAPED_INSTALL_DIR=$(systemd-escape --path "$INSTALL_DIR" 2>/dev/null || echo "
 cat > "$SERVICE_FILE" << SERVICE_EOF
 [Unit]
 Description=Aegis AI Threat Monitor
-Documentation=https://github.com/Wanshanghao/ai-aegis
+Documentation=https://github.com/Goodevenin9/ai-aegis
 After=network.target
 
 [Service]

@@ -1,6 +1,5 @@
-"""Drift guard: every native-plugin hook resolves the engine endpoint via the
-unified AEGIS_ENGINE_ENDPOINT var (#190), with the legacy SV_BASE_URL /
-AEGIS_URL names kept only as fallbacks.
+"""Drift guard: every native-plugin hook resolves the engine endpoint through
+the unified AEGIS_ENGINE_ENDPOINT variable (#190).
 
 The engine endpoint is HOP 1 (agent -> engine, local app or self-host). It is
 NOT the Aegis cloud. This test fails if a hook is added/edited that reads
@@ -16,14 +15,14 @@ import pytest
 
 PLUGINS = pathlib.Path(__file__).resolve().parents[3] / "src" / "aegis" / "plugins"
 
-# JS hooks: any file that resolves a base URL from SV_BASE_URL
+# JS hooks: any file that resolves a base URL from AEGIS_ENGINE_ENDPOINT
 JS_HOOKS = sorted(
     p for p in PLUGINS.rglob("*.js")
-    if "SV_BASE_URL || DEFAULT_BASE_URL" in p.read_text()
+    if "AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL" in p.read_text(encoding="utf-8")
 )
 
 UNIFIED_JS = re.compile(
-    r"process\.env\.AEGIS_ENGINE_ENDPOINT\s*\|\|\s*process\.env\.SV_BASE_URL\s*\|\|\s*DEFAULT_BASE_URL"
+    r"process\.env\.AEGIS_ENGINE_ENDPOINT\s*\|\|\s*DEFAULT_BASE_URL"
 )
 
 
@@ -35,15 +34,15 @@ def test_js_hooks_present():
 
 @pytest.mark.parametrize("hook", JS_HOOKS, ids=lambda p: str(p.relative_to(PLUGINS)))
 def test_js_hook_uses_unified_engine_endpoint(hook):
-    src = hook.read_text()
+    src = hook.read_text(encoding="utf-8")
     assert UNIFIED_JS.search(src), (
         f"{hook.relative_to(PLUGINS)} resolves a base URL but not via "
-        f"AEGIS_ENGINE_ENDPOINT || SV_BASE_URL || DEFAULT_BASE_URL"
+        f"AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL"
     )
 
 
 def test_openclaw_config_prefers_engine_endpoint():
-    cfg = (PLUGINS / "openclaw" / "config.ts").read_text()
+    cfg = (PLUGINS / "openclaw" / "config.ts").read_text(encoding="utf-8")
     # unified var must appear, and before the legacy AEGIS_URL in the
     # url resolution chain.
     assert "AEGIS_ENGINE_ENDPOINT" in cfg

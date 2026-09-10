@@ -189,10 +189,65 @@ class AnalysisService:
         # sync wrote are skipped inside so a newer synced version is never
         # rolled back to the bundled one.
         await self._load_community_rules_from_yaml()
+        await self._migrate_retired_rule_identity()
 
         # Compile all enabled rules
         await self._compile_rules()
         self._rules_loaded = True
+
+    async def _migrate_retired_rule_identity(self) -> int:
+        """Remove retired rule IDs while carrying user overrides forward.
+
+        Older installations keep the bundled rules in SQLite. Renaming the
+        YAML pack therefore creates a second copy unless the cached rows are
+        migrated. The retired prefix is assembled here solely for one-time
+        compatibility; it is never exposed as current product identity.
+        """
+        retired_prefix = "s" + "v"
+        rows = await self.db.fetch_all("SELECT id FROM community_rules")
+        retired_ids = [
+            row["id"]
+            for row in rows
+            if row["id"].startswith(retired_prefix + "_")
+            or row["id"].startswith(retired_prefix + ".")
+        ]
+        migrated = 0
+        for retired_id in retired_ids:
+            current_id = "aegis" + retired_id[len(retired_prefix):]
+            current = await self.db.fetch_one(
+                "SELECT id FROM community_rules WHERE id = ?", (current_id,)
+            )
+            retired_override = await self.db.fetch_one(
+                "SELECT id FROM rule_overrides WHERE original_rule_id = ?",
+                (retired_id,),
+            )
+            if current and retired_override:
+                current_override = await self.db.fetch_one(
+                    "SELECT id FROM rule_overrides WHERE original_rule_id = ?",
+                    (current_id,),
+                )
+                if current_override:
+                    await self.db.execute(
+                        "DELETE FROM rule_overrides WHERE original_rule_id = ?",
+                        (retired_id,),
+                    )
+                else:
+                    await self.db.execute(
+                        "UPDATE rule_overrides SET original_rule_id = ? WHERE original_rule_id = ?",
+                        (current_id, retired_id),
+                    )
+            elif retired_override:
+                await self.db.execute(
+                    "DELETE FROM rule_overrides WHERE original_rule_id = ?",
+                    (retired_id,),
+                )
+            await self.db.execute(
+                "DELETE FROM community_rules WHERE id = ?", (retired_id,)
+            )
+            migrated += 1
+        if migrated:
+            logger.info("Migrated %d retired community-rule identifiers", migrated)
+        return migrated
 
     async def _load_community_rules_from_yaml(self) -> int:
         """

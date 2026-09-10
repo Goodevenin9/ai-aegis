@@ -199,14 +199,14 @@ const SettingsPage = {
         labelRow.appendChild(statusBadge);
 
         // Model version — transparency. Shows which Guardian model is loaded
-        // (bundled today; the installed securevector-guardian-model package once
+        // (bundled today; the installed bundled AI Aegis Guardian package once
         // the model ships separately, so pip -U + restart visibly bumps it).
         const ver = this.generalSettings.guardian_model_version;
         if (ver) {
             const verChip = document.createElement('span');
             verChip.className = 'guardian-model-ver';
             verChip.textContent = 'Model v' + ver;
-            verChip.title = 'Loaded Guardian model version. Update with: pip install -U securevector-guardian-model, then restart.';
+            verChip.title = 'Loaded Guardian model version. Update with: pip install -U bundled AI Aegis Guardian, then restart.';
             labelRow.appendChild(verChip);
         }
         info.appendChild(labelRow);
@@ -339,7 +339,7 @@ const SettingsPage = {
             : [
                 'On by default: prompt input and output are analyzed on-device and are never sent to Aegis Cloud.',
                 'Rule sync, policy sync, fleet metadata, and governance keep working.',
-                'Turn off only if you want cloud ML analysis: that sends your prompt text to scan.aegis.example.',
+                'Turn off only for remote analysis: it sends prompt text to your AI Aegis control plane.',
                 'EU data-residency: when your organization enforces EU residency, this is hard-locked on, local-only analysis cannot be disabled and prompt text can never be sent to the cloud.',
               ];
         bullets.forEach(t => {
@@ -415,7 +415,7 @@ const SettingsPage = {
         const list = document.createElement('ul');
         list.style.cssText = 'margin: 0 0 12px; padding-left: 18px; line-height: 1.6; color: var(--text-secondary);';
         [
-            'Raw prompt text and LLM output are POSTed to scan.aegis.example for analysis.',
+            'Raw prompt text and LLM output are POSTed to your AI Aegis control plane for analysis.',
             'Use only where sending that text to the cloud is acceptable for your data-residency obligations.',
             'Rule sync, fleet metadata, and governance do NOT require this: they already work with prompts kept local.',
         ].forEach(t => {
@@ -1177,13 +1177,6 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
             container.appendChild(indicator);
         }
 
-        // One-click trial CTA — the primary path when not connected. The
-        // manual paste-a-key flow below stays as the fallback (and the only
-        // path for org svet_ enrollment tokens).
-        if (!this.cloudSettings.credentials_configured) {
-            this.renderTrialCta(container);
-        }
-
         // Instructions if not connected
         if (!this.cloudSettings.credentials_configured) {
             const helpText = document.createElement('div');
@@ -1198,17 +1191,17 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
             steps.style.cssText = 'margin: 8px 0 0 16px; padding: 0;';
 
             const step1 = document.createElement('li');
-            step1.textContent = 'Sign up at ';
+            step1.textContent = 'Open ';
             const link = document.createElement('a');
-            link.href = 'https://app.aegis.example';
+            link.href = window.__AEGIS_CONTROL_PLANE_DOCS_URL;
             link.target = '_blank';
             link.style.color = 'var(--accent-primary)';
-            link.textContent = 'app.aegis.example';
+            link.textContent = 'AI Aegis control plane';
             step1.appendChild(link);
             steps.appendChild(step1);
 
             const step2 = document.createElement('li');
-            step2.textContent = 'Go to Access Management → Create a new key';
+            step2.textContent = 'Call Admin API → Create API key';
             steps.appendChild(step2);
 
             const step3 = document.createElement('li');
@@ -1236,7 +1229,7 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
         if (this.cloudSettings.credentials_configured) {
             keyDesc.textContent = 'API key configured - cloud analysis active';
         } else {
-            keyDesc.textContent = 'Enter your API key from app.aegis.example';
+            keyDesc.textContent = 'Enter an API key issued by your AI Aegis control plane';
         }
         keyInfo.appendChild(keyDesc);
 
@@ -1246,7 +1239,7 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
         keyInput.type = 'password';
         keyInput.className = 'form-input';
         keyInput.id = 'cloud-api-key';
-        keyInput.placeholder = 'svpk_...';
+        keyInput.placeholder = 'aepk_...';
         keyInput.style.width = '250px';
         keyRow.appendChild(keyInput);
 
@@ -1267,7 +1260,7 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
         const actionDesc = document.createElement('span');
         actionDesc.className = 'setting-description';
         if (this.cloudSettings.cloud_mode_enabled) {
-            actionDesc.textContent = 'All scans routed to scan.aegis.example';
+            actionDesc.textContent = 'All scans routed to your AI Aegis control plane';
         } else {
             actionDesc.textContent = 'Using local analysis';
         }
@@ -1389,7 +1382,7 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
             if (error.code === 'trial_unavailable' || error.code === 'network_error') {
                 note.textContent =
                     'One-click signup isn’t reachable right now. Use the manual '
-                    + 'steps below (app.aegis.example → create a key → paste it here).';
+                    + 'steps below (open control plane → create a key → paste it here).';
             } else if (error.code === 'rate_limited') {
                 note.textContent = 'Too many attempts from this device. Try again in a bit.';
             } else {
@@ -1482,11 +1475,11 @@ Remove-Item -Recurse "$env:LOCALAPPDATA\\aegis"`,
                     + '. Opening your Governance view…';
                 body.appendChild(done);
                 const gov = document.createElement('a');
-                gov.href = 'https://app.aegis.example/governance';
+                gov.href = window.__AEGIS_CONTROL_PLANE_DOCS_URL;
                 gov.target = '_blank';
                 gov.rel = 'noopener';
                 gov.style.cssText = 'display:inline-block;margin-top:6px;color:var(--accent-primary);font-size:13px;';
-                gov.textContent = 'app.aegis.example/governance →';
+                gov.textContent = 'AI Aegis control plane →';
                 body.appendChild(gov);
                 setTimeout(() => window.location.reload(), 2500);
                 return;

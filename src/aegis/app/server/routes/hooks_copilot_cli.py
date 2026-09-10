@@ -219,13 +219,13 @@ def _atomic_write_config(path: Path, data: dict, header: list[str]) -> None:
     resolved_parent = path.parent.resolve(strict=False)
     home = Path.home().resolve(strict=False)
     copilot_root = (home / ".copilot").resolve(strict=False)
-    sv_root = (home / ".aegis").resolve(strict=False)
+    aegis_root = (home / ".aegis").resolve(strict=False)
     # Allow the configured COPILOT_HOME too (tests / $COPILOT_HOME relocation),
     # but still refuse arbitrary destinations.
     configured_root = COPILOT_HOME.resolve(strict=False)
     if not (
         resolved_parent.is_relative_to(copilot_root)
-        or resolved_parent.is_relative_to(sv_root)
+        or resolved_parent.is_relative_to(aegis_root)
         or resolved_parent.is_relative_to(configured_root)
     ):
         raise PermissionError(
@@ -360,20 +360,20 @@ async def install_plugin():
     Falls back to staging-only + the documented install command when Copilot
     isn't installed yet (``~/.copilot`` absent)."""
     _hooks_common.ensure_bundled_dir(BUNDLED_PLUGIN_DIR, PLUGIN_FILES)
-    sv_url = _hooks_common.resolve_sv_url()
+    aegis_url = _hooks_common.resolve_aegis_url()
     files_written = _hooks_common.stage_files(
         staging_dir=STAGING_DIR,
         source_dir=BUNDLED_PLUGIN_DIR,
         files=PLUGIN_FILES,
         substitutions={
-            "http://127.0.0.1:8741": sv_url,
-            "http://localhost:8741": sv_url,
+            "http://127.0.0.1:8741": aegis_url,
+            "http://localhost:8741": aegis_url,
         },
     )
 
     logger.info(
-        "Staged %d Copilot CLI plugin file(s) for %s at %s (sv_url=%s)",
-        len(files_written), PLUGIN_NAME, STAGING_DIR, sv_url,
+        "Staged %d Copilot CLI plugin file(s) for %s at %s (aegis_url=%s)",
+        len(files_written), PLUGIN_NAME, STAGING_DIR, aegis_url,
     )
 
     # Defense-in-depth: zero files means the bundled plugin assets are missing

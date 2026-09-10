@@ -50,6 +50,7 @@ const Sidebar = {
             // turn/request, i.e. the Traces tab; Sessions is the level above,
             // matching Langfuse/Phoenix vocabulary). Tooltip carries the def.
             { id: 'agent-runs',     label: 'Traces', aliases: ['storylines', 'agent-map', 'agent-timeline'], tooltip: 'One trace per agent session. Open a trace to see its runs (each LLM call and tool call) with the enforcement verdict, tokens and cost on each. Replay it, or open the Map.' },
+            { id: 'session-security', label: 'Session Security', tooltip: 'Intent flow, behaviour flow, five-stage evidence and cumulative drift risk by session.' },
             // Activity log + inventory (SBOM) are two lenses on the same
             // tool_call_audit data — one destination, two tabs on the page.
             // 'bill-of-tools' stays as an alias so deep links keep this row lit.
@@ -58,6 +59,10 @@ const Sidebar = {
             // as facets — see the note on that entry above.
             { id: 'costs',          label: 'Cost & Tokens' },
         ]},
+        // P2 is an operational workspace, not another observability lens. It
+        // therefore gets its own primary destination instead of being buried
+        // as the third child of a long traces menu.
+        { id: 'security-operations', label: 'Security Copilot', icon: 'chat', tooltip: 'Evidence ingestion, security RAG, governed memory, session immunity and human-approved Agent workflows.' },
         // ---- Govern (IA) ----
         // Everything below until Connect is a control the human sets: what
         // agents may do, which rules fire, what ML runs, what budgets cap.
@@ -82,10 +87,8 @@ const Sidebar = {
             { id: 'skill-scanner', label: 'Skills Scanner', tooltip: 'Skill scanner + skill policy management (tabs on the page)' },
             { id: 'cost-settings', label: 'Cost Settings', tooltip: 'Budgets + pricing. The per-agent spend dashboard is under Observability.' },
         ]},
-        // ---- Cloud section (#151) ----
-        // The cloud-account surfaces get their own labelled section
-        // (SECTION_BEFORE maps 'mcp-policies' → 'Cloud') so enrolled-device
-        // features don't blend into the local Configure items.
+        // Cloud-managed policies stay under Governance; enrollment activity
+        // and forwarding destinations live under Connections / Cloud & Export.
         // MCP Policies — read-only viewer of cloud-synced policy bundles.
         // Kept distinct from Tool Permissions: the trust artifact (what's
         // pushed to me, by whom) vs the operational surface.
@@ -173,6 +176,36 @@ const Sidebar = {
     ],
 
     currentPage: 'dashboard',
+
+    // Canonical information architecture shared by the rail and command
+    // palette. Page ids remain stable; only their presentation is grouped.
+    sectionBefore: {
+        'dashboard':            'Overview',
+        'threat-monitor':       'Protection',
+        'agent-activity':       'Observability',
+        'security-operations':  'Operations',
+        'policies-controls':    'Governance',
+        'guide-connect-agents': 'Connections',
+        'siem-export':          'Cloud & Export',
+        'guide':                'Support',
+    },
+
+    sectionFor(pageId) {
+        let section = '';
+        for (const item of this.navItems) {
+            if (this.sectionBefore[item.id]) section = this.sectionBefore[item.id];
+            const matches = item.id === pageId ||
+                (item.aliases || []).includes(pageId) ||
+                (item.subItems || []).some(sub => sub.id === pageId || (sub.aliases || []).includes(pageId));
+            if (matches) return section;
+        }
+        return '';
+    },
+
+    isItemExpanded(item, containsCurrentPage) {
+        const stored = localStorage.getItem(`nav-${item.id}-expanded`);
+        return containsCurrentPage || (stored !== null ? stored === 'true' : !!item.defaultExpanded);
+    },
 
     collapsed: false,
 
@@ -332,27 +365,18 @@ const Sidebar = {
         // lands. CLOUD_TIER (above) is the set that gets this treatment.
         this._probeEnrollment();
 
-        // IA — three verbs. "Visibility" (not "Observe") heads the first
-        // section: the group now contains an "Observability" destination, and
-        // "Observe → Observability" stutters. "Visibility" is the word both
-        // audiences use — SOC operators ("visibility into agent activity") and
-        // business buyers alike — and doesn't echo the child.
-        //   Visibility — what the agents are doing (dashboard, threats, observability)
-        //   Govern     — what the human controls (permissions, rules, policies)
-        //   Connect    — pipes in and out (wizard, integrations, SIEM, cloud)
+        // Task-oriented IA: overview, protection, observability, operations,
+        // governance, connections, cloud/export and support.
         // Page ids are untouched, so every old deep link still lands.
-        const SECTION_BEFORE = {
-            'dashboard':          'Visibility',
-            'policies-controls':  'Govern',
-            'guide-connect-agents': 'Connect',
-            'siem-export':        'Cloud & Forwarders',
-            'guide':              'Help & Settings',
-        };
+        const SECTION_BEFORE = this.sectionBefore;
 
         // Items that get a divider before them — the IA section boundaries.
-        const DIVIDER_BEFORE = new Set(['policies-controls', 'guide-connect-agents', 'siem-export', 'guide']);
+        const DIVIDER_BEFORE = new Set([
+            'threat-monitor', 'agent-activity', 'security-operations',
+            'policies-controls', 'guide-connect-agents', 'siem-export', 'guide',
+        ]);
 
-        // Section groups — each Observe/Govern/Connect header is a toggle
+        // Section groups — each task header is a toggle
         // that collapses every row in its group. Rows register into the
         // current section as they render; the tail (Guide + Settings) is
         // deliberately ungrouped and always visible.
@@ -422,6 +446,10 @@ const Sidebar = {
             // goes unlit on those routes and the user cannot tell where they are.
             const matchesSelf = item.id === this.currentPage ||
                 (item.aliases && item.aliases.includes(this.currentPage));
+            const containsCurrentPage = matchesSelf || (item.subItems || []).some(sub =>
+                sub.id === this.currentPage ||
+                (sub.aliases && sub.aliases.includes(this.currentPage))
+            );
             const isActive = matchesSelf && (!hasSubItems || item.collapsible);
             navItem.className = 'nav-item' + (isActive ? ' active' : '') + (isCloudLocked ? ' nav-item-locked' : '');
             navItem.dataset.page = item.id;
@@ -524,8 +552,7 @@ const Sidebar = {
             // `svg:last-child` lookup finds it.
             let rowChev = null;
             if (item.collapsible && hasSubItems) {
-                const stored = localStorage.getItem(`nav-${item.id}-expanded`);
-                const startsExpanded = stored !== null ? stored === 'true' : !!item.defaultExpanded;
+                const startsExpanded = this.isItemExpanded(item, containsCurrentPage);
                 rowChev = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 rowChev.setAttribute('viewBox', '0 0 24 24');
                 rowChev.setAttribute('fill', 'none');
@@ -596,8 +623,7 @@ const Sidebar = {
                 if (item.collapsible) {
                     subNav.dataset.subFor = item.id;
                     // Same resolution as the chevron above.
-                    const stored = localStorage.getItem(`nav-${item.id}-expanded`);
-                    const isExpanded = stored !== null ? stored === 'true' : !!item.defaultExpanded;
+                    const isExpanded = this.isItemExpanded(item, containsCurrentPage);
                     subNav.style.display = isExpanded ? 'block' : 'none';
                 }
 
@@ -679,7 +705,11 @@ const Sidebar = {
             }
         });
 
-        // Wire the Observe / Govern / Connect section toggles. Collapse hides
+        // Wire the task-oriented section toggles. The active section is always
+        // open; untouched inactive sections start closed so the rail remains a
+        // compact information architecture instead of another wall of links.
+        // An explicit user choice is persisted and wins on later visits.
+        // Collapse hides
         // rows via a class (not inline display) so each row's own inline
         // display state — sub-nav expand/collapse, banner visibility — is
         // preserved intact when the section reopens.
@@ -692,7 +722,11 @@ const Sidebar = {
                 sec.btn.title = (collapsed ? 'Expand ' : 'Collapse ') + sec.name;
             };
             sec.apply = apply;
-            apply(localStorage.getItem(sec.key) === '1' && !sec.containsActive);
+            const savedState = localStorage.getItem(sec.key);
+            const startsCollapsed = sec.containsActive
+                ? false
+                : (savedState === null ? !sec.containsActive : savedState === '1');
+            apply(startsCollapsed);
             sec.btn.addEventListener('click', () => {
                 const next = !sec.collapsed;
                 try { localStorage.setItem(sec.key, next ? '1' : '0'); } catch (_) { /* private mode */ }
@@ -1755,6 +1789,25 @@ const Sidebar = {
         }
     },
 
+    revealPage(page) {
+        const activeEl = Array.from(document.querySelectorAll('.nav-item.active')).find(item =>
+            item.dataset.page === page || (item.dataset.aliases || '').split(',').includes(page)
+        );
+        if (!activeEl) return;
+
+        // A nested destination can be active while its immediate parent menu
+        // is still closed (notably after browser back/forward navigation).
+        const subNav = activeEl.closest('.nav-sub-items');
+        if (subNav && subNav.dataset.subFor) this.expandSection(subNav.dataset.subFor);
+
+        const sec = (this._sections || []).find(candidate => candidate.els.includes(activeEl)
+            || candidate.els.some(el => el.contains && el.contains(activeEl)));
+        if (sec && sec.collapsed && sec.apply) {
+            try { localStorage.setItem(sec.key, '0'); } catch (_) { /* private mode */ }
+            sec.apply(false);
+        }
+    },
+
     navigate(page) {
         // Auto-expand parent section when navigating to a sub-item
         for (const item of this.navItems) {
@@ -1783,15 +1836,7 @@ const Sidebar = {
         // Landing on a page whose section is collapsed would hide the active
         // row ("where am I?") — re-open that section. The render-time guard
         // only covers page load; this covers in-app navigation.
-        const activeEl = document.querySelector(`.nav-item.active[data-page="${page}"]`);
-        if (activeEl && (activeEl.classList.contains('nav-sec-hidden') || activeEl.closest('.nav-sec-hidden'))) {
-            const sec = (this._sections || []).find(s => s.els.includes(activeEl)
-                || s.els.some(el => el.contains && el.contains(activeEl)));
-            if (sec && sec.collapsed && sec.apply) {
-                try { localStorage.setItem(sec.key, '0'); } catch (_) { /* private mode */ }
-                sec.apply(false);
-            }
-        }
+        this.revealPage(page);
 
         // Trigger page load
         if (window.App) {
@@ -1851,6 +1896,7 @@ const Sidebar = {
                 item.classList.toggle('active', matchesPage && (!hasSubItems || isCollapsible));
             }
         });
+        this.revealPage(page);
     },
 };
 

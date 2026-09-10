@@ -46,9 +46,9 @@ const FAST_TIMEOUT_MS = 1500;
 const BG_REFRESH_TIMEOUT_MS = 30 * 1000;
 
 const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;
-const SV_DIR = path.join(os.homedir(), '.aegis');
-const TOKEN_CACHE_FILE = path.join(SV_DIR, 'statusline-tokens.json');
-const REFRESH_LOCK_FILE = path.join(SV_DIR, 'statusline-refresh.lock');
+const AEGIS_DIR = path.join(os.homedir(), '.aegis');
+const TOKEN_CACHE_FILE = path.join(AEGIS_DIR, 'statusline-tokens.json');
+const REFRESH_LOCK_FILE = path.join(AEGIS_DIR, 'statusline-refresh.lock');
 
 function getJson(reqPath, timeoutMs) {
   return new Promise((resolve) => {
@@ -118,7 +118,7 @@ function readTokenCache() {
 
 function writeTokenCache(value) {
   try {
-    fs.mkdirSync(SV_DIR, { recursive: true });
+    fs.mkdirSync(AEGIS_DIR, { recursive: true });
     fs.writeFileSync(
       TOKEN_CACHE_FILE,
       JSON.stringify({ ts: Date.now(), value }),
@@ -129,7 +129,7 @@ function writeTokenCache(value) {
 
 function tryAcquireRefreshLock() {
   try {
-    fs.mkdirSync(SV_DIR, { recursive: true });
+    fs.mkdirSync(AEGIS_DIR, { recursive: true });
     if (fs.existsSync(REFRESH_LOCK_FILE)) {
       const pid = parseInt(fs.readFileSync(REFRESH_LOCK_FILE, 'utf8').trim(), 10);
       if (pid > 0) {

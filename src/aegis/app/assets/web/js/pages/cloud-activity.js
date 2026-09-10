@@ -4,7 +4,7 @@
  *
  * fleet-local-push, story #113.
  *
- * Three read-only sections (mirrors the `sv inspect-uplink` CLI):
+ * Three read-only sections (mirrors the `aegis inspect-uplink` CLI):
  *   1. Enrollment status banner — org / group / device id / last sync /
  *      connection-state indicator.
  *   2. Inbound — synced policies — the current org bundle's tool-permission
@@ -118,11 +118,11 @@ const CloudActivityPage = {
         if (!this._heroSub) return;
         if (enrolled) {
             this._heroSub.textContent =
-                'Exactly what flows in and out of this device since it enrolled: synced policies coming down, metadata-only audit going up. Read-only. The terminal equivalent is `sv inspect-uplink`.';
+                'Exactly what flows in and out of this device since it enrolled: synced policies coming down, metadata-only audit going up. Read-only. The terminal equivalent is `aegis inspect-uplink`.';
             this._heroPill.style.display = '';
         } else {
             this._heroSub.textContent =
-                'What will flow in and out of this device once it connects to a Aegis cloud account: policies syncing down, metadata-only audit going up. Nothing flows until then. Read-only. The terminal equivalent is `sv inspect-uplink`.';
+                'What will flow in and out of this device once it connects to a Aegis cloud account: policies syncing down, metadata-only audit going up. Nothing flows until then. Read-only. The terminal equivalent is `aegis inspect-uplink`.';
             this._heroPill.style.display = 'none';
         }
     },
@@ -236,10 +236,10 @@ const CloudActivityPage = {
         cta.style.cssText = 'margin-top: 14px;';
         const link = document.createElement('a');
         link.className = 'btn btn-primary';
-        link.href = 'https://app.aegis.example';
+        link.href = window.__AEGIS_CONTROL_PLANE_DOCS_URL;
         link.target = '_blank';
         link.rel = 'noopener';
-        link.textContent = 'Create a free cloud account →';
+        link.textContent = 'Open your AI Aegis control plane →';
         link.style.cssText = 'display: inline-flex; text-decoration: none;';
         cta.appendChild(link);
         wrap.appendChild(cta);
@@ -247,7 +247,7 @@ const CloudActivityPage = {
         // Keep the bare domain visible as a quiet caption beneath the button so
         // power users still see exactly where it goes.
         const ctaHint = document.createElement('div');
-        ctaHint.textContent = 'app.aegis.example';
+        ctaHint.textContent = 'your AI Aegis control plane';
         ctaHint.style.cssText =
             'margin-top: 6px; font-size: 11.5px; color: var(--text-muted, var(--text-secondary));';
         wrap.appendChild(ctaHint);
@@ -259,7 +259,7 @@ const CloudActivityPage = {
         lbl.className = 'mcp-empty-cmd-label';
         lbl.textContent = 'ALREADY HAVE A TOKEN?';
         const code = document.createElement('code');
-        code.textContent = 'aegis-app enroll <svet_token>';
+        code.textContent = 'aegis-app enroll <aet_token>';
         cmd.appendChild(lbl);
         cmd.appendChild(code);
         wrap.appendChild(cmd);

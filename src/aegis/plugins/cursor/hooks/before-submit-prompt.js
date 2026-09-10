@@ -44,7 +44,7 @@ async function main() {
   try {
     const prompt = typeof event.prompt === 'string' ? event.prompt : '';
     if (prompt.length > 0) {
-      const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || process.env.SV_BASE_URL || DEFAULT_BASE_URL;
+      const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL;
       postJsonAndForget(`${baseUrl}/analyze`, {
         text: prompt.slice(0, SCAN_TEXT_LIMIT),
         source: SOURCE,
@@ -55,6 +55,16 @@ async function main() {
           event: 'beforeSubmitPrompt',
         },
       });
+      const sessionId = sessionIdFrom(event);
+      if (sessionId) {
+        postJsonAndForget(`${baseUrl}/api/runtime/events`, {
+          session_id: sessionId,
+          runtime_kind: RUNTIME_KIND,
+          event_type: 'before_prompt_build',
+          text: prompt.slice(0, SCAN_TEXT_LIMIT),
+          metadata: { source: 'beforeSubmitPrompt' },
+        });
+      }
     }
   } catch { /* swallow — scan is best-effort */ }
 

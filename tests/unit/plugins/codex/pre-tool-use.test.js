@@ -19,7 +19,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { toHookOutput, decideFromOverrides } = require(
+const { toHookOutput, decideFromOverrides, decide } = require(
   '../../../../src/aegis/plugins/codex/hooks/pre-tool-use.js'
 );
 
@@ -127,4 +127,38 @@ test('Codex decideFromOverrides: case-insensitive tool_id matching (issue #138)'
   assert.equal(decideFromOverrides(['Bash'], lower).decision, 'deny');
   const pascal = { synced: [{ tool_id: 'Read', effect: 'deny' }], total: 1 };
   assert.equal(decideFromOverrides(['read'], pascal).decision, 'deny');
+});
+
+
+test('Codex decide: five-stage pipeline can strengthen allow to deny', async () => {
+  const originalFetch = global.fetch;
+  const calls = [];
+  global.fetch = async (url, options = {}) => {
+    calls.push({ url: String(url), body: options.body ? JSON.parse(options.body) : null });
+    if (String(url).includes('synced-overrides')) {
+      return { ok: true, json: async () => ({ synced: [] }) };
+    }
+    if (String(url).includes('/api/runtime/pretool/decide')) {
+      return {
+        ok: true,
+        json: async () => ({
+          action: 'block', risk_score: 100, drift_score: 80,
+          reason: 'Five-stage pipeline block', signals: [{ layer: 'drift' }],
+        }),
+      };
+    }
+    throw new Error(`unexpected URL ${url}`);
+  };
+  try {
+    const result = await decide('Read', 'http://127.0.0.1:8741', 'session-1', {
+      file_path: 'README.md',
+    });
+    assert.equal(result.decision, 'deny');
+    assert.equal(result.pipeline.drift_score, 80);
+    const pipelineCall = calls.find((call) => call.url.includes('/api/runtime/pretool/decide'));
+    assert.equal(pipelineCall.body.runtime_kind, 'codex');
+    assert.equal(pipelineCall.body.base_decision, 'allow');
+  } finally {
+    global.fetch = originalFetch;
+  }
 });

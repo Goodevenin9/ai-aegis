@@ -68,7 +68,7 @@ const GovernancePage = {
             fw: 'OWASP LLM01/LLM09 · NIST MEASURE',
             evaluate: (s) => {
                 if (!s.guardian_ml_enabled) return { state: 'off', note: 'Guardian ML is disabled (optional: rules still run).' };
-                if (s.guardian_ml_available === false) return { state: 'partial', note: 'Enabled but the model is not installed: pip install securevector-guardian-model, then restart.' };
+                if (s.guardian_ml_available === false) return { state: 'partial', note: 'Enabled but the model is not installed: pip install bundled AI Aegis Guardian, then restart.' };
                 return { state: 'on', note: 'Local ML model is loaded and scoring alongside the rules.' };
             },
         },
@@ -271,8 +271,8 @@ const GovernancePage = {
         const ctx = { integrityOk, auditCount, activeRules, enrolled, proxyRunning, activeRuntimes, toolCallsSeen, sessionCount, openclawActive };
         // One canonical scope phrase reused in the band + scope + warnings.
         const agentTxt = sessionCount === 0
-            ? 'no agent sessions connected via SV Guard / SDK yet'
-            : (sessionCount + ' agent session' + (sessionCount === 1 ? '' : 's') + ' across ' + activeRuntimes.length + ' harness' + (activeRuntimes.length === 1 ? '' : 'es') + ' connected via SV Guard / SDK' + (activeRuntimes.length ? ' (' + activeRuntimes.join(', ') + ')' : ''));
+            ? 'no agent sessions connected via Aegis Guard / SDK yet'
+            : (sessionCount + ' agent session' + (sessionCount === 1 ? '' : 's') + ' across ' + activeRuntimes.length + ' harness' + (activeRuntimes.length === 1 ? '' : 'es') + ' connected via Aegis Guard / SDK' + (activeRuntimes.length ? ' (' + activeRuntimes.join(', ') + ')' : ''));
 
         const rows = this.CONTROLS.map(c => Object.assign({}, c, c.evaluate(settings, ctx)));
         const band = this._band(rows, sessionCount);
@@ -437,7 +437,7 @@ const GovernancePage = {
             const body = document.createElement('div');
             body.innerHTML = '<div class="gov-next-eyebrow">Next action</div>' +
                 '<div class="gov-next-lab">Connect an agent</div>' +
-                '<div class="gov-next-note">Nothing has reported through SV Guard / SDK yet, so there is nothing to govern. Connect a runtime to light this page up.</div>';
+                '<div class="gov-next-note">Nothing has reported through Aegis Guard / SDK yet, so there is nothing to govern. Connect a runtime to light this page up.</div>';
             nextCard.appendChild(body);
             const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'gov-next-btn';
             btn.textContent = 'Connect →';
@@ -568,7 +568,7 @@ const GovernancePage = {
         if (!cloudOn) {
             const cta = card(); cta.style.borderColor = 'var(--accent-primary)';
             const cLead = document.createElement('div'); cLead.style.cssText = 'font-size: 13px; color: var(--text-secondary); line-height: 1.5;';
-            cLead.innerHTML = 'This is one device. <a href="https://app.aegis.example/governance" target="_blank" rel="noopener noreferrer" style="color:var(--accent-primary); font-weight:600;">See posture across your whole fleet →</a> by connecting to Aegis Cloud.';
+            cLead.innerHTML = `This is one device. <a href="${window.__AEGIS_CONTROL_PLANE_DOCS_URL}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-primary); font-weight:600;">Manage signed fleet policy →</a> in your AI Aegis control plane.`;
             cta.appendChild(cLead);
             const cMicro = document.createElement('div');
             cMicro.textContent = (settings.local_only_analysis !== false && settings.residency_locked)

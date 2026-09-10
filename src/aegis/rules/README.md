@@ -7,13 +7,13 @@ This directory contains the security rules used by the AI Threat Monitor SDK for
 ```
 rules/
 ├── community/         # Community security rules (used in LOCAL mode)
-│   ├── sv_community_essential_patterns.yml    # Core threat detection patterns
-│   ├── sv_community_prompt_injection.yml      # Prompt injection attempts
-│   ├── sv_community_jailbreak_attempts.yml    # AI jailbreak detection
-│   ├── sv_community_data_extraction.yml       # Data exfiltration patterns
-│   ├── sv_community_social_engineering.yml    # Social engineering attempts
-│   ├── sv_community_pii_detection.yml         # PII detection patterns
-│   ├── sv_community_harmful_content.yml       # Harmful content detection
+│   ├── aegis_community_essential_patterns.yml    # Core threat detection patterns
+│   ├── aegis_community_prompt_injection.yml      # Prompt injection attempts
+│   ├── aegis_community_jailbreak_attempts.yml    # AI jailbreak detection
+│   ├── aegis_community_data_extraction.yml       # Data exfiltration patterns
+│   ├── aegis_community_social_engineering.yml    # Social engineering attempts
+│   ├── aegis_community_pii_detection.yml         # PII detection patterns
+│   ├── aegis_community_harmful_content.yml       # Harmful content detection
 │   ├── owasp_top10.yml                        # OWASP LLM Top 10 patterns
 │   └── mitre_patterns.yml                     # MITRE ATT&CK patterns
 ├── custom/            # User-defined custom rules (empty by default)
@@ -58,7 +58,7 @@ For enhanced detection, professional and enterprise-tier rules are available exc
 
 ## 📊 Rule Categories
 
-### Essential Patterns (`sv_community_essential_patterns.yml`)
+### Essential Patterns (`aegis_community_essential_patterns.yml`)
 Core patterns for fundamental threat detection:
 - Instruction override attempts
 - Jailbreak persona activation
@@ -66,42 +66,42 @@ Core patterns for fundamental threat detection:
 - Safety bypass attempts
 - System probing
 
-### Prompt Injection (`sv_community_prompt_injection.yml`)
+### Prompt Injection (`aegis_community_prompt_injection.yml`)
 Detection of prompt injection attacks:
 - Direct instruction override
 - Context manipulation
 - Role confusion attacks
 - System prompt extraction
 
-### Jailbreak Attempts (`sv_community_jailbreak_attempts.yml`)
+### Jailbreak Attempts (`aegis_community_jailbreak_attempts.yml`)
 Advanced AI jailbreak detection:
 - DAN and similar personas
 - Role-play manipulation
 - Hypothetical scenario abuse
 - Character impersonation
 
-### Data Extraction (`sv_community_data_extraction.yml`)
+### Data Extraction (`aegis_community_data_extraction.yml`)
 Patterns to detect data exfiltration:
 - Database structure requests
 - API credential extraction
 - System information harvesting
 - Privilege escalation attempts
 
-### Social Engineering (`sv_community_social_engineering.yml`)
+### Social Engineering (`aegis_community_social_engineering.yml`)
 Detection of social engineering tactics:
 - Authority impersonation
 - Trust exploitation
 - Emergency override claims
 - Fake identity claims
 
-### PII Detection (`sv_community_pii_detection.yml`)
+### PII Detection (`aegis_community_pii_detection.yml`)
 Personal Identifiable Information detection:
 - Social Security Numbers
 - Credit card patterns
 - Medical record requests
 - Financial information
 
-### Harmful Content (`sv_community_harmful_content.yml`)
+### Harmful Content (`aegis_community_harmful_content.yml`)
 Detection of harmful content requests:
 - Violence and harm instructions
 - Illegal activity guidance
@@ -201,14 +201,14 @@ Users can adjust rule behavior by:
 - **API Mode**: Get real-time updates via Aegis API
 
 ### Getting Help
-- **Documentation**: [https://docs.aegis.example/ai-threat-monitor](https://docs.aegis.example/ai-threat-monitor)
-- **Support**: [GitHub Issues](https://github.com/Wanshanghao/ai-aegis/issues)
-- **Security Issues**: security@aegis.example (for security vulnerabilities)
+- **Documentation**: [https://github.com/Goodevenin9/ai-aegis/tree/master/docs](https://github.com/Goodevenin9/ai-aegis/tree/master/docs)
+- **Support**: [GitHub Issues](https://github.com/Goodevenin9/ai-aegis/issues)
+- **Security Issues**: GitHub security advisory (for security vulnerabilities)
 
 ---
 
 **⚖️ Legal Notice**: This software is provided "AS IS" without warranty. Users are responsible for compliance with applicable laws and regulations. See LICENSE file for full terms.
 
-**🔐 Security Notice**: Report security vulnerabilities privately to security@aegis.example. Do not disclose security issues publicly until patched.
+**🔐 Security Notice**: Report security vulnerabilities privately to GitHub security advisory. Do not disclose security issues publicly until patched.
 
 **📅 Last Updated**: January 2025 | **Version**: 1.0.0

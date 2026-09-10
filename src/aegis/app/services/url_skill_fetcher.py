@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 MAX_DOWNLOAD_BYTES = 50_000_000  # 50 MB
 DOWNLOAD_TIMEOUT = 60  # seconds
 MAX_EXTRACTED_FILES = 500
-TEMP_PREFIX = "sv_skill_"
+TEMP_PREFIX = "aegis_skill_"
 STALE_AGE_SECONDS = 3600  # 1 hour
 
 ALLOWED_SCHEMES = {"https"}
@@ -490,7 +490,7 @@ class UrlSkillFetcher:
 
     @staticmethod
     def cleanup_stale(max_age: int = STALE_AGE_SECONDS) -> int:
-        """Remove sv_skill_* temp dirs older than max_age seconds."""
+        """Remove aegis_skill_* temp dirs older than max_age seconds."""
         tmp = Path(tempfile.gettempdir())
         now = time.time()
         removed = 0

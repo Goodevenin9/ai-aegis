@@ -383,7 +383,7 @@ samples:
     text: "Check the service with: curl -s https://api.example.com/health | jq .status"
     label: benign
     direction: outgoing
-    note: "curl present but no credential path → must not trip sv_community_038"
+    note: "curl present but no credential path → must not trip aegis_community_038"
   - id: benign_wget_tarball
     text: "Download the release: wget https://example.com/releases/app-1.2.3.tar.gz"
     label: benign

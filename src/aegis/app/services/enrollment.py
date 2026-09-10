@@ -1,5 +1,5 @@
 """
-Device enrollment — redeems an `svet_*` token against the Aegis cloud.
+Device enrollment — redeems an `aet_*` token against the Aegis cloud.
 
 active-mcp-and-policy-sync bundle, Phase 2 / Release A device side.
 
@@ -96,10 +96,10 @@ async def enroll(
     returns an EnrollmentResult; on failure raises EnrollmentError with a
     machine-readable `code`.
     """
-    if not token or not token.startswith("svet_"):
+    if not token or not token.startswith("aet_"):
         raise EnrollmentError(
             "token_invalid",
-            "Enrollment tokens must start with `svet_`",
+            "Enrollment tokens must start with `aet_`",
         )
 
     device_id = get_device_id()

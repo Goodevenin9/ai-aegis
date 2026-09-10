@@ -1,0 +1,9 @@
+{$AEGIS_ENGINE_DOMAIN} {
+    encode zstd gzip
+    reverse_proxy engine:8741
+}
+
+{$AEGIS_CONTROL_DOMAIN} {
+    encode zstd gzip
+    reverse_proxy control-plane:8780
+}

@@ -120,7 +120,7 @@ class TestBaselineRules:
     def test_imds_is_denied(self, pack):
         result = decide("curl http://169.254.169.254/latest/meta-data/", pack=pack)
         assert result.action == BLOCK
-        assert any(v.rule_id == "sv.egress.cloud_metadata" for v in result.verdicts)
+        assert any(v.rule_id == "aegis.egress.cloud_metadata" for v in result.verdicts)
 
     def test_imds_waived_under_ci_profile(self, pack):
         """A CI runner on EC2 legitimately fetches instance credentials."""

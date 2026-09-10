@@ -2313,11 +2313,11 @@ const AgentRunsPage = {
         }).join('');
         return `<div class="ar-detail-body">` +
             `<div class="ar-chat">` +
-            bubble('prompt', promptRole, 'LLM input: prompt (redacted preview)',
+            bubble('prompt', promptRole, 'LLM input — prompt (redacted preview)',
                 s.input_preview, s.input_truncated,
                 s.input_is_tool_result ? 'Turn driven by a tool result (no prompt text).' : 'No text in this turn (tool call / reasoning only).') +
             bubble('model', `${AR_ROBOT_SVG('#7c6cff', 11)} ${this._esc(this._prettyModel(s.model))}`,
-                'LLM output: response (redacted preview)',
+                'LLM output — response (redacted preview)',
                 s.output_preview, s.output_truncated, 'No text in this turn (tool call / reasoning only).') +
             resultsHtml +
             `</div>` +

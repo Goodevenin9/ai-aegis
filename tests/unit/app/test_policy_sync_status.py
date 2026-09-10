@@ -3,7 +3,7 @@ Unit tests for GET /api/v1/policy-sync/status — header badge data source.
 
 Covers the two states the UI needs to distinguish:
   - not enrolled → enrolled=False, message explains personal-mode behavior
-  - enrolled (svet_*) → enrolled=True, org info + last bundle stats present
+  - enrolled (aet_*) → enrolled=True, org info + last bundle stats present
 """
 
 import asyncio
@@ -36,7 +36,7 @@ async def test_not_enrolled_returns_off_with_explanatory_message():
 async def test_enrolled_with_no_bundle_yet_signals_waiting():
     creds = EnrolledCredentials(
         device_record_id="dev_record_1",
-        device_id="sv-abc",
+        device_id="aegis-abc",
         org_id="org_xyz",
         org_name="Acme Corp",
         user_id="user_1",
@@ -86,7 +86,7 @@ async def test_enrolled_with_no_bundle_yet_signals_waiting():
 async def test_enrolled_with_bundle_returns_latest_version_and_count():
     creds = EnrolledCredentials(
         device_record_id="dev_record_1",
-        device_id="sv-abc",
+        device_id="aegis-abc",
         org_id="org_xyz",
         org_name="Acme Corp",
         user_id="user_1",

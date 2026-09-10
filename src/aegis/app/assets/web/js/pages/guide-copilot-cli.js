@@ -134,9 +134,9 @@ aegis-app --install-plugin copilot-cli
 
 # point the hooks at your engine endpoint (the URL from \`terraform output\`)
 export AEGIS_ENGINE_ENDPOINT=https://<your-engine-endpoint>`));
-        root.appendChild(note('Engine, not cloud.', 'AEGIS_ENGINE_ENDPOINT is the engine the hooks call for analysis: your local app OR your self-host / Terraform engine. It is NOT the Aegis cloud (scan.aegis.example). Legacy SV_BASE_URL / AEGIS_URL still work as fallbacks.'));
-        root.appendChild(p('Auth is optional. A private (in-VPC) endpoint needs no credential: the default and least friction. Only if you expose the endpoint publicly and gate it (Terraform ingress_token: enforced by a v4.9.0+ engine; older images set but ignore it) do you set a key; use a free Aegis account key or an SVET token: it gates inbound access only and forwards no data:'));
-        root.appendChild(code(`export AEGIS_API_KEY=<Aegis account key or SVET token>   # optional: public gated endpoint only`));
+        root.appendChild(note('Engine and control plane are separate.', 'AEGIS_ENGINE_ENDPOINT is the analysis engine called by hooks. AEGIS_CONTROL_PLANE_URL is the fleet-management service.'));
+        root.appendChild(p('Auth is optional for a private endpoint. For a public deployment, configure an Aegis API key at the gateway.'));
+        root.appendChild(code(`export AEGIS_API_KEY=<Aegis API key>   # public gated endpoint only`));
 
         root.appendChild(h2('Verify it works'));
         root.appendChild(p('1. Plugin status from the local app:'));
@@ -181,7 +181,7 @@ export AEGIS_ENGINE_ENDPOINT=https://<your-engine-endpoint>`));
         // --- Configuration ---
         root.appendChild(h2('Configuration'));
         root.appendChild(table(['Setting', 'Where', 'Default', 'Purpose'], [
-            ['Local app port', 'svconfig.yml server.port, or SV_WEB_PORT', '8741', 'Loopback port the plugin POSTs to'],
+            ['Local app port', 'aegis.yml server.port, or AEGIS_WEB_PORT', '8741', 'Loopback port the plugin POSTs to'],
             ['Plugin target URL', 'AEGIS_ENGINE_ENDPOINT env var', 'http://127.0.0.1:8741', 'Override for non-default app deployments'],
             ['Tool permission rules', 'Tool Permissions page in the app', 'Default-allow + last-resort denies', 'Per-tool allow / deny / ask, cloud-syncable, local overrides'],
         ]));

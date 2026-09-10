@@ -1,7 +1,7 @@
 """
 Cloud API proxy service for Aegis desktop app.
 
-Proxies requests to the Aegis cloud API (api.aegis.example) when
+Proxies requests to the configured AI Aegis control plane when
 cloud mode is enabled. Stores Aegis Cloud webapp credentials securely
 in the OS keychain for authentication.
 

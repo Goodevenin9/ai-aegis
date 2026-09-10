@@ -5,7 +5,7 @@ Three guards:
      every pattern is a compilable string. The engine wraps each file load in
      try/except and SILENTLY SKIPS a malformed one, so a YAML break is a stealth
      recall hole (it just removes a whole rule family from production with no
-     error). This is exactly how `sv_community_prompt_injection.yml` was dead.
+     error). This is exactly how `aegis_community_prompt_injection.yml` was dead.
   2. test_precision_recall_floor — overall precision/recall must stay at/above a
      committed floor. Ratchet the floor UP as rules are tightened (#136 part 5);
      never down without a recorded reason.
@@ -70,7 +70,7 @@ def test_ruleset_includes_prompt_injection():
     """The prompt-injection family must actually load (it was silently dead)."""
     categories = {r.category for r in load_ruleset()}
     assert "prompt_injection" in categories, (
-        "prompt_injection rules are not loading — sv_community_prompt_injection.yml "
+        "prompt_injection rules are not loading — aegis_community_prompt_injection.yml "
         "likely failed to parse again (see #136)."
     )
 

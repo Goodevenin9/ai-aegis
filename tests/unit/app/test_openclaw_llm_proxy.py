@@ -96,6 +96,51 @@ def _upstream_401_response() -> httpx.Response:
     )
 
 
+@pytest.mark.asyncio
+async def test_proxy_five_stage_pipeline_can_strengthen_allow_to_block():
+    proxy = LLMProxy(skip_url_validation=True)
+    response = MagicMock(status_code=200)
+    response.json.return_value = {
+        "action": "block", "reason": "session drift", "drift_score": 90,
+    }
+    client = AsyncMock()
+    client.is_closed = False
+    client.post.return_value = response
+    proxy._http_client = client
+    decision = MagicMock(action="allow", reason="allowed", function_name="bash")
+    tool_call = MagicMock(function_name="bash", arguments='{"command":"whoami"}')
+
+    await proxy._apply_runtime_pipeline(tool_call, decision, "proxy-session")
+
+    assert decision.action == "block"
+    assert decision.reason == "session drift"
+    payload = client.post.await_args.kwargs["json"]
+    assert payload["headless"] is True
+    assert payload["base_decision"] == "allow"
+
+
+@pytest.mark.asyncio
+async def test_proxy_records_normalized_intent_flow_event():
+    proxy = LLMProxy(skip_url_validation=True, integration="langgraph")
+    client = AsyncMock()
+    client.is_closed = False
+    proxy._http_client = client
+
+    await proxy._record_runtime_event(
+        "llm_output", "session-1", "assistant response", {"provider": "openai"}
+    )
+
+    assert client.post.await_args.args[0].endswith("/api/runtime/events")
+    payload = client.post.await_args.kwargs["json"]
+    assert payload == {
+        "session_id": "session-1",
+        "runtime_kind": "langgraph",
+        "event_type": "llm_output",
+        "text": "assistant response",
+        "metadata": {"provider": "openai"},
+    }
+
+
 # ---------------------------------------------------------------------------
 # Single-Provider Mode Tests
 # ---------------------------------------------------------------------------

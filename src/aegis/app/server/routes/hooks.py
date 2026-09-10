@@ -60,20 +60,20 @@ def _ensure_bundled_plugin_dir() -> Path:
     )
 
 
-def _resolve_sv_url() -> str:
+def _resolve_aegis_url() -> str:
     """Resolve the local app's base URL; thin wrapper."""
-    return _hooks_common.resolve_sv_url()
+    return _hooks_common.resolve_aegis_url()
 
 
-def _stage_plugin_files(sv_url: str, source_dir: Path = None) -> list[str]:
+def _stage_plugin_files(aegis_url: str, source_dir: Path = None) -> list[str]:
     """Copy plugin files to the OpenClaw staging dir with URL substitution; thin wrapper."""
     return _hooks_common.stage_files(
         staging_dir=STAGING_DIR,
         source_dir=source_dir or BUNDLED_PLUGIN_DIR,
         files=PLUGIN_FILES,
         substitutions={
-            "http://localhost:8741": sv_url,
-            "http://localhost:8000": sv_url,
+            "http://localhost:8741": aegis_url,
+            "http://localhost:8000": aegis_url,
         },
     )
 
@@ -448,8 +448,8 @@ async def install_plugin(request: Optional[InstallRequest] = None):
         _cleanup_stale_config_entry()
 
         # Stage plugin files with correct Aegis URL
-        sv_url = _resolve_sv_url()
-        files_written = _stage_plugin_files(sv_url, source_dir=plugin_source_dir)
+        aegis_url = _resolve_aegis_url()
+        files_written = _stage_plugin_files(aegis_url, source_dir=plugin_source_dir)
 
         if not files_written:
             return {
@@ -486,7 +486,7 @@ async def install_plugin(request: Optional[InstallRequest] = None):
             # Keep the restart hint as a fallback, not a required step.
             message = (
                 f"Aegis plugin {status} successfully. "
-                f"URL: {sv_url}. "
+                f"URL: {aegis_url}. "
                 "The OpenClaw gateway should pick this up automatically within a few seconds; "
                 "restart it if monitoring doesn't start."
             )
@@ -575,7 +575,7 @@ _PLUGIN_JSON = """{
     "properties": {
       "url": {
         "type": "string",
-        "description": "Aegis API base URL (auto-detected from svconfig.yml if not set)"
+        "description": "Aegis API base URL (auto-detected from aegis.yml if not set)"
       },
       "threshold": {
         "type": "number",
@@ -600,11 +600,11 @@ _PACKAGE_JSON = """{
   "version": "1.0.0",
   "description": "Real-time AI threat monitoring and tool permission enforcement for OpenClaw agents — powered by Aegis",
   "license": "MIT",
-  "author": "Secure Vector <hello@aegis.example>",
+  "author": "AI Aegis Team",
   "keywords": ["openclaw", "openclaw-plugin", "security", "threat-detection", "ai-safety"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Wanshanghao/ai-aegis"
+    "url": "https://github.com/Goodevenin9/ai-aegis"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -649,7 +649,7 @@ import { resolveConfig, PluginConfig } from "./config";
 // Aegis API client
 // ---------------------------------------------------------------------------
 
-class SVClient {
+class AegisClient {
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
 
@@ -864,7 +864,7 @@ export default {
 
   register(api: any): void {
     const cfg = resolveConfig(api.config ?? {});
-    const sv = new SVClient(cfg.url, cfg.apiKey);
+    const aegis = new AegisClient(cfg.url, cfg.apiKey);
     const tag = "[aegis-guard]";
 
     console.log(`${tag} Initialising — url=${cfg.url} threshold=${cfg.threshold}`);
@@ -877,15 +877,15 @@ export default {
 
         const sessionKey = event?.sessionKey || "openclaw-agent";
         const [result, { enforcementEnabled }] = await Promise.all([
-          sv.analyze(content, "inbound", {
+          aegis.analyze(content, "inbound", {
             sender: event?.from,
             session: sessionKey,
             provider: event?.metadata?.provider,
           }),
-          sv.getSettings(),
+          aegis.getSettings(),
         ]);
 
-        sv.fetchToolPermissions().then(({ toolCount, overrideCount }) => {
+        aegis.fetchToolPermissions().then(({ toolCount, overrideCount }) => {
           console.log(`${tag} Tool permissions: ${toolCount} tools, ${overrideCount} overrides, enforcement=${enforcementEnabled}`);
         }).catch(() => {});
 
@@ -923,7 +923,7 @@ export default {
         }
 
         if (text) {
-          sv.analyze(text, "outbound", {
+          aegis.analyze(text, "outbound", {
             tool: toolName,
             session: sessionKey,
           }).then((result) => {
@@ -942,7 +942,7 @@ export default {
     // ── Context Guard (before_agent_start) ────────────────────────────
     api.on("before_agent_start", async (event: any) => {
       try {
-        const { blockMode } = await sv.getSettings();
+        const { blockMode } = await aegis.getSettings();
         if (blockMode) return;
         return { prependContext: SECURITY_DIRECTIVES };
       } catch (err) {
@@ -957,10 +957,10 @@ export default {
     //
     // Uses a process-wide Set to avoid re-auditing across multiple
     // agent_end calls and plugin re-initializations.
-    if (!(globalThis as any).__sv_seen_tools__) {
-      (globalThis as any).__sv_seen_tools__ = new Set<string>();
+    if (!(globalThis as any).__aegis_seen_tools__) {
+      (globalThis as any).__aegis_seen_tools__ = new Set<string>();
     }
-    const seenToolIds: Set<string> = (globalThis as any).__sv_seen_tools__;
+    const seenToolIds: Set<string> = (globalThis as any).__aegis_seen_tools__;
 
     api.on("agent_end", async (event: any, ctx: any) => {
       try {
@@ -998,14 +998,14 @@ export default {
           byName.set(tc.name, tc.args);
         }
 
-        const { blockMode } = await sv.getSettings();
+        const { blockMode } = await aegis.getSettings();
         for (const [toolName, args] of byName) {
-          const verdict = await sv.toolVerdict(toolName);
+          const verdict = await aegis.toolVerdict(toolName);
           if (!verdict) continue;
           const auditVerdict = (!blockMode && verdict.action === "block")
             ? { ...verdict, action: "log_only" as const, reason: `${verdict.reason} (audit only — enable proxy to block)` }
             : verdict;
-          sv.recordToolAudit(toolName, auditVerdict, sessionKey, args);
+          aegis.recordToolAudit(toolName, auditVerdict, sessionKey, args);
           if (verdict.action === "block") {
             const mode = blockMode ? "BLOCKED" : "AUDIT (would block)";
             console.warn(`${tag} TOOL ${mode} — ${toolName}: ${verdict.reason}`);
@@ -1034,7 +1034,7 @@ export default {
         const cachedTokens = usage.cacheRead || 0;
         const agentId = ctx?.sessionKey || ctx?.agentId || event?.sessionId || "openclaw-agent";
 
-        sv.recordCost(provider, modelId, inputTokens, outputTokens, cachedTokens, agentId);
+        aegis.recordCost(provider, modelId, inputTokens, outputTokens, cachedTokens, agentId);
       } catch (err) {
         console.warn(`${tag} cost-tracker error:`, (err as Error).message);
       }
@@ -1062,7 +1062,7 @@ export interface PluginConfig {
   threshold: number;
 }
 
-function readSvConfig(): { host: string; port: number } | null {
+function readAegisConfig(): { host: string; port: number } | null {
   try {
     const fs = require("fs");
     const path = require("path");
@@ -1073,11 +1073,11 @@ function readSvConfig(): { host: string; port: number } | null {
 
     if (process.platform === "win32") {
       const localAppData = process.env.LOCALAPPDATA || path.join(home, "AppData", "Local");
-      configPath = path.join(localAppData, "Aegis", "ThreatMonitor", "svconfig.yml");
+      configPath = path.join(localAppData, "Aegis", "ThreatMonitor", "aegis.yml");
     } else if (process.platform === "darwin") {
-      configPath = path.join(home, "Library", "Application Support", "Aegis", "ThreatMonitor", "svconfig.yml");
+      configPath = path.join(home, "Library", "Application Support", "Aegis", "ThreatMonitor", "aegis.yml");
     } else {
-      configPath = path.join(home, ".local", "share", "aegis", "threat-monitor", "svconfig.yml");
+      configPath = path.join(home, ".local", "share", "aegis", "threat-monitor", "aegis.yml");
     }
 
     const content = fs.readFileSync(configPath, "utf-8");
@@ -1104,8 +1104,8 @@ function readSvConfig(): { host: string; port: number } | null {
 
 export function resolveConfig(pluginConfig: Record<string, any> = {}): PluginConfig {
   let defaultUrl = "http://127.0.0.1:8741";
-  const sv = readSvConfig();
-  if (sv) defaultUrl = `http://${sv.host}:${sv.port}`;
+  const aegis = readAegisConfig();
+  if (aegis) defaultUrl = `http://${aegis.host}:${aegis.port}`;
 
   return {
     url:       pluginConfig.url       || process.env.AEGIS_URL       || defaultUrl,

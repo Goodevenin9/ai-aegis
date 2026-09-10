@@ -20,7 +20,9 @@
 
 'use strict';
 
-const { fetchSyncedOverrides, postJsonAndForget, evaluateEgress } = require('./client.js');
+const {
+  fetchSyncedOverrides, postJsonAndForget, evaluateEgress, evaluatePreToolPipeline,
+} = require('./client.js');
 const { redactForScan } = require('./redact.js');
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:8741';
@@ -235,7 +237,39 @@ async function decideEgress(baseUrl, toolName, toolInput, sessionId, mcpEndpoint
   }
 }
 
+/**
+ * Let the five-stage pipeline strengthen (never weaken) the existing rule/
+ * egress verdict. Network failures return the base decision unchanged.
+ */
+async function applyRuntimePipeline(baseUrl, toolName, toolInput, sessionId, baseDecision) {
+  const current = baseDecision || ALLOW;
+  if (!sessionId || current.decision === 'deny') return current;
+  try {
+    const result = await evaluatePreToolPipeline(baseUrl, {
+      session_id: sessionId,
+      runtime_kind: RUNTIME_KIND,
+      tool_name: toolName,
+      tool_input: toolInput || {},
+      base_decision: current.decision,
+    });
+    const action = result && result.action;
+    if (action !== 'block' && action !== 'confirm') return current;
+    const strengthened = action === 'block' ? 'deny' : 'ask';
+    if (current.decision === 'ask' && strengthened === 'ask') return current;
+    return {
+      decision: strengthened,
+      reason: result.reason || `Five-stage pipeline requires ${action}`,
+      toolId: toolName,
+      requestable: false,
+      pipeline: result,
+    };
+  } catch {
+    return current;
+  }
+}
+
 module.exports = {
+  applyRuntimePipeline,
   decideEgress,
   decideFromOverrides,
   decideForCandidates,

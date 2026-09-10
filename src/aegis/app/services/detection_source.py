@@ -2,7 +2,7 @@
 
 A threat can be caught by the regex rules, by the Guardian ML model, or by
 both. The Guardian model appears inside ``matched_rules`` as an entry with
-``source == "model"`` (rule_id ``sv_guardian_model``); its ``confidence`` is the
+``source == "model"`` (rule_id ``aegis_guardian_model``); its ``confidence`` is the
 ML score. This helper turns that into a single ``rule`` / ``ml`` / ``rule_ml``
 label plus the ML score and the matched rule names, so the Threats, Agent Map,
 and Agent Runs views all read identical semantics (mirrors the frontend
@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 from typing import Optional
 
-ML_RULE_ID = "sv_guardian_model"
+ML_RULE_ID = "aegis_guardian_model"
 
 # Threat types and rule-name fragments that mean a credential / secret / PII
 # was exposed. Used to light the Agent Map's lock badge from the detection

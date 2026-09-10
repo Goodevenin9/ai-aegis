@@ -8392,9 +8392,9 @@ thead tr:hover #records-select-all,
    ============================================================ */
 @media (prefers-reduced-motion: no-preference) {
     .ag-page-enter {
-        animation: svPageEnter 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+        animation: aegisPageEnter 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;
     }
-    @keyframes svPageEnter {
+    @keyframes aegisPageEnter {
         from { opacity: 0; transform: translateY(6px); }
         to   { opacity: 1; transform: none; }
     }

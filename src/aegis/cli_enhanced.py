@@ -44,7 +44,7 @@ class EnhancedCLI:
     def create_parser(self) -> argparse.ArgumentParser:
         """Create enhanced argument parser"""
         parser = argparse.ArgumentParser(
-            prog="sv-enhanced",
+            prog="aegis-enhanced",
             description="Aegis AI Threat Monitor - Enhanced CLI for Development",
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog=self._get_help_text(),
@@ -244,34 +244,34 @@ class EnhancedCLI:
 Enhanced CLI Examples:
 
 Analysis:
-  sv-enhanced analyze "Test prompt"                    # Basic analysis
-  sv-enhanced analyze --file prompts.txt --async      # Async file analysis
-  sv-enhanced interactive                              # Interactive session
+  aegis-enhanced analyze "Test prompt"                    # Basic analysis
+  aegis-enhanced analyze --file prompts.txt --async      # Async file analysis
+  aegis-enhanced interactive                              # Interactive session
 
 Testing:
-  sv-enhanced test --type performance --count 1000    # Performance tests
-  sv-enhanced generate prompts --scenario threat      # Generate test data
-  sv-enhanced mock --port 8080 --threat-rate 0.5     # Mock server
+  aegis-enhanced test --type performance --count 1000    # Performance tests
+  aegis-enhanced generate prompts --scenario threat      # Generate test data
+  aegis-enhanced mock --port 8080 --threat-rate 0.5     # Mock server
 
 Development:
-  sv-enhanced dev profile "Test prompt" --iterations 100  # Profile performance
-  sv-enhanced dev validate --config config.json           # Validate config
-  sv-enhanced dev reload --rules-dir ./rules             # Hot reload rules
+  aegis-enhanced dev profile "Test prompt" --iterations 100  # Profile performance
+  aegis-enhanced dev validate --config config.json           # Validate config
+  aegis-enhanced dev reload --rules-dir ./rules             # Hot reload rules
 
 Streaming:
-  sv-enhanced stream --file large_text.txt --chunk-size 4096  # Stream analysis
-  sv-enhanced stream --file input.txt --real-time           # Real-time mode
+  aegis-enhanced stream --file large_text.txt --chunk-size 4096  # Stream analysis
+  aegis-enhanced stream --file input.txt --real-time           # Real-time mode
 
 Benchmarking:
-  sv-enhanced benchmark --mode all --iterations 1000    # Full benchmark
-  sv-enhanced benchmark --concurrent 20 --export results.json  # Export results
+  aegis-enhanced benchmark --mode all --iterations 1000    # Full benchmark
+  aegis-enhanced benchmark --concurrent 20 --export results.json  # Export results
 
 Debugging:
-  sv-enhanced debug telemetry show                      # Show telemetry
-  sv-enhanced debug health --detailed                   # Health check
-  sv-enhanced debug simulate api --count 5              # Simulate API errors
+  aegis-enhanced debug telemetry show                      # Show telemetry
+  aegis-enhanced debug health --detailed                   # Health check
+  aegis-enhanced debug simulate api --count 5              # Simulate API errors
 
-For detailed documentation: https://docs.aegis.example/cli
+For detailed documentation: https://github.com/Goodevenin9/ai-aegis/tree/master/docs
         """
 
     async def run_command(self, args) -> int:

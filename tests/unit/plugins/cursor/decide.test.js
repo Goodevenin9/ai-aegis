@@ -11,6 +11,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  applyRuntimePipeline,
   decideFromOverrides,
   toCursorOutput,
   decisionToAuditAction,
@@ -18,6 +19,44 @@ const {
   sessionIdFrom,
   ALLOW,
 } = require('../../../../src/aegis/plugins/cursor/lib/decide.js');
+const { decideReadEvent } = require('../../../../src/aegis/plugins/cursor/hooks/before-read-file.js');
+
+test('runtime pipeline can strengthen an allow decision to deny', async () => {
+  const originalFetch = global.fetch;
+  global.fetch = async () => ({
+    ok: true,
+    json: async () => ({ action: 'block', reason: 'session drift', drift_score: 88 }),
+  });
+  try {
+    const d = await applyRuntimePipeline(
+      'http://127.0.0.1:8741', 'shell', { command: 'whoami' }, 'conv-1', ALLOW,
+    );
+    assert.equal(d.decision, 'deny');
+    assert.equal(d.reason, 'session drift');
+    assert.equal(d.pipeline.drift_score, 88);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('beforeReadFile sends sensitive paths through the five-stage pipeline', async () => {
+  const originalFetch = global.fetch;
+  global.fetch = async (_url, options) => {
+    const body = JSON.parse(options.body);
+    assert.equal(body.tool_name, 'read');
+    assert.equal(body.tool_input.file_path, '/etc/shadow');
+    return { ok: true, json: async () => ({ action: 'block', reason: 'sensitive path' }) };
+  };
+  try {
+    const out = await decideReadEvent(
+      { conversation_id: 'conv-read', file_path: '/etc/shadow' },
+      'http://127.0.0.1:8741',
+    );
+    assert.equal(out.permission, 'deny');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
 
 const overrides = (rows) => ({ synced: rows });
 

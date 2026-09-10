@@ -125,6 +125,7 @@ celerybeat.pid
 
 # Environments
 .env
+.env.self-host
 .venv
 env/
 venv/
@@ -251,6 +252,9 @@ tests/fixtures/skills/
 test_logs/
 *.test.log
 threat_detection.log
+reports/**/deepseek-cache/
+reports/**/source-cache/
+reports/delivery/dist-*/
 
 # Custom rules (may contain sensitive patterns)
 rules/custom/

@@ -48,14 +48,14 @@ class TestAttemptReconstruction:
     def test_publish_flag_is_recovered_from_the_recorded_rule(self):
         attempt = attempt_from_audit_row(
             row("upload.pypi.org", operation="write", action="block",
-                rule_id="sv.egress.package_publish")
+                rule_id="aegis.egress.package_publish")
         )
         assert attempt.is_publish is True
 
     def test_inline_remote_flag_is_recovered_from_the_recorded_rule(self):
         attempt = attempt_from_audit_row(
             row("evil.example.com", operation="write", action="block",
-                kind="git", rule_id="sv.egress.git_push_inline_url")
+                kind="git", rule_id="aegis.egress.git_push_inline_url")
         )
         assert attempt.inline_remote is True
 
@@ -115,7 +115,7 @@ class TestNeverUnderstatesTheCost:
     def test_non_promotable_host_is_named_as_unclearable(self):
         rows = [row("upload.pypi.org", operation="write")]
         pack = [{
-            "id": "sv.egress.package_publish",
+            "id": "aegis.egress.package_publish",
             "title": "Package publish",
             "severity": "critical",
             "effect": "deny",

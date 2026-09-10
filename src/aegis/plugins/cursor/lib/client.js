@@ -131,6 +131,7 @@ async function fetchSyncedOverrides(baseUrl, runtime, opts = {}) {
  * no cached fallback — a timeout means the call is simply not evaluated.
  */
 const EGRESS_TIMEOUT_MS = 400;
+const PRETOOL_PIPELINE_TIMEOUT_MS = 200;
 
 /**
  * Domain helper: POST a tool call to the local app's egress evaluator.
@@ -159,7 +160,30 @@ async function evaluateEgress(baseUrl, body, opts = {}) {
   }
 }
 
+/** Ask the deterministic five-stage session pipeline for a stronger verdict. */
+async function evaluatePreToolPipeline(baseUrl, body, opts = {}) {
+  const timeoutMs = typeof opts.timeoutMs === 'number'
+    ? opts.timeoutMs : PRETOOL_PIPELINE_TIMEOUT_MS;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const resp = await fetch(`${baseUrl}/api/runtime/pretool/decide`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!resp || !resp.ok) return {};
+    const data = await resp.json();
+    return data && typeof data === 'object' ? data : {};
+  } catch {
+    return {};
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 module.exports = {
-  getJson, postJsonAndForget, fetchSyncedOverrides, evaluateEgress,
-  authHeaders, DEFAULT_TIMEOUT_MS, EGRESS_TIMEOUT_MS,
+  getJson, postJsonAndForget, fetchSyncedOverrides, evaluateEgress, evaluatePreToolPipeline,
+  authHeaders, DEFAULT_TIMEOUT_MS, EGRESS_TIMEOUT_MS, PRETOOL_PIPELINE_TIMEOUT_MS,
 };

@@ -44,6 +44,7 @@ def client_config():
     return {"raise_on_threat": False, "cache_enabled": True, "timeout": 30}
 
 
+@pytest.hookimpl(wrapper=True, tryfirst=True)
 def pytest_sessionfinish(session, exitstatus):
     """Force-exit after the session summary so leaked non-daemon threads
     don't keep the runner alive past the test results.
@@ -65,4 +66,7 @@ def pytest_sessionfinish(session, exitstatus):
     that leak DatabaseConnection / TestClient / subprocess state so
     the process can exit cleanly on its own.
     """
+    yield
+    sys.stdout.flush()
+    sys.stderr.flush()
     os._exit(exitstatus)

@@ -13,7 +13,7 @@ Speaks identity-service's actual OAuth device-grant contract (RFC 8628):
      device_code, mint_api_key: true } until the grant is authorized. Polling
      states come back as an HTTP-200 body with an `error` field
      (authorization_pending / expired_token / invalid_grant). On success the
-     response carries access_token + an auto-minted personal svpk_ key
+     response carries access_token + an auto-minted personal aepk_ key
      (nested {id, name, api_key}); if minting was skipped or failed, we fall
      back to POST /oauth/api-keys/json with the fresh access token, and fetch
      the account email from GET /oauth/user for the "Connected as …" UI.
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 # The device-grant client identity for the local app. identity-service binds
 # each device code to the client_id that requested it and requires the same
 # value on the token exchange; there is no server-side client registry.
-OAUTH_CLIENT_ID = os.environ.get("SV_OAUTH_CLIENT_ID", "aegis-local-app")
+OAUTH_CLIENT_ID = os.environ.get("AEGIS_OAUTH_CLIENT_ID", "aegis-local-app")
 OAUTH_SCOPE = "read write"
 
 # Where the user lands to enter/confirm the user_code. identity-service
@@ -50,7 +50,7 @@ OAUTH_SCOPE = "read write"
 # points at the auth API itself (a POST-only endpoint, not a browsable page)
 # we send the user to the cloud app's device page instead.
 APP_DEVICE_LOGIN_URL = os.environ.get(
-    "SV_APP_DEVICE_LOGIN_URL", "https://app.aegis.example/login/device"
+    "AEGIS_APP_DEVICE_LOGIN_URL", "http://127.0.0.1:8780/docs"
 )
 
 
@@ -146,7 +146,7 @@ async def request_device_code(*, app_version: Optional[str] = None) -> DeviceCod
         raise TrialSignupError(
             "trial_unavailable",
             "One-click trial signup is not available yet — "
-            "use app.aegis.example to create a key.",
+            "use the AI Aegis control plane admin API to create a key.",
             http_status=response.status_code,
         )
     if response.status_code == 429:
@@ -200,7 +200,7 @@ async def _mint_key_fallback(client: "httpx.AsyncClient", auth_url: str, access_
         )
         if response.status_code in (200, 201):
             key = _safe_json(response).get("api_key")
-            if isinstance(key, str) and key.startswith("svpk_"):
+            if isinstance(key, str) and key.startswith("aepk_"):
                 return key
         logger.warning("Fallback API-key mint failed: HTTP %s", response.status_code)
     except httpx.RequestError as exc:
@@ -264,7 +264,7 @@ async def poll_trial_token(device_code: str) -> TrialTokenResult:
                 )
             minted = body.get("api_key")
             api_key = minted.get("api_key") if isinstance(minted, dict) else minted
-            if not (isinstance(api_key, str) and api_key.startswith("svpk_")):
+            if not (isinstance(api_key, str) and api_key.startswith("aepk_")):
                 api_key = await _mint_key_fallback(client, auth_url, access_token)
             if not api_key:
                 raise TrialSignupError(

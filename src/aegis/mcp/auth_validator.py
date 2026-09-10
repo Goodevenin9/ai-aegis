@@ -22,7 +22,7 @@ class AuthValidator:
         Initialize the auth validator
 
         Args:
-            identity_service_url: URL of the identity service (e.g., https://auth.aegis.example)
+            identity_service_url: URL of the identity service (e.g., http://127.0.0.1:8780)
                                  If not provided, uses IDENTITY_SERVICE_URL environment variable
         """
         self.identity_service_url = identity_service_url or os.getenv(

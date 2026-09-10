@@ -1,0 +1,39 @@
+FROM python:3.11-slim
+
+ARG AEGIS_PIP_INDEX_URL=""
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DEFAULT_TIMEOUT=120 \
+    PIP_RETRIES=8 \
+    HOME=/home/aegis \
+    PORT=8741 \
+    AEGIS_CONTAINER=1
+
+WORKDIR /opt/ai-aegis
+COPY setup.py pyproject.toml MANIFEST.in README.md LICENSE NOTICE ./
+COPY benchmarks/ ./benchmarks/
+COPY src/ ./src/
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-chi-sim \
+    && rm -rf /var/lib/apt/lists/* \
+    && if [ -n "$AEGIS_PIP_INDEX_URL" ]; then \
+        pip install --prefer-binary --index-url "$AEGIS_PIP_INDEX_URL" ".[demo]"; \
+    else \
+        pip install --prefer-binary ".[demo]"; \
+    fi \
+    && useradd -m -u 1000 -d /home/aegis aegis \
+    && mkdir -p /home/aegis/.local/share/aegis/threat-monitor \
+    && chown -R aegis:aegis /home/aegis
+
+USER aegis
+WORKDIR /home/aegis
+
+EXPOSE 8741
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8741/health', timeout=3)" || exit 1
+
+CMD ["uvicorn", "aegis.app.server.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8741", "--log-level", "info"]
+
+LABEL org.opencontainers.image.title="AI Aegis Web Demo" \
+      org.opencontainers.image.description="Resource-conscious AI Aegis dashboard and security analysis demo."

@@ -14,8 +14,9 @@ recursive-include src/aegis/plugins/codex/.codex-plugin *
 recursive-include src/aegis/plugins/copilot-cli *
 recursive-include src/aegis/plugins/cursor *
 recursive-include src/aegis/plugins/cursor/.cursor-plugin *
-recursive-include src/aegis/app/services/guardian *.json.gz
-recursive-include src/aegis/app/services/guardian *.sha256
+recursive-include src/aegis/guardian *.json.gz
+recursive-include src/aegis/guardian *.sha256
+include benchmarks/chinese_agent_security_p1.jsonl
 global-exclude __pycache__
 global-exclude *.py[co]
 global-exclude *.pyo

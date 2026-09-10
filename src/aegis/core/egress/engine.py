@@ -149,8 +149,8 @@ def load_baseline_pack(yaml_path: Optional[str] = None) -> list:
         paths = [Path(yaml_path)]
     else:
         paths = [
-            Path(__file__).parent.parent.parent / "rules" / "egress" / "sv_egress_baseline.yml",
-            Path(__file__).parent.parent.parent.parent / "rules" / "egress" / "sv_egress_baseline.yml",
+            Path(__file__).parent.parent.parent / "rules" / "egress" / "aegis_egress_baseline.yml",
+            Path(__file__).parent.parent.parent.parent / "rules" / "egress" / "aegis_egress_baseline.yml",
         ]
 
     for p in paths:
@@ -300,7 +300,7 @@ def _baseline_verdict(attempt, policy, ctx, pack):
             # promotion is the wrong affordance — they should cost an explicit
             # policy edit. Everything else is promotable.
             promotable=rule.get("id") not in (
-                "sv.egress.package_publish", "sv.egress.cloud_metadata",
+                "aegis.egress.package_publish", "aegis.egress.cloud_metadata",
             ),
         )
     return None

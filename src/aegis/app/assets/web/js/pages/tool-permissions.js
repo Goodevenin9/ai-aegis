@@ -4005,7 +4005,7 @@ const ToolPermissionsPage = {
             renderSourceBadge();
             // Stash on the row so the override/reset handlers below can
             // re-invoke without an extra DOM lookup.
-            row._svRenderSourceBadge = renderSourceBadge;
+            row._aegisRenderSourceBadge = renderSourceBadge;
             actionContainer.appendChild(sourceBadge);
         }
 
@@ -4061,7 +4061,7 @@ const ToolPermissionsPage = {
                     row.dataset.status = newAction;
                     if (isBlocked) this._jitBlockToast(tool.name || tool.tool_id);
                     resetBtn.style.display = 'inline-block';
-                    if (row._svRenderSourceBadge) row._svRenderSourceBadge();
+                    if (row._aegisRenderSourceBadge) row._aegisRenderSourceBadge();
                 } catch (e) {
                     if (window.Toast) Toast.show(e.message || 'Failed to update permission', 'error');
                 }
@@ -4086,7 +4086,7 @@ const ToolPermissionsPage = {
                 this._setBtnContent(actionBtn, isBlocked, true);
                 row.dataset.status = tool.effective_action === 'block' ? 'block' : 'allow';
                 resetBtn.style.display = 'none';
-                if (row._svRenderSourceBadge) row._svRenderSourceBadge();
+                if (row._aegisRenderSourceBadge) row._aegisRenderSourceBadge();
             } catch (e2) {
                 if (window.Toast) Toast.show(e2.message || 'Failed to reset', 'error');
             }

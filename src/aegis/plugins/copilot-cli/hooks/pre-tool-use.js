@@ -32,7 +32,9 @@
 'use strict';
 
 const { normalize } = require('../lib/normalize.js');
-const { fetchSyncedOverrides, postJsonAndForget, evaluateEgress } = require('../lib/client.js');
+const {
+  fetchSyncedOverrides, postJsonAndForget, evaluateEgress, evaluatePreToolPipeline,
+} = require('../lib/client.js');
 const { redactForScan } = require('../lib/redact.js');
 
 const EFFECT_TO_DECISION = Object.freeze({
@@ -198,14 +200,43 @@ async function decide(toolName, baseUrl, sessionId = null, toolInput = null) {
   // Tool-permission rules key off the tool NAME. Egress rules key off the
   // DESTINATION, so a tool with no name-based rule can still be denied for
   // where it points — the egress check must run even with no candidates.
+  let baseDecision = ALLOW;
   if (candidates.length > 0) {
     const overrides = await fetchSyncedOverrides(baseUrl, RUNTIME_KIND);
     const decision = decideFromOverrides(candidates, overrides, sessionId);
     // A name-based deny already stops the call; evaluating egress on top would
     // add latency and a duplicate audit row for a call that never happens.
-    if (decision.decision !== 'allow') return decision;
+    if (decision.decision !== 'allow') baseDecision = decision;
   }
-  return decideEgress(toolName, toolInput, baseUrl, sessionId);
+  if (baseDecision.decision === 'allow') {
+    baseDecision = await decideEgress(toolName, toolInput, baseUrl, sessionId);
+  }
+  const pipeline = await evaluatePreToolPipeline(baseUrl, {
+    tool_name: toolName,
+    tool_input: toolInput || {},
+    runtime_kind: RUNTIME_KIND,
+    session_id: sessionId || '__anonymous__',
+    base_decision: baseDecision.decision,
+    allowed_capabilities: [],
+    project_root: null,
+    headless: false,
+  });
+  const mapped = pipeline.action === 'block'
+    ? 'deny' : pipeline.action === 'confirm'
+      ? 'ask' : pipeline.action === 'allow' ? 'allow' : null;
+  if (!mapped) return baseDecision;
+  if (mapped === 'allow' && baseDecision.decision !== 'allow') return baseDecision;
+  if (mapped === 'ask' && baseDecision.decision === 'deny') return baseDecision;
+  const pipelineReason = typeof pipeline.reason === 'string' ? pipeline.reason : null;
+  return {
+    ...baseDecision,
+    decision: mapped,
+    reason: baseDecision.reason && pipelineReason
+      ? `${baseDecision.reason}; ${pipelineReason}` : pipelineReason || baseDecision.reason,
+    toolId: baseDecision.toolId || candidates[0] || toolName,
+    riskScore: typeof pipeline.risk_score === 'number' ? pipeline.risk_score : null,
+    pipeline,
+  };
 }
 
 
@@ -277,9 +308,11 @@ async function main() {
       return;
     }
     const toolName = (event && (event.toolName || event.tool_name)) || '';
-    const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || process.env.SV_BASE_URL || DEFAULT_BASE_URL;
+    const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL;
     const sessionId = (event && (event.sessionId || event.session_id)) || null;
-    const toolInputForCall = (event && (event.tool_input || event.toolInput)) || null;
+    const toolInputForCall = coerceToolInput(event && (
+      event.toolArgs !== undefined ? event.toolArgs : (event.tool_input || event.toolInput)
+    ));
     let decision = ALLOW;
     try {
       decision = await decide(toolName, baseUrl, sessionId, toolInputForCall);

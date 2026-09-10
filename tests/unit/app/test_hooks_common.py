@@ -14,21 +14,21 @@ import pytest
 from aegis.app.server.routes import _hooks_common
 
 
-# --- resolve_sv_url -------------------------------------------------------
+# --- resolve_aegis_url -------------------------------------------------------
 
 
-def test_resolve_sv_url_returns_http_url(monkeypatch):
-    monkeypatch.delenv("SV_WEB_PORT", raising=False)
-    url = _hooks_common.resolve_sv_url()
+def test_resolve_aegis_url_returns_http_url(monkeypatch):
+    monkeypatch.delenv("AEGIS_WEB_PORT", raising=False)
+    url = _hooks_common.resolve_aegis_url()
     assert url.startswith("http://")
     assert ":" in url
 
 
-def test_resolve_sv_url_respects_env_port(monkeypatch):
-    monkeypatch.setenv("SV_WEB_PORT", "9999")
+def test_resolve_aegis_url_respects_env_port(monkeypatch):
+    monkeypatch.setenv("AEGIS_WEB_PORT", "9999")
     # bypass the config-file fall-back that could override env
     monkeypatch.setattr(_hooks_common, "_load_server_config", lambda: {})
-    url = _hooks_common.resolve_sv_url()
+    url = _hooks_common.resolve_aegis_url()
     assert url.endswith(":9999")
 
 

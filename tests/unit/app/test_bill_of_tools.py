@@ -147,7 +147,7 @@ async def test_bill_touched_secrets_set_when_credential_keyword_in_reason(tmp_pa
         function_name="send_message",
         action="block",
         risk="write",
-        reason="rule sv_community_033_credential_harvesting matched on args",
+        reason="rule aegis_community_033_credential_harvesting matched on args",
     )
 
     rows = await repo.get_bill_of_tools(window_days=7)

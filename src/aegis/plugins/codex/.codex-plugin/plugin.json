@@ -4,7 +4,7 @@
   "description": "Real-time policy enforcement and tamper-evident audit for MCP tool calls invoked from an OpenAI Codex session. Forwards every tool call to a local Aegis app for cloud-managed deny rules and persistent audit logging. Fails open if the local app is unreachable.",
   "author": {
     "name": "Aegis",
-    "url": "https://aegis.example"
+    "url": "https://github.com/Goodevenin9/ai-aegis"
   },
   "license": "Apache-2.0",
   "keywords": [
@@ -24,17 +24,17 @@
     "capabilities": [
       "hooks"
     ],
-    "websiteUrl": "https://aegis.example",
-    "privacyPolicyUrl": "https://github.com/Wanshanghao/ai-aegis/blob/v4.6.0/src/aegis/plugins/codex/PRIVACY.md",
+    "websiteUrl": "https://github.com/Goodevenin9/ai-aegis",
+    "privacyPolicyUrl": "https://github.com/Goodevenin9/ai-aegis/blob/v4.6.0/src/aegis/plugins/codex/PRIVACY.md",
     "brandColor": "#5EADB8",
     "defaultPrompt": [
       "Show me my recent Codex tool calls in Aegis."
     ],
     "screenshots": [
-      "https://raw.githubusercontent.com/Wanshanghao/ai-aegis/v4.6.0/docs/screenshots/dashboard.png",
-      "https://raw.githubusercontent.com/Wanshanghao/ai-aegis/v4.6.0/docs/screenshots/tool-permissions-light.png",
-      "https://raw.githubusercontent.com/Wanshanghao/ai-aegis/v4.6.0/docs/screenshots/tool-activity-detail.png",
-      "https://raw.githubusercontent.com/Wanshanghao/ai-aegis/v4.6.0/docs/screenshots/costs-light.png"
+      "https://raw.githubusercontent.com/Goodevenin9/ai-aegis/v4.6.0/docs/screenshots/dashboard.png",
+      "https://raw.githubusercontent.com/Goodevenin9/ai-aegis/v4.6.0/docs/screenshots/tool-permissions-light.png",
+      "https://raw.githubusercontent.com/Goodevenin9/ai-aegis/v4.6.0/docs/screenshots/tool-activity-detail.png",
+      "https://raw.githubusercontent.com/Goodevenin9/ai-aegis/v4.6.0/docs/screenshots/costs-light.png"
     ]
   }
 }

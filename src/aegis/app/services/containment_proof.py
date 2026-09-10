@@ -240,12 +240,12 @@ async def run_containment_proof(
         except Exception as e:  # noqa: BLE001
             logger.warning("Probe %s failed policy evaluation: %s", probe.id, e)
             policy_action = "error"
-        blocked_by_sv = policy_action == BLOCK
+        blocked_by_aegis = policy_action == BLOCK
 
         # 2. Did it actually get out? Skipped when we blocked it — the point of
         #    enforcement is that the call does not happen. Reporting the network
         #    result of a call we stopped would be measuring the wrong thing.
-        if blocked_by_sv:
+        if blocked_by_aegis:
             attempt = {"reached": False, "detail": "not attempted (blocked before execution)"}
             attempted = False
         else:
@@ -275,7 +275,7 @@ async def run_containment_proof(
             "destination": probe.url or probe.host,
             "expect_contained": probe.expect_contained,
             "policy_action": policy_action,
-            "blocked_by_aegis": blocked_by_sv,
+            "blocked_by_aegis": blocked_by_aegis,
             "attempted": attempted,
             "reached": bool(attempt["reached"]),
             # Attempted, we did not stop it, and it still did not get out —

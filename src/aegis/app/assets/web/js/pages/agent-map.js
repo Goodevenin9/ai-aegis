@@ -255,14 +255,14 @@ const AgentMapPage = {
         const st = document.createElement('style');
         st.id = 'agent-map-style';
         st.textContent = `
-            @keyframes svFlow { to { stroke-dashoffset: -16; } }
-            @keyframes svPulse { 0%,100% { opacity: .5; } 50% { opacity: .95; } }
-            .ag-edge-flow { stroke-dasharray: 3 11; stroke-linecap: round; animation: svFlow linear infinite; pointer-events: none; }
-            .ag-edge-blocked { animation: svFlow linear infinite, svPulse 1.2s ease-in-out infinite; }
-            @keyframes svGearSpin { to { transform: rotate(360deg); } }
-            .ag-gear { transform-box: fill-box; transform-origin: center; animation: svGearSpin 28s linear infinite; }
-            .ag-spin { transform-origin: center; animation: svGearSpin 28s linear infinite; }
-            @media (prefers-reduced-motion: reduce) { .ag-edge-flow, .ag-edge-blocked, .ag-gear, .ag-spin { animation: none !important; } }
+            @keyframes aegisFlow { to { stroke-dashoffset: -16; } }
+            @keyframes aegisPulse { 0%,100% { opacity: .5; } 50% { opacity: .95; } }
+            .ag-edge-flow, .aegis-edge-flow { stroke-dasharray: 3 11; stroke-linecap: round; animation: aegisFlow linear infinite; pointer-events: none; }
+            .ag-edge-blocked, .aegis-edge-blocked { animation: aegisFlow linear infinite, aegisPulse 1.2s ease-in-out infinite; }
+            @keyframes aegisGearSpin { to { transform: rotate(360deg); } }
+            .ag-gear { transform-box: fill-box; transform-origin: center; animation: aegisGearSpin 28s linear infinite; }
+            .ag-spin { transform-origin: center; animation: aegisGearSpin 28s linear infinite; }
+            @media (prefers-reduced-motion: reduce) { .ag-edge-flow, .ag-edge-blocked, .aegis-edge-flow, .aegis-edge-blocked, .ag-gear, .ag-spin { animation: none !important; } }
             .ag-node { cursor: grab; }
             .ag-node:active { cursor: grabbing; }
             .ag-node.ag-sel circle { stroke: var(--accent-primary,#7c6cff) !important; stroke-width: 3.4 !important; }
@@ -493,7 +493,7 @@ const AgentMapPage = {
         this._gradFill = {};
         const colors = [...new Set(Object.values(this._harnessColor || {}))];
         colors.forEach(col => {
-            const id = 'svgrad-' + String(col).replace('#', '');
+            const id = 'aegisgrad-' + String(col).replace('#', '');
             const lg = document.createElementNS(SVG_NS, 'linearGradient');
             lg.setAttribute('id', id);
             lg.setAttribute('x1', '0'); lg.setAttribute('y1', '0');
@@ -702,7 +702,7 @@ const AgentMapPage = {
                     flow.setAttribute('stroke', e.blocked ? '#ffffff' : e.col);
                     flow.setAttribute('stroke-width', Math.max(e.w + 0.6, 2));
                     flow.setAttribute('stroke-opacity', e.blocked ? 0.6 : 0.9);
-                    flow.setAttribute('class', e.blocked ? 'ag-edge-flow ag-edge-blocked' : 'ag-edge-flow');
+                    flow.setAttribute('class', e.blocked ? 'ag-edge-flow ag-edge-blocked aegis-edge-flow aegis-edge-blocked' : 'ag-edge-flow aegis-edge-flow');
                     flow.style.animationDuration = `${Math.max(0.6, 2.2 - Math.log2((e.calls || 1) + 1) * 0.3)}s`;
                     vp.appendChild(flow);
                 }

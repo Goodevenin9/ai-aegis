@@ -17,60 +17,60 @@ class ErrorCode(Enum):
     """Structured error codes for programmatic error handling"""
 
     # Security Errors (1000-1999)
-    SECURITY_THREAT_DETECTED = "SV-1001"
-    SECURITY_POLICY_VIOLATION = "SV-1002"
-    SECURITY_RULE_FAILED = "SV-1003"
+    SECURITY_THREAT_DETECTED = "AEGIS-1001"
+    SECURITY_POLICY_VIOLATION = "AEGIS-1002"
+    SECURITY_RULE_FAILED = "AEGIS-1003"
 
     # Configuration Errors (2000-2999)
-    CONFIG_INVALID = "SV-2001"
-    CONFIG_MISSING_API_KEY = "SV-2002"
-    CONFIG_INVALID_MODE = "SV-2003"
-    CONFIG_INVALID_POLICY = "SV-2004"
-    CONFIG_MISSING_RULES = "SV-2005"
+    CONFIG_INVALID = "AEGIS-2001"
+    CONFIG_MISSING_API_KEY = "AEGIS-2002"
+    CONFIG_INVALID_MODE = "AEGIS-2003"
+    CONFIG_INVALID_POLICY = "AEGIS-2004"
+    CONFIG_MISSING_RULES = "AEGIS-2005"
 
     # API Errors (3000-3999)
-    API_CONNECTION_FAILED = "SV-3001"
-    API_AUTHENTICATION_FAILED = "SV-3002"
-    API_RATE_LIMIT_EXCEEDED = "SV-3003"
-    API_REQUEST_TIMEOUT = "SV-3004"
-    API_INVALID_RESPONSE = "SV-3005"
-    API_SERVICE_UNAVAILABLE = "SV-3006"
-    API_PAYLOAD_TOO_LARGE = "SV-3007"
+    API_CONNECTION_FAILED = "AEGIS-3001"
+    API_AUTHENTICATION_FAILED = "AEGIS-3002"
+    API_RATE_LIMIT_EXCEEDED = "AEGIS-3003"
+    API_REQUEST_TIMEOUT = "AEGIS-3004"
+    API_INVALID_RESPONSE = "AEGIS-3005"
+    API_SERVICE_UNAVAILABLE = "AEGIS-3006"
+    API_PAYLOAD_TOO_LARGE = "AEGIS-3007"
 
     # Validation Errors (4000-4999)
-    VALIDATION_EMPTY_PROMPT = "SV-4001"
-    VALIDATION_PROMPT_TOO_LONG = "SV-4002"
-    VALIDATION_INVALID_INPUT_TYPE = "SV-4003"
-    VALIDATION_BATCH_TOO_LARGE = "SV-4004"
+    VALIDATION_EMPTY_PROMPT = "AEGIS-4001"
+    VALIDATION_PROMPT_TOO_LONG = "AEGIS-4002"
+    VALIDATION_INVALID_INPUT_TYPE = "AEGIS-4003"
+    VALIDATION_BATCH_TOO_LARGE = "AEGIS-4004"
 
     # Performance Errors (5000-5999)
-    PERFORMANCE_TIMEOUT = "SV-5001"
-    PERFORMANCE_MEMORY_EXCEEDED = "SV-5002"
-    PERFORMANCE_THRESHOLD_EXCEEDED = "SV-5003"
+    PERFORMANCE_TIMEOUT = "AEGIS-5001"
+    PERFORMANCE_MEMORY_EXCEEDED = "AEGIS-5002"
+    PERFORMANCE_THRESHOLD_EXCEEDED = "AEGIS-5003"
 
     # Cache Errors (6000-6999)
-    CACHE_WRITE_FAILED = "SV-6001"
-    CACHE_READ_FAILED = "SV-6002"
-    CACHE_CORRUPTION = "SV-6003"
+    CACHE_WRITE_FAILED = "AEGIS-6001"
+    CACHE_READ_FAILED = "AEGIS-6002"
+    CACHE_CORRUPTION = "AEGIS-6003"
 
     # Rule Engine Errors (7000-7999)
-    RULES_LOAD_FAILED = "SV-7001"
-    RULES_PARSE_ERROR = "SV-7002"
-    RULES_MISSING = "SV-7003"
-    RULES_VALIDATION_FAILED = "SV-7004"
+    RULES_LOAD_FAILED = "AEGIS-7001"
+    RULES_PARSE_ERROR = "AEGIS-7002"
+    RULES_MISSING = "AEGIS-7003"
+    RULES_VALIDATION_FAILED = "AEGIS-7004"
 
     # Circuit Breaker Errors (8000-8999)
-    CIRCUIT_BREAKER_OPEN = "SV-8001"
-    CIRCUIT_BREAKER_HALF_OPEN = "SV-8002"
+    CIRCUIT_BREAKER_OPEN = "AEGIS-8001"
+    CIRCUIT_BREAKER_HALF_OPEN = "AEGIS-8002"
 
     # Mode Errors (9000-9999)
-    MODE_NOT_AVAILABLE = "SV-9001"
-    MODE_INITIALIZATION_FAILED = "SV-9002"
-    MODE_SWITCH_FAILED = "SV-9003"
+    MODE_NOT_AVAILABLE = "AEGIS-9001"
+    MODE_INITIALIZATION_FAILED = "AEGIS-9002"
+    MODE_SWITCH_FAILED = "AEGIS-9003"
 
     # General Errors (10000+)
-    UNKNOWN_ERROR = "SV-10001"
-    INTERNAL_ERROR = "SV-10002"
+    UNKNOWN_ERROR = "AEGIS-10001"
+    INTERNAL_ERROR = "AEGIS-10002"
 
 
 class ErrorSolution:
@@ -114,7 +114,7 @@ ERROR_SOLUTIONS = {
             "Switch to local mode: AegisClient(mode='local')",
             "Use hybrid mode for automatic fallback",
         ],
-        "https://docs.aegis.example/api-keys",
+        "https://github.com/Goodevenin9/ai-aegis/tree/master/docs",
     ),
     ErrorCode.API_CONNECTION_FAILED: ErrorSolution(
         ErrorCode.API_CONNECTION_FAILED,
@@ -127,7 +127,7 @@ ERROR_SOLUTIONS = {
             "Enable hybrid mode for automatic fallback",
             "Check if firewall is blocking the connection",
         ],
-        "https://docs.aegis.example/troubleshooting#connection-issues",
+        "https://github.com/Goodevenin9/ai-aegis/issues",
     ),
     ErrorCode.VALIDATION_EMPTY_PROMPT: ErrorSolution(
         ErrorCode.VALIDATION_EMPTY_PROMPT,
@@ -160,7 +160,7 @@ ERROR_SOLUTIONS = {
             "Upgrade to higher rate limit plan",
             "Use batch processing for multiple prompts",
         ],
-        "https://docs.aegis.example/rate-limits",
+        "https://github.com/Goodevenin9/ai-aegis/tree/master/docs",
     ),
     ErrorCode.RULES_LOAD_FAILED: ErrorSolution(
         ErrorCode.RULES_LOAD_FAILED,
@@ -172,7 +172,7 @@ ERROR_SOLUTIONS = {
             "Reinstall the package to restore community rules",
             "Check file permissions on rules directory",
         ],
-        "https://docs.aegis.example/custom-rules",
+        "https://github.com/Goodevenin9/ai-aegis/tree/master/docs",
     ),
 }
 

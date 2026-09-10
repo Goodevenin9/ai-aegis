@@ -89,13 +89,13 @@ If you want to:
 - Resell Aegis-based services under our brand
 - Become an official partner or integrator
 
-**Please contact us:** Create a GitHub issue with the label "trademark-request" or email legal@aegis.example
+**Please contact us:** Create a GitHub issue with the label "trademark-request" or email GitHub issues
 
 ## Reporting Trademark Violations
 
 If you believe someone is misusing Aegis trademarks, please report it:
 - **GitHub Issue:** Create issue with label "trademark-violation"
-- **Email:** legal@aegis.example
+- **Email:** GitHub issues
 
 ## Questions?
 

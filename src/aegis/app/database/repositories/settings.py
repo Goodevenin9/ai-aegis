@@ -24,14 +24,14 @@ def _residency_locked_from_env() -> bool:
     """Data-residency hard-lock from env/config (the enforcement source today).
 
     EU / regulated deployments set this so the device can never send prompt or
-    output text to the cloud. ``SV_RESIDENCY_LOCKED`` is an explicit boolean;
-    ``SV_DATA_RESIDENCY`` locks when set to an EU/EEA region. The cloud
+    output text to the cloud. ``AEGIS_RESIDENCY_LOCKED`` is an explicit boolean;
+    ``AEGIS_DATA_RESIDENCY`` locks when set to an EU/EEA region. The cloud
     enrollment response will be able to set the persisted ``residency_locked``
     column too (llm-security-engine #189) — either source enables the lock.
     """
-    if os.environ.get("SV_RESIDENCY_LOCKED", "").strip().lower() in ("1", "true", "yes", "on"):
+    if os.environ.get("AEGIS_RESIDENCY_LOCKED", "").strip().lower() in ("1", "true", "yes", "on"):
         return True
-    return os.environ.get("SV_DATA_RESIDENCY", "").strip().lower() in ("eu", "eea")
+    return os.environ.get("AEGIS_DATA_RESIDENCY", "").strip().lower() in ("eu", "eea")
 
 
 @dataclass

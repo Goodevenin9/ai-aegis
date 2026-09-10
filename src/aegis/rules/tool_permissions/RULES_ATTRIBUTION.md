@@ -2,7 +2,7 @@
 
 ## Trademark Disclaimer
 
-The tool names referenced in the essential tool registry (`sv_tool_essential.yml`)
+The tool names referenced in the essential tool registry (`aegis_tool_essential.yml`)
 are trademarks of their respective owners. Aegis is not affiliated with,
 endorsed by, or sponsored by any of the companies or projects listed.
 
@@ -13,28 +13,28 @@ security policies for tool calls made by AI agents.
 
 | Provider | Trademark Owner | Registry File |
 |----------|----------------|---------------|
-| Gmail | Google LLC | sv_tool_essential.yml |
-| Slack | Salesforce, Inc. | sv_tool_essential.yml |
-| Twilio | Twilio Inc. | sv_tool_essential.yml |
-| SendGrid | Twilio Inc. | sv_tool_essential.yml |
-| GitHub | Microsoft Corporation | sv_tool_essential.yml |
-| GitLab | GitLab Inc. | sv_tool_essential.yml |
-| AWS | Amazon Web Services, Inc. | sv_tool_essential.yml |
-| Terraform | HashiCorp, Inc. | sv_tool_essential.yml |
-| Kubernetes | The Linux Foundation | sv_tool_essential.yml |
-| PostgreSQL | PostgreSQL Global Development Group | sv_tool_essential.yml |
-| MySQL | Oracle Corporation | sv_tool_essential.yml |
-| MongoDB | MongoDB, Inc. | sv_tool_essential.yml |
-| Redis | Redis Ltd. | sv_tool_essential.yml |
-| SQLite | Public Domain | sv_tool_essential.yml |
-| Google Drive | Google LLC | sv_tool_essential.yml |
-| Stripe | Stripe, Inc. | sv_tool_essential.yml |
-| PayPal | PayPal Holdings, Inc. | sv_tool_essential.yml |
-| Twitter/X | X Corp. | sv_tool_essential.yml |
-| LinkedIn | Microsoft Corporation | sv_tool_essential.yml |
-| Facebook | Meta Platforms, Inc. | sv_tool_essential.yml |
-| HashiCorp Vault | HashiCorp, Inc. | sv_tool_essential.yml |
-| 1Password | AgileBits, Inc. | sv_tool_essential.yml |
+| Gmail | Google LLC | aegis_tool_essential.yml |
+| Slack | Salesforce, Inc. | aegis_tool_essential.yml |
+| Twilio | Twilio Inc. | aegis_tool_essential.yml |
+| SendGrid | Twilio Inc. | aegis_tool_essential.yml |
+| GitHub | Microsoft Corporation | aegis_tool_essential.yml |
+| GitLab | GitLab Inc. | aegis_tool_essential.yml |
+| AWS | Amazon Web Services, Inc. | aegis_tool_essential.yml |
+| Terraform | HashiCorp, Inc. | aegis_tool_essential.yml |
+| Kubernetes | The Linux Foundation | aegis_tool_essential.yml |
+| PostgreSQL | PostgreSQL Global Development Group | aegis_tool_essential.yml |
+| MySQL | Oracle Corporation | aegis_tool_essential.yml |
+| MongoDB | MongoDB, Inc. | aegis_tool_essential.yml |
+| Redis | Redis Ltd. | aegis_tool_essential.yml |
+| SQLite | Public Domain | aegis_tool_essential.yml |
+| Google Drive | Google LLC | aegis_tool_essential.yml |
+| Stripe | Stripe, Inc. | aegis_tool_essential.yml |
+| PayPal | PayPal Holdings, Inc. | aegis_tool_essential.yml |
+| Twitter/X | X Corp. | aegis_tool_essential.yml |
+| LinkedIn | Microsoft Corporation | aegis_tool_essential.yml |
+| Facebook | Meta Platforms, Inc. | aegis_tool_essential.yml |
+| HashiCorp Vault | HashiCorp, Inc. | aegis_tool_essential.yml |
+| 1Password | AgileBits, Inc. | aegis_tool_essential.yml |
 
 ## License
 

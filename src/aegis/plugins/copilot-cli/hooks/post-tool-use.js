@@ -172,6 +172,21 @@ async function audit(event, baseUrl) {
     session_id: sessionId,
     request_id: requestId,
   });
+  if (sessionId) {
+    let responseText = '';
+    try {
+      responseText = extractScanTextFromResponse(
+        event && (event.toolResult || event.tool_response || event.toolResponse),
+      ).slice(0, THREAT_SCAN_RESPONSE_LIMIT);
+    } catch { /* event recording is best-effort */ }
+    postJsonAndForget(`${baseUrl}/api/runtime/events`, {
+      session_id: sessionId,
+      runtime_kind: RUNTIME_KIND,
+      event_type: 'after_tool_call',
+      text: responseText || null,
+      metadata: { tool_name: toolName, tool_id: toolId, action, request_id: requestId },
+    });
+  }
 
   // Outgoing prose scan (task prompt etc.)
   if (THREAT_SCAN_TOOLS.has(toolName)) {
@@ -230,7 +245,7 @@ async function main() {
   } catch {
     return; // malformed stdin — nothing to audit
   }
-  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || process.env.SV_BASE_URL || DEFAULT_BASE_URL;
+  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL;
   try {
     await audit(event, baseUrl);
   } catch { /* never crash the hook */ }

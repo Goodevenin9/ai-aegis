@@ -1,0 +1,62 @@
+services:
+  engine:
+    build:
+      context: .
+      dockerfile: Dockerfile.engine
+      args:
+        AEGIS_APT_MIRROR: ${AEGIS_APT_MIRROR:-}
+        AEGIS_APT_SECURITY_MIRROR: ${AEGIS_APT_SECURITY_MIRROR:-}
+        AEGIS_PIP_INDEX_URL: ${AEGIS_PIP_INDEX_URL:-}
+    restart: unless-stopped
+    environment:
+      AEGIS_INGRESS_TOKEN: ${AEGIS_ENGINE_INGRESS_TOKEN}
+      AEGIS_CONTROL_PLANE_URL: https://${AEGIS_CONTROL_DOMAIN}
+      AEGIS_AUTH_URL: https://${AEGIS_CONTROL_DOMAIN}
+      AEGIS_LSE_URL: https://${AEGIS_CONTROL_DOMAIN}
+      AEGIS_SCAN_API_URL: https://${AEGIS_CONTROL_DOMAIN}
+      AEGIS_CLOUD_API_URL: https://${AEGIS_CONTROL_DOMAIN}
+    volumes:
+      - engine-data:/home/aegis/.local/share/aegis/threat-monitor
+    expose:
+      - "8741"
+
+  control-plane:
+    build:
+      context: .
+      dockerfile: Dockerfile.control-plane
+      args:
+        AEGIS_PIP_INDEX_URL: ${AEGIS_PIP_INDEX_URL:-}
+    restart: unless-stopped
+    environment:
+      AEGIS_CONTROL_PLANE_ADMIN_KEY: ${AEGIS_CONTROL_PLANE_ADMIN_KEY}
+      AEGIS_CONTROL_PLANE_URL: https://${AEGIS_CONTROL_DOMAIN}
+      AEGIS_ORG_ID: ${AEGIS_ORG_ID}
+      AEGIS_ORG_NAME: ${AEGIS_ORG_NAME}
+      AEGIS_ADMIN_EMAIL: ${AEGIS_ADMIN_EMAIL}
+    volumes:
+      - control-plane-data:/var/lib/aegis
+    expose:
+      - "8780"
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      - engine
+      - control-plane
+    environment:
+      AEGIS_ENGINE_DOMAIN: ${AEGIS_ENGINE_DOMAIN}
+      AEGIS_CONTROL_DOMAIN: ${AEGIS_CONTROL_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  engine-data:
+  control-plane-data:
+  caddy-data:
+  caddy-config:

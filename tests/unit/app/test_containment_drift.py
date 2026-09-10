@@ -27,12 +27,12 @@ from aegis.app.services.containment_drift import (
 )
 
 
-def probe(probe_id, *, sv=False, network=False, reached=False, title=None):
+def probe(probe_id, *, aegis=False, network=False, reached=False, title=None):
     return {
         "id": probe_id,
         "title": title or probe_id,
         "category": "supply-chain",
-        "blocked_by_aegis": sv,
+        "blocked_by_aegis": aegis,
         "blocked_by_network": network,
         "reached": reached,
         "expect_contained": True,
@@ -51,7 +51,7 @@ def proof(probes, verdict="contained", preset="baseline", proof_id="p1"):
 
 class TestContainmentSource:
     def test_aegis_wins_attribution(self):
-        assert containment_source(probe("a", sv=True)) == SOURCE_AEGIS
+        assert containment_source(probe("a", aegis=True)) == SOURCE_AEGIS
 
     def test_reached_means_nobody_held_it(self):
         assert containment_source(probe("a", reached=True)) == SOURCE_NONE
@@ -69,7 +69,7 @@ class TestNeverInventsRegressions:
 
     @pytest.mark.parametrize("bad", ["degraded", "error"])
     def test_degraded_previous_is_inconclusive(self, bad):
-        before = proof([probe("x", sv=True)], verdict=bad)
+        before = proof([probe("x", aegis=True)], verdict=bad)
         after = proof([probe("x", reached=True)], proof_id="p2")
         result = diff_proofs(before, after)
         assert result["status"] == STATUS_INCONCLUSIVE
@@ -80,14 +80,14 @@ class TestNeverInventsRegressions:
     @pytest.mark.parametrize("bad", ["degraded", "error"])
     def test_degraded_current_is_inconclusive(self, bad):
         """An offline run today must not read as today's regression."""
-        before = proof([probe("x", sv=True)])
+        before = proof([probe("x", aegis=True)])
         after = proof([probe("x", reached=True)], verdict=bad, proof_id="p2")
         result = diff_proofs(before, after)
         assert result["status"] == STATUS_INCONCLUSIVE
         assert not result["regressions"]
 
     def test_single_proof_is_inconclusive_not_stable(self):
-        result = diff_proofs(None, proof([probe("x", sv=True)]))
+        result = diff_proofs(None, proof([probe("x", aegis=True)]))
         assert result["status"] == STATUS_INCONCLUSIVE
         assert result["comparable"] is False
 
@@ -95,7 +95,7 @@ class TestNeverInventsRegressions:
         assert diff_proofs(None, None)["status"] == STATUS_INCONCLUSIVE
 
     def test_identical_proofs_are_stable(self):
-        probes = [probe("x", sv=True), probe("y", network=True)]
+        probes = [probe("x", aegis=True), probe("y", network=True)]
         result = diff_proofs(proof(probes), proof(probes, proof_id="p2"))
         assert result["status"] == STATUS_STABLE
         assert result["changes"] == []
@@ -104,7 +104,7 @@ class TestNeverInventsRegressions:
 class TestRegressionDetection:
     def test_contained_to_reached_is_critical(self):
         result = diff_proofs(
-            proof([probe("x", sv=True)]),
+            proof([probe("x", aegis=True)]),
             proof([probe("x", reached=True)], verdict="uncontained", proof_id="p2"),
         )
         assert result["status"] == STATUS_REGRESSED
@@ -124,7 +124,7 @@ class TestEnforcementWeakened:
     """The finding nobody else reports: both proofs pass, the guarantee moved."""
 
     def test_aegis_to_network_is_weakened_not_stable(self):
-        before = proof([probe("x", sv=True)], verdict="contained")
+        before = proof([probe("x", aegis=True)], verdict="contained")
         after = proof([probe("x", network=True)], verdict="partial", proof_id="p2")
         result = diff_proofs(before, after)
         assert result["status"] == STATUS_WEAKENED
@@ -134,12 +134,12 @@ class TestEnforcementWeakened:
 
     def test_weakened_is_reported_even_when_both_verdicts_are_clean(self):
         """Both runs say contained. The change is real and must still surface."""
-        before = proof([probe("x", sv=True)], verdict="contained")
+        before = proof([probe("x", aegis=True)], verdict="contained")
         after = proof([probe("x", network=True)], verdict="contained", proof_id="p2")
         assert diff_proofs(before, after)["status"] == STATUS_WEAKENED
 
     def test_regression_outranks_weakening(self):
-        before = proof([probe("x", sv=True), probe("y", sv=True)])
+        before = proof([probe("x", aegis=True), probe("y", aegis=True)])
         after = proof(
             [probe("x", network=True), probe("y", reached=True)],
             verdict="uncontained", proof_id="p2",
@@ -150,21 +150,21 @@ class TestEnforcementWeakened:
 class TestImprovementAndCoverage:
     def test_network_to_aegis_is_an_improvement(self):
         before = proof([probe("x", network=True)], verdict="partial")
-        after = proof([probe("x", sv=True)], proof_id="p2")
+        after = proof([probe("x", aegis=True)], proof_id="p2")
         result = diff_proofs(before, after)
         assert result["changes"][0]["drift"] == DRIFT_IMPROVED
 
     def test_new_probe_is_flagged_not_silently_compared(self):
-        before = proof([probe("x", sv=True)])
-        after = proof([probe("x", sv=True), probe("z", sv=True)], proof_id="p2")
+        before = proof([probe("x", aegis=True)])
+        after = proof([probe("x", aegis=True), probe("z", aegis=True)], proof_id="p2")
         change = next(c for c in diff_proofs(before, after)["changes"]
                       if c["probe_id"] == "z")
         assert change["drift"] == DRIFT_ADDED
 
     def test_dropped_probe_is_a_coverage_loss_not_a_pass(self):
         """Silence about an untested path reads as 'fine'. It is not."""
-        before = proof([probe("x", sv=True), probe("y", sv=True)])
-        after = proof([probe("x", sv=True)], proof_id="p2")
+        before = proof([probe("x", aegis=True), probe("y", aegis=True)])
+        after = proof([probe("x", aegis=True)], proof_id="p2")
         change = next(c for c in diff_proofs(before, after)["changes"]
                       if c["probe_id"] == "y")
         assert change["drift"] == DRIFT_REMOVED
@@ -173,7 +173,7 @@ class TestImprovementAndCoverage:
 
 class TestPresetAttribution:
     def test_preset_change_is_named_in_the_reason(self):
-        before = proof([probe("x", sv=True)], preset="hardened")
+        before = proof([probe("x", aegis=True)], preset="hardened")
         after = proof([probe("x", reached=True)], verdict="uncontained",
                       preset="baseline", proof_id="p2")
         result = diff_proofs(before, after)

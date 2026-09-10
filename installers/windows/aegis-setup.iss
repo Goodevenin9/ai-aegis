@@ -12,7 +12,7 @@
   #define MyAppVersion "0.3.0"
 #endif
 #define MyAppPublisher "Aegis"
-#define MyAppURL "https://aegis.example"
+#define MyAppURL "https://github.com/Goodevenin9/ai-aegis"
 #define MyAppExeName "Aegis" + AppSuffix + ".exe"
 
 [Setup]

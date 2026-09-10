@@ -161,15 +161,15 @@ jobs:
         fi
 
         # Verify production API URL is set correctly
-        if ! grep -q 'api_url: str = "https://scan.aegis.example"' src/aegis/models/config_models.py; then
+        if ! grep -q 'api_url: str = "http://127.0.0.1:8780"' src/aegis/models/config_models.py; then
           echo "❌ Production API URL not set correctly!"
-          echo "Expected: api_url: str = \"https://scan.aegis.example\""
+          echo "Expected: api_url: str = \"http://127.0.0.1:8780\""
           echo "Actual:"
           grep 'api_url: str =' src/aegis/models/config_models.py || echo "Not found"
           exit 1
         fi
         
-        echo "✅ Production API URL correctly set to https://scan.aegis.example"
+        echo "✅ Production API URL correctly set to http://127.0.0.1:8780"
         echo "✅ Production security scan passed"
 
     - name: Pre-build validation
@@ -253,7 +253,7 @@ jobs:
     # with the workflow's short-lived OIDC identity via Sigstore Fulcio, and
     # publishes the attestation to the public Sigstore Rekor transparency log.
     # Zero third-party licensing — the Sigstore stack is free and open.
-    # Customers verify with: gh attestation verify <wheel> --owner Secure-Vector
+          # Customers verify with: gh attestation verify <wheel> --owner Goodevenin9
     # or:                    cosign verify-blob --bundle <bundle> <wheel>
     - name: Generate build provenance attestation
       uses: actions/attest-build-provenance@v1
@@ -431,4 +431,3 @@ jobs:
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

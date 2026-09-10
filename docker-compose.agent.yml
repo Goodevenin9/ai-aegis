@@ -1,0 +1,16 @@
+# Combine with docker-compose.demo.yml. AEGIS_AGENT_KEY_FILE is a server path.
+services:
+  demo:
+    environment:
+      AEGIS_DEEPSEEK_API_KEY_FILE: /run/secrets/agent_model_key
+      AEGIS_DEEPSEEK_MODEL: deepseek-v4-flash
+      AEGIS_AGENT_MAX_CALLS: ${AEGIS_AGENT_MAX_CALLS:-200}
+      AEGIS_BENCHMARK_REPORT: /opt/aegis-benchmarks/external_benchmark_results.json
+    secrets:
+      - agent_model_key
+    volumes:
+      - ./reports/external-benchmarks:/opt/aegis-benchmarks:ro
+
+secrets:
+  agent_model_key:
+    file: ${AEGIS_AGENT_KEY_FILE:?Set AEGIS_AGENT_KEY_FILE to the private server key file}

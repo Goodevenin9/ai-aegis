@@ -23,7 +23,7 @@ The plugin never reads anything outside what Claude Code passes to these hooks.
 
 ## Where the data goes
 
-Every network-bound surface talks to **loopback HTTP** at `http://127.0.0.1:8741` (overridable via `SV_BASE_URL` for the hooks, or `AEGIS_URL` for the statusline). Traffic never leaves your machine.
+Every network-bound surface talks to **loopback HTTP** at `http://127.0.0.1:8741` (overridable via `AEGIS_ENGINE_ENDPOINT` for the hooks, or `AEGIS_URL` for the statusline). Traffic never leaves your machine.
 
 In addition to the POSTs listed in the table above, the `PreToolUse` and `PostToolUse` hooks issue a short-timeout GET to `/api/tool-permissions/synced-overrides` on the same loopback origin to fetch the current cloud-synced rule set. The GET carries no user data.
 
@@ -35,7 +35,7 @@ Plugin-side files written to disk:
 
 Nothing else is written to disk by the plugin.
 
-For anything the companion app does with hook payloads after they arrive (local SQLite persistence, optional Cloud Connect, SIEM forwarding, retention windows, deletion), see the companion app's privacy documentation: <https://github.com/Wanshanghao/ai-aegis>.
+For anything the companion app does with hook payloads after they arrive (local SQLite persistence, optional Cloud Connect, SIEM forwarding, retention windows, deletion), see the companion app's privacy documentation: <https://github.com/Goodevenin9/ai-aegis>.
 
 ## Client-side redaction before any POST
 
@@ -75,7 +75,7 @@ Once uninstalled, no hook events are read and no POSTs are made. The Stop probe 
 
 ## Source code & licence
 
-The plugin is **Apache-2.0 licensed** and published at <https://github.com/Wanshanghao/ai-aegis> under `src/aegis/plugins/claude-code/`. The redactor ([`lib/redact.js`](./lib/redact.js)), all four hook scripts plus the statusline ([`hooks/*.js`](./hooks/)), the hook manifest ([`hooks/hooks.json`](./hooks/hooks.json)), and the HTTP client ([`lib/client.js`](./lib/client.js)) are auditable — we encourage reviewing them before installation.
+The plugin is **Apache-2.0 licensed** and published at <https://github.com/Goodevenin9/ai-aegis> under `src/aegis/plugins/claude-code/`. The redactor ([`lib/redact.js`](./lib/redact.js)), all four hook scripts plus the statusline ([`hooks/*.js`](./hooks/)), the hook manifest ([`hooks/hooks.json`](./hooks/hooks.json)), and the HTTP client ([`lib/client.js`](./lib/client.js)) are auditable — we encourage reviewing them before installation.
 
 ## Changes to this policy
 
@@ -83,4 +83,4 @@ We may update this policy from time to time. Material changes will bump the **La
 
 ## Contact
 
-For privacy questions about the plugin, email **privacy@aegis.example**, or open an issue at <https://github.com/Wanshanghao/ai-aegis/issues>.
+For privacy questions about the plugin, email **GitHub security advisory**, or open an issue at <https://github.com/Goodevenin9/ai-aegis/issues>.

@@ -11,7 +11,7 @@
     "properties": {
       "url": {
         "type": "string",
-        "description": "Aegis API base URL (auto-detected from svconfig.yml if not set)"
+        "description": "Aegis API base URL (auto-detected from aegis.yml if not set)"
       },
       "threshold": {
         "type": "number",

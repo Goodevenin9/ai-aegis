@@ -195,8 +195,8 @@ class AegisMCPServer:
         base_allowed_hosts = [
             "*.onrender.com",        # Render.com wildcard (note: not fully supported by MCP)
             "*.render.com",          # Render.com alternative
-            "*.aegis.example",     # Aegis custom domains
-            "aegis.example",       # Aegis root domain
+            "",     # Aegis custom domains
+            "",       # Aegis root domain
             "localhost",             # Local development
             "127.0.0.1",            # Local development
             "0.0.0.0",              # Docker/container binding
@@ -567,7 +567,7 @@ class AegisMCPServer:
                         raise SecurityException(
                             "Invalid or expired API key",
                             error_code="INVALID_API_KEY",
-                            details={"message": "Please check your API key or create a new one at https://aegis.example"}
+                            details={"message": "Please check your API key or create a new one at https://github.com/Goodevenin9/ai-aegis"}
                         )
 
                     # Cache user context for this session (no more validation needed!)

@@ -48,11 +48,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await init_database_schema(db)
     logger.info("Database initialized")
 
-    # Apply svconfig.yml config (creates default if missing)
+    # The five-stage runtime can operate in memory during isolated tests, but
+    # the desktop application always attaches its durable state/event adapter.
+    from aegis.app.server.routes.runtime_pipeline import configure_runtime_repository
+    configure_runtime_repository(db)
+    from aegis.app.server.routes.security_operations import configure_security_operations
+    configure_security_operations(db)
+
+    # Apply aegis.yml config (creates default if missing)
     from aegis.app.utils.config_file import apply_config_to_db, load_config
     await apply_config_to_db(db)
 
-    # Auto-start proxy if configured in svconfig.yml
+    # Detection readiness is a startup invariant. Loading lazily on the first
+    # scan made /health claim zero rules and allowed stale cached rule IDs to
+    # survive until traffic arrived.
+    from aegis.app.services.analysis_service import init_analysis_service
+    analysis_service = await init_analysis_service()
+    logger.info("Detection engine ready: %s", await analysis_service.get_stats())
+
+    # Auto-start proxy if configured in aegis.yml
     # For OpenClaw/ClawdBot: proxy only starts when block_mode is enabled
     # (plugin-only mode handles monitoring without proxy overhead).
     # For other integrations (langchain, crewai, ollama): proxy starts as before.
@@ -74,16 +88,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 _needs_proxy = _block_mode
                 if not _block_mode:
                     logger.info(
-                        "[svconfig] OpenClaw integration in monitor mode — "
+                        "[aegis config] OpenClaw integration in monitor mode — "
                         "plugin handles monitoring, proxy not started. "
-                        "Enable block_mode in svconfig.yml to start the proxy for active blocking."
+                        "Enable block_mode in aegis.yml to start the proxy for active blocking."
                     )
 
             if _needs_proxy:
                 from aegis.app.server.routes.proxy import auto_start_from_config
-                # Use SV_PROXY_PORT (set by main.py from --port + 1) rather than the
-                # svconfig default of 8742, so the proxy respects the --port flag.
-                _proxy_port = int(_os.environ.get('SV_PROXY_PORT', _proxy_cfg.get("port", 8742)))
+                # Use AEGIS_PROXY_PORT (set by main.py from --port + 1) rather than the
+                # aegis config default of 8742, so the proxy respects the --port flag.
+                _proxy_port = int(_os.environ.get('AEGIS_PROXY_PORT', _proxy_cfg.get("port", 8742)))
                 auto_start_from_config(
                     integration=_integration,
                     mode=_proxy_mode,
@@ -92,7 +106,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                     provider=_proxy_cfg.get("provider") or None,
                 )
     except Exception as _e:
-        logger.warning(f"Could not auto-start proxy from svconfig.yml: {_e}")
+        logger.warning(f"Could not auto-start proxy from aegis.yml: {_e}")
 
     # Start the external SIEM forwarder. Runs unconditionally —
     # customers without Aegis Cloud still use SIEM export to
@@ -254,13 +268,21 @@ def create_app(host: str = "127.0.0.1", port: int = 8741) -> FastAPI:
 
         status = "healthy" if db_health.get("connected") else "degraded"
 
+        try:
+            from aegis.app.services.analysis_service import get_analysis_service
+            rule_stats = await get_analysis_service().get_stats()
+        except Exception:
+            logger.exception("Rule readiness check failed")
+            rule_stats = {"community_rules": 0, "custom_rules": 0, "compiled_patterns": 0}
+
         return {
             "status": status,
             "version": __version__,
             "database": db_health,
             "rules_loaded": {
-                "community": 0,  # TODO: Get actual count
-                "custom": 0,
+                "community": rule_stats.get("community_rules", 0),
+                "custom": rule_stats.get("custom_rules", 0),
+                "compiled_patterns": rule_stats.get("compiled_patterns", 0),
             },
         }
 
@@ -342,6 +364,8 @@ def create_app(host: str = "127.0.0.1", port: int = 8741) -> FastAPI:
         siem_forwarders,
         device_admin,
         redactions,
+        runtime_pipeline,
+        security_operations,
     )
 
     # Quick analysis endpoint (uses X-Api-Key for cloud)
@@ -371,6 +395,12 @@ def create_app(host: str = "127.0.0.1", port: int = 8741) -> FastAPI:
     app.include_router(device_admin.router, prefix="/api", tags=["Device Admin"])
     # Redactions audit log — backs the local Redactions page (v4.3+).
     app.include_router(redactions.router, prefix="/api", tags=["Redactions"])
+    # Five-stage semantic session pipeline. DeepSeek is used only by the
+    # intent observer; the PreToolUse decision endpoint is deterministic.
+    app.include_router(runtime_pipeline.router, prefix="/api", tags=["Runtime Pipeline"])
+    app.include_router(
+        security_operations.router, prefix="/api", tags=["Security Operations Agent"]
+    )
     # Bundle 0.4 — Agent Replay Timeline. Merged threat / tool-audit / cost feed.
     from aegis.app.server.routes import replay
     app.include_router(replay.router, prefix="/api", tags=["Replay"])

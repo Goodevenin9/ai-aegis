@@ -33,9 +33,9 @@ from typing import Any, Callable, Optional
 # (service.version) stays in sync with __init__.py. Avoids the bug
 # class where SIEM events stamp a stale version string after a bump.
 try:
-    from aegis import __version__ as _SV_PACKAGE_VERSION
+    from aegis import __version__ as _AEGIS_PACKAGE_VERSION
 except ImportError:
-    _SV_PACKAGE_VERSION = "unknown"
+    _AEGIS_PACKAGE_VERSION = "unknown"
 
 OCSF_VERSION = "1.3.0"
 PRODUCT_NAME = "Aegis Local Threat Monitor"
@@ -699,7 +699,7 @@ def _t_otlp_http(events: list[dict[str, Any]], _fwd: dict[str, Any]) -> tuple[by
             "resource": {
                 "attributes": [
                     {"key": "service.name", "value": {"stringValue": "aegis-local"}},
-                    {"key": "service.version", "value": {"stringValue": _SV_PACKAGE_VERSION}},
+                    {"key": "service.version", "value": {"stringValue": _AEGIS_PACKAGE_VERSION}},
                 ],
             },
             "scopeLogs": [{

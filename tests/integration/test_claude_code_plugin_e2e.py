@@ -257,7 +257,10 @@ def _run_hook(
     return subprocess.run(
         ["node", str(hook_path)],
         input=json.dumps(event),
-        env={**os.environ, "SV_BASE_URL": base_url},
+        # Synced-policy scenarios assume the session is authorized for MCP.
+        # Without a capability manifest the five-stage layer correctly asks.
+        env={**os.environ, "AEGIS_ENGINE_ENDPOINT": base_url,
+             "AEGIS_SESSION_CAPABILITIES": "network_outbound"},
         capture_output=True,
         text=True,
         timeout=timeout,

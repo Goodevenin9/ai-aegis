@@ -7,12 +7,12 @@
  * `url` is the ENGINE endpoint — where the plugin sends tool calls for
  * analysis (the local app by default, or a remote self-host engine, e.g. a
  * Terraform deployment). This is NOT the Aegis cloud: the cloud
- * (scan.aegis.example, addressed elsewhere as AEGIS_URL) is only ever
+ * (AI Aegis control plane, addressed by AEGIS_CONTROL_PLANE_URL) is only ever
  * reached by the engine itself for Cloud Connect, never by this plugin.
  *
  * Resolution order (first non-empty wins):
  *   1. pluginConfig.{url, apiKey, threshold}  — from openclaw.json
- *   2. svconfig.yml server.host + server.port — written by aegis-app
+ *   2. aegis.yml server.host + server.port — written by aegis-app
  *   3. AEGIS_ENGINE_ENDPOINT           — unified engine var (preferred)
  *   4. AEGIS_URL                        — legacy alias for the engine in
  *                                                this plugin; deprecated, kept
@@ -28,8 +28,8 @@ export interface PluginConfig {
   threshold: number;
 }
 
-/** Read server.host and server.port from svconfig.yml (platform-specific path). */
-function readSvConfig(): { host: string; port: number } | null {
+/** Read server.host and server.port from aegis.yml (platform-specific path). */
+function readAegisConfig(): { host: string; port: number } | null {
   try {
     const fs = require("fs");
     const path = require("path");
@@ -40,11 +40,11 @@ function readSvConfig(): { host: string; port: number } | null {
 
     if (process.platform === "win32") {
       const localAppData = process.env.LOCALAPPDATA || path.join(home, "AppData", "Local");
-      configPath = path.join(localAppData, "Aegis", "ThreatMonitor", "svconfig.yml");
+      configPath = path.join(localAppData, "Aegis", "ThreatMonitor", "aegis.yml");
     } else if (process.platform === "darwin") {
-      configPath = path.join(home, "Library", "Application Support", "Aegis", "ThreatMonitor", "svconfig.yml");
+      configPath = path.join(home, "Library", "Application Support", "Aegis", "ThreatMonitor", "aegis.yml");
     } else {
-      configPath = path.join(home, ".local", "share", "aegis", "threat-monitor", "svconfig.yml");
+      configPath = path.join(home, ".local", "share", "aegis", "threat-monitor", "aegis.yml");
     }
 
     const content = fs.readFileSync(configPath, "utf-8");
@@ -71,8 +71,8 @@ function readSvConfig(): { host: string; port: number } | null {
 
 export function resolveConfig(pluginConfig: Record<string, any> = {}): PluginConfig {
   let defaultUrl = "http://127.0.0.1:8741";
-  const sv = readSvConfig();
-  if (sv) defaultUrl = `http://${sv.host}:${sv.port}`;
+  const aegis = readAegisConfig();
+  if (aegis) defaultUrl = `http://${aegis.host}:${aegis.port}`;
 
   return {
     url:       pluginConfig.url       || process.env.AEGIS_ENGINE_ENDPOINT || process.env.AEGIS_URL || defaultUrl,

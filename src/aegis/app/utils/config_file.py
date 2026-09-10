@@ -1,14 +1,14 @@
 """
-svconfig.yml config file support.
+aegis.yml config file support.
 
 Reads and writes a human-editable YAML config file in the app data directory.
 Values are applied to the database on startup, and the file is kept in sync
 whenever settings are changed via the UI.
 
 Config location (platform-specific):
-  Linux:   ~/.local/share/aegis/threat-monitor/svconfig.yml
-  macOS:   ~/Library/Application Support/Aegis/ThreatMonitor/svconfig.yml
-  Windows: %LOCALAPPDATA%/Aegis/ThreatMonitor/svconfig.yml
+  Linux:   ~/.local/share/aegis/threat-monitor/aegis.yml
+  macOS:   ~/Library/Application Support/Aegis/ThreatMonitor/aegis.yml
+  Windows: %LOCALAPPDATA%/Aegis/ThreatMonitor/aegis.yml
 """
 
 import logging
@@ -17,7 +17,7 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
-CONFIG_FILENAME = "svconfig.yml"
+CONFIG_FILENAME = "aegis.yml"
 
 _TEMPLATE = """\
 # Aegis Configuration
@@ -94,7 +94,7 @@ def get_config_path() -> Path:
 
 
 def load_config() -> dict[str, Any]:
-    """Load svconfig.yml. Returns empty dict if file doesn't exist or is invalid."""
+    """Load aegis.yml. Returns empty dict if file doesn't exist or is invalid."""
     path = get_config_path()
     if not path.exists():
         return {}
@@ -143,7 +143,7 @@ def save_config(
     server_host: str = DEFAULT_SERVER_HOST,
     server_port: int = DEFAULT_SERVER_PORT,
 ) -> Path:
-    """Write current settings to svconfig.yml. Returns the config path."""
+    """Write current settings to aegis.yml. Returns the config path."""
     path = get_config_path()
     content = _TEMPLATE.format(
         path=path,
@@ -171,7 +171,7 @@ def save_config(
 
 def get_server_defaults() -> tuple[str, int]:
     """
-    Return (host, port) from svconfig.yml server section.
+    Return (host, port) from aegis.yml server section.
     Falls back to defaults if the file doesn't exist or the keys are missing.
     """
     config = load_config()
@@ -187,7 +187,7 @@ def get_server_defaults() -> tuple[str, int]:
 
 def get_proxy_defaults() -> tuple[str, Optional[int]]:
     """
-    Return (host, port) from svconfig.yml proxy section.
+    Return (host, port) from aegis.yml proxy section.
     Port is None if not set in config (caller should use its own default).
     Falls back to DEFAULT_PROXY_HOST for host if not set.
     """
@@ -207,7 +207,7 @@ def get_proxy_defaults() -> tuple[str, Optional[int]]:
 
 async def apply_config_to_db(db) -> None:
     """
-    Read svconfig.yml and push values into the database settings.
+    Read aegis.yml and push values into the database settings.
     Called once on startup. If the file doesn't exist, a default one is created.
     """
     from aegis.app.database.repositories.settings import SettingsRepository
@@ -235,7 +235,7 @@ async def apply_config_to_db(db) -> None:
     if "mode" in proxy:
         mode = proxy["mode"]
         if mode not in VALID_PROXY_MODES:
-            logger.warning(f"Unknown proxy mode '{mode}' in svconfig.yml — using '{DEFAULT_PROXY_MODE}'")
+            logger.warning(f"Unknown proxy mode '{mode}' in aegis.yml — using '{DEFAULT_PROXY_MODE}'")
 
     if updates:
         await settings_repo.update(**updates)

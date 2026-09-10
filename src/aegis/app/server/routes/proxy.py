@@ -29,9 +29,9 @@ PROVIDERS = ["openai", "anthropic", "groq", "deepseek", "mistral", "xai", "gemin
 
 
 def _get_proxy_port() -> int:
-    """Return the proxy port — set by main.py via SV_PROXY_PORT, defaults to 8742."""
+    """Return the proxy port — set by main.py via AEGIS_PROXY_PORT, defaults to 8742."""
     import os
-    return int(os.environ.get('SV_PROXY_PORT', '8742'))
+    return int(os.environ.get('AEGIS_PROXY_PORT', '8742'))
 
 
 def _is_port_in_use(port: int) -> bool:
@@ -55,7 +55,7 @@ def set_proxy_running_in_process(running: bool, provider: str = "openai", integr
 
 def auto_start_from_config(integration: str, mode: str, host: str, port: int, provider: Optional[str] = None) -> bool:
     """
-    Auto-start the proxy as a subprocess from svconfig.yml settings.
+    Auto-start the proxy as a subprocess from aegis.yml settings.
     Sets all globals so status/stop work correctly from the UI.
     Returns True if started successfully.
     """
@@ -71,7 +71,7 @@ def auto_start_from_config(integration: str, mode: str, host: str, port: int, pr
     # Validate: single mode requires a provider
     if not multi and not provider:
         raise ValueError(
-            "svconfig.yml: 'proxy.provider' is required when mode is 'single'.\n"
+            "aegis.yml: 'proxy.provider' is required when mode is 'single'.\n"
             "Example:\n"
             "  proxy:\n"
             "    mode: single\n"
@@ -83,7 +83,7 @@ def auto_start_from_config(integration: str, mode: str, host: str, port: int, pr
 
     # Web app port — used so the subprocess knows where to report threats
     import os as _os
-    web_port = int(_os.environ.get('SV_WEB_PORT', '8741'))
+    web_port = int(_os.environ.get('AEGIS_WEB_PORT', '8741'))
 
     if integration == "openclaw":
         # When running from a PyInstaller binary, sys.executable IS the app binary.
@@ -123,20 +123,20 @@ def auto_start_from_config(integration: str, mode: str, host: str, port: int, pr
             _current_integration = integration
             _multi_mode = multi
             _started_with_openclaw = (integration == "openclaw")
-            logger.info(f"[svconfig] Proxy auto-started: integration={integration}, mode={mode}, provider={effective_provider}, port={port}")
+            logger.info(f"[aegis config] Proxy auto-started: integration={integration}, mode={mode}, provider={effective_provider}, port={port}")
             return True
         else:
             # Process exited immediately — openclaw/pi-ai likely not installed, or config error
             # This is non-fatal: user may be using a different agent framework
             logger.warning(
-                f"[svconfig] Proxy exited immediately (code={_llm_proxy_process.poll()}). "
+                f"[aegis config] Proxy exited immediately (code={_llm_proxy_process.poll()}). "
                 f"OpenClaw may not be installed, or this user is using a different agent framework. "
                 f"Starting without proxy — use the Integrations page to start it manually."
             )
     except FileNotFoundError:
-        logger.warning(f"[svconfig] Proxy command not found ({cmd[0]}). Starting without proxy.")
+        logger.warning(f"[aegis config] Proxy command not found ({cmd[0]}). Starting without proxy.")
     except Exception as e:
-        logger.warning(f"[svconfig] Could not auto-start proxy: {e}")
+        logger.warning(f"[aegis config] Could not auto-start proxy: {e}")
     return False
 
 
@@ -209,7 +209,7 @@ async def start_proxy(request: StartProxyRequest = None):
 
     try:
         import os as _os
-        web_port = int(_os.environ.get('SV_WEB_PORT', '8741'))
+        web_port = int(_os.environ.get('AEGIS_WEB_PORT', '8741'))
 
         # Build command - use aegis-app for OpenClaw to enable patching
         if integration == 'openclaw':

@@ -28,7 +28,7 @@ Every tool call your Copilot CLI session issues passes through hooks installed b
 
 - [GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli) with the plugin/hooks system
 - Node.js 18+ (Copilot uses its own Node runtime; no separate install required)
-- A running local [Aegis AI Threat Monitor](https://github.com/Wanshanghao/ai-aegis) app on `http://127.0.0.1:8741` (or override via `SV_BASE_URL`)
+- A running local [Aegis AI Threat Monitor](https://github.com/Goodevenin9/ai-aegis) app on `http://127.0.0.1:8741` (or override via `AEGIS_ENGINE_ENDPOINT`)
 
 ## Installation
 
@@ -66,15 +66,15 @@ All POSTs target loopback (`http://127.0.0.1:8741` by default). The plugin write
 
 ## Configuration
 
-Set `AEGIS_ENGINE_ENDPOINT` (the unified engine-endpoint variable; legacy alias `SV_BASE_URL`) to point at a non-default **engine** — your local app or a self-hosted / Terraform deployment, not the Aegis cloud:
+Set `AEGIS_ENGINE_ENDPOINT` (the unified engine-endpoint variable; legacy alias `AEGIS_ENGINE_ENDPOINT`) to point at a non-default **engine** — your local app or a self-hosted / Terraform deployment, not the Aegis cloud:
 
 ```bash
-export AEGIS_ENGINE_ENDPOINT="https://<your-engine-endpoint>"   # legacy: SV_BASE_URL
+export AEGIS_ENGINE_ENDPOINT="https://<your-engine-endpoint>"   # legacy: AEGIS_ENGINE_ENDPOINT
 ```
 
 ## License
 
-Apache 2.0. Source at <https://github.com/Wanshanghao/ai-aegis> under `src/aegis/plugins/copilot-cli/`.
+Apache 2.0. Source at <https://github.com/Goodevenin9/ai-aegis> under `src/aegis/plugins/copilot-cli/`.
 
 ## Disclaimer
 

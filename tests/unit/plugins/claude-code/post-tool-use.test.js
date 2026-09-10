@@ -537,7 +537,7 @@ test('GATE: benign Bash strings-dump response is NOT sent to /analyze', async ()
   // A multi-KB `strings <binary>` dump: hundreds of plain C-symbol-shaped
   // identifiers, no credential anywhere. This is the false-positive source.
   const stringsDump = Array.from({ length: 600 }, (_, i) =>
-    `_OBJC_CLASS_$_SVThing${i} __mh_execute_header dyld_stub_binder _objc_msgSend`
+    `_OBJC_CLASS_$_AegisThing${i} __mh_execute_header dyld_stub_binder _objc_msgSend`
   ).join('\n');
   let analyzeFired = false;
   let auditFired = false;

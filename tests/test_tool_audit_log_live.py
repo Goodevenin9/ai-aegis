@@ -143,9 +143,9 @@ class TestAuditEndpoints:
 class TestDecisionTypesAreLogged:
     """POST one entry for each action type and verify it appears in the log."""
 
-    TOOL_BLOCKED  = "sv_test.blocked_tool"
-    TOOL_ALLOWED  = "sv_test.allowed_tool"
-    TOOL_LOGONLY  = "sv_test.logonly_tool"
+    TOOL_BLOCKED  = "aegis_test.blocked_tool"
+    TOOL_ALLOWED  = "aegis_test.allowed_tool"
+    TOOL_LOGONLY  = "aegis_test.logonly_tool"
 
     def _seed(self):
         ts = int(time.time())
@@ -213,7 +213,7 @@ class TestActionFilter:
         ts = int(time.time())
         for action, risk in [("block", "admin"), ("allow", "read"), ("log_only", None)]:
             _post_audit(_audit_entry(
-                f"sv_filter_test.{action}_{ts}", action,
+                f"aegis_filter_test.{action}_{ts}", action,
                 risk=risk,
                 reason=f"filter test {action}",
                 is_essential=(action != "log_only"),
@@ -265,7 +265,7 @@ class TestStatsConsistency:
     def test_stats_increase_after_new_entry(self):
         before = _get_stats()
         _post_audit(_audit_entry(
-            "sv_stats_test.counter", "block",
+            "aegis_stats_test.counter", "block",
             risk="write", reason="stats increment test", is_essential=True,
         ))
         after = _get_stats()
@@ -277,7 +277,7 @@ class TestStatsConsistency:
     def test_allowed_stats_increment(self):
         before = _get_stats()
         _post_audit(_audit_entry(
-            "sv_stats_test.allow_counter", "allow",
+            "aegis_stats_test.allow_counter", "allow",
             risk="read", reason="stats allow test", is_essential=True,
         ))
         after = _get_stats()
@@ -287,7 +287,7 @@ class TestStatsConsistency:
     def test_log_only_stats_increment(self):
         before = _get_stats()
         _post_audit(_audit_entry(
-            "sv_stats_test.log_counter", "log_only",
+            "aegis_stats_test.log_counter", "log_only",
             reason="stats log_only test",
         ))
         after = _get_stats()
@@ -303,7 +303,7 @@ class TestRiskLevelPreserved:
 
     @pytest.mark.parametrize("risk", ["read", "write", "delete", "admin"])
     def test_risk_level_stored_correctly(self, risk):
-        fn = f"sv_risk_test.{risk}_tool"
+        fn = f"aegis_risk_test.{risk}_tool"
         _post_audit(_audit_entry(fn, "block", risk=risk, reason=f"risk={risk} test", is_essential=True))
         entries = _get_audit(limit=20, action="block")["entries"]
         entry = _find_in_audit(fn, "block", entries)
@@ -311,7 +311,7 @@ class TestRiskLevelPreserved:
         assert entry["risk"] == risk, f"Expected risk={risk}, got {entry['risk']}"
 
     def test_null_risk_stored_as_null(self):
-        fn = "sv_risk_test.no_risk_tool"
+        fn = "aegis_risk_test.no_risk_tool"
         _post_audit(_audit_entry(fn, "log_only", risk=None, reason="null risk test"))
         entries = _get_audit(limit=20, action="log_only")["entries"]
         entry = _find_in_audit(fn, "log_only", entries)
@@ -326,7 +326,7 @@ class TestRiskLevelPreserved:
 class TestIsEssentialFlag:
 
     def test_essential_flag_true_stored_correctly(self):
-        fn = "sv_essential_test.ess_tool"
+        fn = "aegis_essential_test.ess_tool"
         _post_audit(_audit_entry(fn, "block", risk="admin", is_essential=True))
         entries = _get_audit(limit=20)["entries"]
         entry = _find_in_audit(fn, "block", entries)
@@ -336,7 +336,7 @@ class TestIsEssentialFlag:
         )
 
     def test_essential_flag_false_stored_correctly(self):
-        fn = "sv_essential_test.custom_tool"
+        fn = "aegis_essential_test.custom_tool"
         _post_audit(_audit_entry(fn, "allow", risk="read", is_essential=False))
         entries = _get_audit(limit=20)["entries"]
         entry = _find_in_audit(fn, "allow", entries)
@@ -346,7 +346,7 @@ class TestIsEssentialFlag:
         )
 
     def test_log_only_is_not_essential(self):
-        fn = "sv_essential_test.unknown_tool"
+        fn = "aegis_essential_test.unknown_tool"
         _post_audit(_audit_entry(fn, "log_only", is_essential=False))
         entries = _get_audit(limit=20)["entries"]
         entry = _find_in_audit(fn, "log_only", entries)
@@ -361,7 +361,7 @@ class TestIsEssentialFlag:
 class TestArgsPreview:
 
     def test_short_args_stored_verbatim(self):
-        fn = "sv_args_test.short_args"
+        fn = "aegis_args_test.short_args"
         args = '{"key": "value"}'
         _post_audit(_audit_entry(fn, "block", risk="write", args_preview=args))
         entries = _get_audit(limit=20)["entries"]
@@ -371,7 +371,7 @@ class TestArgsPreview:
 
     def test_long_args_stored_at_full_length_sent(self):
         """Proxy sends first 200 chars; API stores exactly what it receives."""
-        fn = "sv_args_test.long_args"
+        fn = "aegis_args_test.long_args"
         args = '{"data": "' + ("x" * 188) + '"}'   # ~200 chars
         _post_audit(_audit_entry(fn, "block", risk="write", args_preview=args[:200]))
         entries = _get_audit(limit=20)["entries"]
@@ -382,7 +382,7 @@ class TestArgsPreview:
         )
 
     def test_null_args_stored_as_null(self):
-        fn = "sv_args_test.null_args"
+        fn = "aegis_args_test.null_args"
         _post_audit(_audit_entry(fn, "log_only", args_preview=None))
         entries = _get_audit(limit=20)["entries"]
         entry = _find_in_audit(fn, "log_only", entries)
@@ -397,7 +397,7 @@ class TestArgsPreview:
 class TestReasonText:
 
     def test_reason_stored_verbatim(self):
-        fn = "sv_reason_test.tool"
+        fn = "aegis_reason_test.tool"
         reason = "Essential tool default: block — risk=admin category=cloud_infra"
         _post_audit(_audit_entry(fn, "block", risk="admin", reason=reason, is_essential=True))
         entries = _get_audit(limit=20)["entries"]
@@ -406,7 +406,7 @@ class TestReasonText:
         assert entry["reason"] == reason
 
     def test_rate_limit_reason_stored(self):
-        fn = "sv_reason_test.rate_limited_tool"
+        fn = "aegis_reason_test.rate_limited_tool"
         reason = "Rate limited: 5/5 calls in the last 15 minute(s)"
         _post_audit(_audit_entry(fn, "block", risk="write", reason=reason, is_essential=True))
         entries = _get_audit(limit=20)["entries"]
@@ -415,7 +415,7 @@ class TestReasonText:
         assert "Rate limited" in entry["reason"]
 
     def test_override_reason_stored(self):
-        fn = "sv_reason_test.overridden_tool"
+        fn = "aegis_reason_test.overridden_tool"
         reason = "User override: block"
         _post_audit(_audit_entry(fn, "block", risk="read", reason=reason, is_essential=True))
         entries = _get_audit(limit=20)["entries"]
@@ -435,15 +435,15 @@ class TestOrdering:
         # Insert three entries with slight delay to ensure ordering
         for i in range(3):
             _post_audit(_audit_entry(
-                f"sv_order_test.tool_{ts}_{i}", "log_only",
+                f"aegis_order_test.tool_{ts}_{i}", "log_only",
                 reason=f"ordering test seq={i}",
             ))
 
         entries = _get_audit(limit=50)["entries"]
-        fns = [e["function_name"] for e in entries if f"sv_order_test.tool_{ts}" in e["function_name"]]
+        fns = [e["function_name"] for e in entries if f"aegis_order_test.tool_{ts}" in e["function_name"]]
         assert len(fns) == 3
         # Newest (index 2) must come before oldest (index 0)
-        assert fns.index(f"sv_order_test.tool_{ts}_2") < fns.index(f"sv_order_test.tool_{ts}_0"), (
+        assert fns.index(f"aegis_order_test.tool_{ts}_2") < fns.index(f"aegis_order_test.tool_{ts}_0"), (
             f"Entries not newest-first: {fns}"
         )
 
@@ -624,7 +624,7 @@ class TestEngineToAuditRoundTrip:
 # 16. Custom tool cycle in audit
 # ──────────────────────────────────────────────────────────────────────────────
 
-AUDIT_CUSTOM_TOOL_ID = "sv_audit_test.custom_cycle_tool"
+AUDIT_CUSTOM_TOOL_ID = "aegis_audit_test.custom_cycle_tool"
 
 
 class TestCustomToolAuditCycle:
@@ -960,8 +960,8 @@ class TestAuditInputValidation:
     @pytest.mark.parametrize("valid_action", ["block", "allow", "log_only"])
     def test_all_valid_actions_accepted(self, valid_action):
         r = _post_audit({
-            "tool_id": f"sv_valid.{valid_action}",
-            "function_name": f"sv_valid.{valid_action}",
+            "tool_id": f"aegis_valid.{valid_action}",
+            "function_name": f"aegis_valid.{valid_action}",
             "action": valid_action,
         })
         assert r.status_code == 200, (

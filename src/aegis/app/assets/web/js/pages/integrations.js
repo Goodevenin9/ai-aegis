@@ -224,11 +224,11 @@ from aegis import AegisClient
 
 # Initialize clients
 ollama = OpenAI(base_url="http://localhost:11434/v1", api_key="not-needed")
-sv = AegisClient()
+aegis = AegisClient()
 
 def chat_with_protection(user_input):
     # Scan input for prompt injection
-    result = sv.analyze(user_input, direction="input")
+    result = aegis.analyze(user_input, direction="input")
     if result.is_threat:
         return f"Blocked: {result.threat_type}"
 
@@ -240,7 +240,7 @@ def chat_with_protection(user_input):
     output = response.choices[0].message.content
 
     # Scan output for data leakage
-    result = sv.analyze(output, direction="output")
+    result = aegis.analyze(output, direction="output")
     if result.is_threat:
         return f"Warning: {result.threat_type}"
 
@@ -2600,10 +2600,10 @@ def chat_with_protection(user_input):
         content.appendChild(step2Desc);
 
         const s2Providers = [
-            { name: 'OpenAI', id: 'openai-sv', api: 'openai-responses', baseUrl: 'http://127.0.0.1:8742/openai/v1', model: 'gpt-4o-mini' },
-            { name: 'Anthropic', id: 'anthropic-sv', api: 'anthropic-messages', baseUrl: 'http://127.0.0.1:8742/anthropic', model: 'claude-sonnet-4-6' },
-            { name: 'Gemini', id: 'gemini-sv', api: 'google-generative-ai', baseUrl: 'http://127.0.0.1:8742/gemini/v1beta', model: 'gemini-2.0-flash' },
-            { name: 'Ollama', id: 'ollama-sv', api: 'openai-completions', baseUrl: 'http://127.0.0.1:8742/ollama/v1', model: 'llama3' },
+            { name: 'OpenAI', id: 'openai-aegis', api: 'openai-responses', baseUrl: 'http://127.0.0.1:8742/openai/v1', model: 'gpt-4o-mini' },
+            { name: 'Anthropic', id: 'anthropic-aegis', api: 'anthropic-messages', baseUrl: 'http://127.0.0.1:8742/anthropic', model: 'claude-sonnet-4-6' },
+            { name: 'Gemini', id: 'gemini-aegis', api: 'google-generative-ai', baseUrl: 'http://127.0.0.1:8742/gemini/v1beta', model: 'gemini-2.0-flash' },
+            { name: 'Ollama', id: 'ollama-aegis', api: 'openai-completions', baseUrl: 'http://127.0.0.1:8742/ollama/v1', model: 'llama3' },
         ];
 
         const s2TabBar = document.createElement('div');
@@ -2954,7 +2954,7 @@ def chat_with_protection(user_input):
         const geminiStrong = document.createElement('strong');
         geminiStrong.textContent = 'Google Gemini: ';
         geminiNote.appendChild(geminiStrong);
-        geminiNote.appendChild(document.createTextNode('If you added a custom provider (gemini-sv) in ~/.openclaw/openclaw.json, also remove it from models.providers and switch back to the built-in google/gemini-2.0-flash model.'));
+        geminiNote.appendChild(document.createTextNode('If you added a custom provider (gemini-aegis) in ~/.openclaw/openclaw.json, also remove it from models.providers and switch back to the built-in google/gemini-2.0-flash model.'));
         content.appendChild(geminiNote);
 
         // Revert button
@@ -3158,14 +3158,14 @@ def chat_with_protection(user_input):
         geminiDesc.textContent = 'To use Gemini through the proxy, add a custom provider to ~/.openclaw/openclaw.json under "models.providers":';
         geminiSection.appendChild(geminiDesc);
 
-        const geminiJson = '"gemini-sv": {\n  "baseUrl": "http://localhost:' + (window.__SV_PROXY_PORT || 8742) + geminiConfig.path + '",\n  "apiKey": "YOUR_GEMINI_API_KEY",\n  "api": "google-generative-ai",\n  "models": [\n    {\n      "id": "gemini-2.0-flash",\n      "name": "Gemini 2.0 Flash",\n      "contextWindow": 200000,\n      "maxTokens": 8192\n    }\n  ]\n}';
+        const geminiJson = '"gemini-aegis": {\n  "baseUrl": "http://localhost:' + (window.__AEGIS_PROXY_PORT || 8742) + geminiConfig.path + '",\n  "apiKey": "YOUR_GEMINI_API_KEY",\n  "api": "google-generative-ai",\n  "models": [\n    {\n      "id": "gemini-2.0-flash",\n      "name": "Gemini 2.0 Flash",\n      "contextWindow": 200000,\n      "maxTokens": 8192\n    }\n  ]\n}';
         const geminiBlock = this.createCodeBlock(geminiJson);
         geminiBlock.style.marginBottom = '8px';
         geminiSection.appendChild(geminiBlock);
 
         const geminiUsage = document.createElement('div');
         geminiUsage.style.cssText = 'font-size: 11px; color: var(--text-secondary); line-height: 1.5;';
-        geminiUsage.textContent = 'Then use gemini-sv/gemini-2.0-flash as your model in OpenClaw.';
+        geminiUsage.textContent = 'Then use gemini-aegis/gemini-2.0-flash as your model in OpenClaw.';
         geminiSection.appendChild(geminiUsage);
 
         container.appendChild(geminiSection);
@@ -3458,11 +3458,11 @@ def chat_with_protection(user_input):
         calloutBox.style.cssText = 'margin: 10px 0; padding: 12px 14px; border: 1px solid var(--border-default); border-left: 3px solid var(--accent-primary); border-radius: 6px; background: var(--bg-tertiary); font-size: 12px; color: var(--text-primary); line-height: 1.55;';
         const cStrong = document.createElement('strong'); cStrong.textContent = 'Engine, not cloud. ';
         calloutBox.appendChild(cStrong);
-        calloutBox.appendChild(document.createTextNode('AEGIS_ENGINE_ENDPOINT is where calls go for analysis: your local app OR your Terraform/self-host engine. It is NOT the Aegis cloud (scan.aegis.example). The legacy AEGIS_SDK_APP_URL still works as a fallback.'));
+        calloutBox.appendChild(document.createTextNode('AEGIS_ENGINE_ENDPOINT is where calls go for analysis: your local app or your deployed engine. AEGIS_CONTROL_PLANE_URL points to fleet management.'));
         body.appendChild(calloutBox);
 
-        body.appendChild(note('Auth is optional. A private (in-VPC) endpoint needs no credential: the default, and the least friction. Only if you expose the endpoint publicly and gate it (Terraform ingress_token: enforced by a v4.9.0+ engine; older images set but ignore it) do you set a key: a free Aegis account key or an SVET token; it gates inbound access only and forwards no data:'));
-        body.appendChild(this.createCodeBlock('export AEGIS_API_KEY=<Aegis account key or SVET token>   # optional: public gated endpoint only'));
+        body.appendChild(note('Authentication is optional for a private engine endpoint. If the engine is public, set AEGIS_INGRESS_TOKEN on the server and provide the same value through AEGIS_API_KEY on clients:'));
+        body.appendChild(this.createCodeBlock('export AEGIS_API_KEY=<your engine ingress token>   # public gated endpoint only'));
 
         details.appendChild(body);
         return details;
@@ -3542,8 +3542,8 @@ def chat_with_protection(user_input):
 
     createCodeBlock(code) {
         // Substitute actual running ports and host so display and Copy both show the right values
-        const _pp = window.__SV_PROXY_PORT; const _wp = window.__SV_WEB_PORT;
-        const _host = window.__SV_HOST;
+        const _pp = window.__AEGIS_PROXY_PORT; const _wp = window.__AEGIS_WEB_PORT;
+        const _host = window.__AEGIS_HOST;
         if (_pp && _pp !== 8742) code = code.replaceAll(':8742', ':' + _pp);
         if (_wp && _wp !== 8741) code = code.replaceAll(':8741', ':' + _wp);
         if (_host && _host !== 'localhost' && _host !== '127.0.0.1') {

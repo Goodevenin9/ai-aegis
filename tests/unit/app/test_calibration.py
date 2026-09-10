@@ -67,19 +67,19 @@ def test_resolve_direction_legacy_input_means_outgoing():
     # Legacy `input` was authored to mean "user prompt" — it maps to
     # `outgoing` so user-request-shaped rules stop firing on incoming
     # fetched/tool content (2026-07 FP flood).
-    assert resolve_direction("sv_x_001", "prompt_injection", "input") == "outgoing"
+    assert resolve_direction("aegis_x_001", "prompt_injection", "input") == "outgoing"
 
 
 def test_resolve_direction_legacy_output_and_unset_stay_both():
     # Legacy `output` stays `both`: those rules match secret VALUES, which
     # are worth catching in tool output too. Unset stays `both`.
-    assert resolve_direction("sv_x_001", "data_leakage", "output") == "both"
-    assert resolve_direction("sv_x_001", "data_leakage", None) == "both"
+    assert resolve_direction("aegis_x_001", "data_leakage", "output") == "both"
+    assert resolve_direction("aegis_x_001", "data_leakage", None) == "both"
 
 
 def test_resolve_direction_evasion_id_defaults_outgoing():
     # Reproduces the route's historical `"_evasion_" in id` incoming-suppression.
-    assert resolve_direction("sv_community_075_evasion_leetspeak", "x", None) == "outgoing"
+    assert resolve_direction("aegis_community_075_evasion_leetspeak", "x", None) == "outgoing"
 
 
 def test_direction_applies_both_always():

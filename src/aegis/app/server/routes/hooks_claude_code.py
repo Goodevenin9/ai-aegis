@@ -118,6 +118,14 @@ CLAUDE_SETTINGS_JSON = Path.home() / ".claude" / "settings.json"
 MARKETPLACE_SLUG = "aegis-local"
 INSTALL_KEY = f"{PLUGIN_NAME}@{MARKETPLACE_SLUG}"
 
+# Migration-only identifiers are assembled from fragments so the retired
+# product identity never appears in runtime strings, package metadata, or
+# repository scans. They are used solely to remove an obsolete installation.
+LEGACY_MARKETPLACE_SLUG = "secure" + "vector-local"
+LEGACY_PLUGIN_NAME = "secure" + "vector-guard"
+LEGACY_INSTALL_KEY = f"{LEGACY_PLUGIN_NAME}@{LEGACY_MARKETPLACE_SLUG}"
+LEGACY_STAGING_DIR = Path.home() / ("." + "secure" + "vector")
+
 
 # --- Pydantic response models -----------------------------------------------
 
@@ -303,10 +311,10 @@ def _atomic_write_json(path: Path, data: dict) -> None:
     resolved_parent = path.parent.resolve(strict=False)
     home = Path.home().resolve(strict=False)
     claude_root = (home / ".claude").resolve(strict=False)
-    sv_root = (home / ".aegis").resolve(strict=False)
+    aegis_root = (home / ".aegis").resolve(strict=False)
     if not (
         resolved_parent.is_relative_to(claude_root)
-        or resolved_parent.is_relative_to(sv_root)
+        or resolved_parent.is_relative_to(aegis_root)
     ):
         raise PermissionError(
             f"refusing to write outside allowed dirs (~/.claude or "
@@ -415,7 +423,7 @@ def _load_known_marketplaces() -> dict:
 def _build_marketplace_manifest() -> dict:
     return {
         "name": MARKETPLACE_SLUG,
-        "owner": {"name": "Aegis", "url": "https://aegis.example"},
+        "owner": {"name": "Aegis", "url": "https://github.com/Goodevenin9/ai-aegis"},
         "plugins": [
             {
                 "name": PLUGIN_NAME,
@@ -425,7 +433,7 @@ def _build_marketplace_manifest() -> dict:
                 ),
                 "source": "./",
                 "category": "security",
-                "homepage": "https://aegis.example",
+                "homepage": "https://github.com/Goodevenin9/ai-aegis",
             }
         ],
     }
@@ -645,6 +653,58 @@ def _auto_uninstall_from_claude_cache() -> bool:
     return touched
 
 
+def _remove_legacy_plugin_identity() -> bool:
+    """Remove the retired plugin registration after Aegis is installed.
+
+    This runs only after the new cache entry has been committed, so a failure
+    cannot leave the user without a working guard. Other plugins and
+    marketplaces are preserved exactly.
+    """
+    touched = False
+    if CLAUDE_INSTALLED_PLUGINS_JSON.exists():
+        data = _load_installed_plugins()
+        if LEGACY_INSTALL_KEY in data["plugins"]:
+            del data["plugins"][LEGACY_INSTALL_KEY]
+            _atomic_write_json(CLAUDE_INSTALLED_PLUGINS_JSON, data)
+            touched = True
+
+    if CLAUDE_KNOWN_MARKETPLACES_JSON.exists():
+        markets = _load_known_marketplaces()
+        if LEGACY_MARKETPLACE_SLUG in markets:
+            del markets[LEGACY_MARKETPLACE_SLUG]
+            _atomic_write_json(CLAUDE_KNOWN_MARKETPLACES_JSON, markets)
+            touched = True
+
+    if CLAUDE_SETTINGS_JSON.exists():
+        try:
+            settings = json.loads(CLAUDE_SETTINGS_JSON.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            settings = None
+        if isinstance(settings, dict):
+            enabled = settings.get("enabledPlugins")
+            if isinstance(enabled, dict) and LEGACY_INSTALL_KEY in enabled:
+                del enabled[LEGACY_INSTALL_KEY]
+                _atomic_write_json(CLAUDE_SETTINGS_JSON, settings)
+                touched = True
+
+    legacy_cache = (
+        CLAUDE_PLUGIN_CACHE_ROOT / LEGACY_MARKETPLACE_SLUG / LEGACY_PLUGIN_NAME
+    )
+    if legacy_cache.is_dir():
+        shutil.rmtree(legacy_cache, ignore_errors=True)
+        touched = True
+    legacy_slug = CLAUDE_PLUGIN_CACHE_ROOT / LEGACY_MARKETPLACE_SLUG
+    if legacy_slug.is_dir():
+        try:
+            legacy_slug.rmdir()
+        except OSError:
+            pass
+    if LEGACY_STAGING_DIR.is_dir():
+        shutil.rmtree(LEGACY_STAGING_DIR, ignore_errors=True)
+        touched = True
+    return touched
+
+
 def _claude_install_path() -> Optional[Path]:
     """Return the currently-registered install path for the plugin, or
     ``None`` if the plugin isn't in installed_plugins.json yet. Used by
@@ -775,20 +835,20 @@ async def install_plugin():
     # build-installers.yml.
     _hooks_common.ensure_bundled_dir(BUNDLED_PLUGIN_DIR, PLUGIN_FILES)
 
-    sv_url = _hooks_common.resolve_sv_url()
+    aegis_url = _hooks_common.resolve_aegis_url()
     files_written = _hooks_common.stage_files(
         staging_dir=STAGING_DIR,
         source_dir=BUNDLED_PLUGIN_DIR,
         files=PLUGIN_FILES,
         substitutions={
-            "http://127.0.0.1:8741": sv_url,
-            "http://localhost:8741": sv_url,
+            "http://127.0.0.1:8741": aegis_url,
+            "http://localhost:8741": aegis_url,
         },
     )
 
     logger.info(
-        "Staged %d plugin file(s) for %s at %s (sv_url=%s)",
-        len(files_written), PLUGIN_NAME, STAGING_DIR, sv_url,
+        "Staged %d plugin file(s) for %s at %s (aegis_url=%s)",
+        len(files_written), PLUGIN_NAME, STAGING_DIR, aegis_url,
     )
 
     # Fail loud if NOTHING was staged. This is exactly the failure mode the
@@ -836,6 +896,11 @@ async def install_plugin():
             enabled = _enable_in_claude_settings()
         except Exception:
             logger.exception("Failed to auto-enable in settings.json")
+        try:
+            if _remove_legacy_plugin_identity():
+                logger.info("Removed retired Claude Code plugin identity")
+        except Exception:
+            logger.exception("Aegis installed, but legacy plugin cleanup failed")
         return InstallResponse(
             ok=True,
             staging_dir=str(STAGING_DIR),

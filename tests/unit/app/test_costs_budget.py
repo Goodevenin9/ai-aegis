@@ -12,8 +12,8 @@ Tests all API endpoints and proxy enforcement scenarios:
   - Edge cases: invalid actions, missing agents, zero budget
 
 Requires a running Aegis instance on:
-  - http://127.0.0.1:8741  (app API)   — override with SV_WEB_PORT
-  - http://127.0.0.1:8742  (LLM proxy) — override with SV_PROXY_PORT
+  - http://127.0.0.1:8741  (app API)   — override with AEGIS_WEB_PORT
+  - http://127.0.0.1:8742  (LLM proxy) — override with AEGIS_PROXY_PORT
 """
 
 import json
@@ -26,8 +26,8 @@ import os
 
 pytestmark = pytest.mark.integration
 
-_web_port = os.environ.get("SV_WEB_PORT", "8741")
-_proxy_port = os.environ.get("SV_PROXY_PORT", "8742")
+_web_port = os.environ.get("AEGIS_WEB_PORT", "8741")
+_proxy_port = os.environ.get("AEGIS_PROXY_PORT", "8742")
 BASE = f"http://127.0.0.1:{_web_port}/api"
 PROXY = f"http://127.0.0.1:{_proxy_port}"
 

@@ -1,7 +1,7 @@
 rules:
 - category: prompt_injection
   description: Detects attempts to manipulate LLM behavior through crafted inputs
-  id: sv_llm_001_prompt_injection
+  id: aegis_llm_001_prompt_injection
   metadata:
     author: AI Security Community
     created_at: '2024-01-15T00:00:00Z'
@@ -15,7 +15,7 @@ rules:
     references:
     - description: Community-developed methodology inspired by OWASP research
       title: Aegis Prompt Injection Detection
-      url: https://github.com/Wanshanghao/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - prompt_injection
@@ -66,7 +66,7 @@ rules:
   threshold: 0.85
 - category: malicious_code_generation
   description: Detects potentially dangerous output that could lead to XSS or injection
-  id: sv_llm_002_insecure_output
+  id: aegis_llm_002_insecure_output
   metadata:
     author: AI Security Community
     created_at: '2024-01-15T00:00:00Z'
@@ -74,7 +74,7 @@ rules:
     references:
     - description: Community-developed methodology for output validation
       title: Aegis Output Security Analysis
-      url: https://github.com/Wanshanghao/ai-aegis/tree/master/src/aegis/rules/community
+      url: https://github.com/Goodevenin9/ai-aegis/tree/master/src/aegis/rules/community
     source: aegis_community
     tags:
     - output_validation
@@ -122,7 +122,7 @@ rules:
       description: Detection pattern for file_get_contents\s*\(...
 - category: data_poisoning
   description: Detects potential signs of training data poisoning attempts
-  id: sv_llm_003_training_data_poisoning
+  id: aegis_llm_003_training_data_poisoning
   metadata:
     author: AI Security Community
     created_at: '2024-01-15T00:00:00Z'
@@ -145,7 +145,7 @@ rules:
   detection_logic: any
 - category: adversarial_attack
   description: Detects attempts to cause resource exhaustion or DoS
-  id: sv_llm_004_model_dos
+  id: aegis_llm_004_model_dos
   metadata:
     author: AI Security Community
     created_at: '2024-01-15T00:00:00Z'
@@ -165,7 +165,7 @@ rules:
   detection_logic: heuristic_score > threshold
 - category: sensitive_data_exposure
   description: Detects attempts to extract sensitive information
-  id: sv_llm_006_sensitive_disclosure
+  id: aegis_llm_006_sensitive_disclosure
   metadata:
     author: AI Security Community
     created_at: '2024-01-15T00:00:00Z'
@@ -223,7 +223,7 @@ rules:
       description: Phone label followed by an E.164-ish digit sequence
 - category: malicious_code_generation
   description: Detects potential plugin security issues
-  id: sv_llm_007_insecure_plugins
+  id: aegis_llm_007_insecure_plugins
   metadata:
     author: AI Security Community
     created_at: '2024-01-15T00:00:00Z'
@@ -245,7 +245,7 @@ rules:
   detection_logic: any
 - category: privilege_escalation
   description: Detects attempts to abuse LLM autonomous capabilities
-  id: sv_llm_008_excessive_agency
+  id: aegis_llm_008_excessive_agency
   metadata:
     author: AI Security Community
     created_at: '2024-01-15T00:00:00Z'
@@ -292,7 +292,7 @@ rules:
       description: Excessive-permission grant within a single phrase
 - category: misinformation_generation
   description: Detects scenarios that may lead to overreliance on LLM outputs
-  id: sv_llm_009_overreliance
+  id: aegis_llm_009_overreliance
   metadata:
     author: AI Security Community
     created_at: '2024-01-15T00:00:00Z'
@@ -314,7 +314,7 @@ rules:
   detection_logic: any
 - category: model_extraction
   description: Detects attempts to extract or steal model information
-  id: sv_llm_010_model_theft
+  id: aegis_llm_010_model_theft
   metadata:
     author: AI Security Community
     created_at: '2024-01-15T00:00:00Z'

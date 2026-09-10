@@ -433,7 +433,7 @@ def setup_analyze_prompt_tool(mcp: "FastMCP", server: "AegisMCPServer"):
                         f"  • Improved Detection Accuracy\n"
                         f"  • Reduced False Positives\n\n"
                         f"  Get your FREE API key:\n"
-                        f"  → https://aegis.example/signup\n"
+                        f"  → https://github.com/Goodevenin9/ai-aegis\n"
                         f"═══════════════════════════════════════════════════════════\n"
                     )
                 else:

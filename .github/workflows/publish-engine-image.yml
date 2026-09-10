@@ -37,7 +37,7 @@ jobs:
     # Only the canonical repo can publish (no-op on forks), AND only the
     # authorized operator may publish — any other actor's dispatch is skipped.
     if: >-
-      github.repository == 'Wanshanghao/ai-aegis' &&
+      github.repository == 'Goodevenin9/ai-aegis' &&
       github.actor == 'mss04132020'
     runs-on: ubuntu-latest
     steps:
@@ -68,7 +68,7 @@ jobs:
             VERSION=${{ inputs.version }}
             EXTRA=${{ inputs.extra }}
           tags: |
-            ghcr.io/Wanshanghao/ai-aegis:${{ inputs.version }}
-            ghcr.io/Wanshanghao/ai-aegis:latest
+            ghcr.io/Goodevenin9/ai-aegis:${{ inputs.version }}
+            ghcr.io/Goodevenin9/ai-aegis:latest
           provenance: true
           sbom: true

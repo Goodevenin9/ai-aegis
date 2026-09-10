@@ -18,29 +18,29 @@ from typing import List, Literal, Optional
 logger = logging.getLogger(__name__)
 
 
-TokenType = Literal["svet", "svpk", "legacy"]
+TokenType = Literal["aet", "aepk", "legacy"]
 
 
 def detect_token_type(token: str) -> TokenType:
     """
     Distinguish enrollment tokens, personal API keys, and legacy keys by prefix.
 
-    - `svet_<...>` → org enrollment token (single-use, redeem via /api/v1/devices/enroll)
-    - `svpk_<...>` → personal API key (Cloud Connect personal mode)
+    - `aet_<...>` → org enrollment token (single-use, redeem via /api/v1/devices/enroll)
+    - `aepk_<...>` → personal API key (Cloud Connect personal mode)
     - everything else → legacy unprefixed personal API key (grandfathered)
     """
     if not token:
         return "legacy"
-    if token.startswith("svet_"):
-        return "svet"
-    if token.startswith("svpk_"):
-        return "svpk"
+    if token.startswith("aet_"):
+        return "aet"
+    if token.startswith("aepk_"):
+        return "aepk"
     return "legacy"
 
 
 @dataclass
 class EnrolledCredentials:
-    """v2 credential shape — populated after a successful svet_* redemption."""
+    """v2 credential shape — populated after a successful aet_* redemption."""
 
     # Org binding
     device_record_id: str
@@ -94,7 +94,7 @@ def _load_raw() -> Optional[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Personal-key path (svpk_* and legacy)
+# Personal-key path (aepk_* and legacy)
 # ---------------------------------------------------------------------------
 
 def save_credentials(api_key: str) -> bool:
@@ -135,7 +135,7 @@ def credentials_configured() -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Enrolled path (svet_* — active-mcp-and-policy-sync)
+# Enrolled path (aet_* — active-mcp-and-policy-sync)
 # ---------------------------------------------------------------------------
 
 def save_enrolled_credentials(creds: EnrolledCredentials) -> bool:

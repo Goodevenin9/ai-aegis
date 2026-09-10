@@ -880,7 +880,7 @@ const ThreatsPage = {
         let agree = md.ml_agreement || null;
         let score = (typeof md.ml_malicious_score === 'number') ? md.ml_malicious_score : null;
         if (score === null && Array.isArray(threat.matched_rules)) {
-            const g = threat.matched_rules.find(r => r.source === 'model' || r.rule_id === 'sv_guardian_model');
+            const g = threat.matched_rules.find(r => r.source === 'model' || r.rule_id === 'aegis_guardian_model');
             if (g && typeof g.confidence === 'number') score = g.confidence;
         }
         // Derive the agreement tier from the score if metadata didn't carry it.
@@ -894,7 +894,7 @@ const ThreatsPage = {
         // with itself — exactly the records most likely to be FPs.
         const rules = Array.isArray(threat.matched_rules) ? threat.matched_rules : [];
         const modelOnly = rules.length > 0 && rules.every(
-            r => r.source === 'model' || r.rule_id === 'sv_guardian_model'
+            r => r.source === 'model' || r.rule_id === 'aegis_guardian_model'
         );
         return (agree || score !== null) ? { agree, score, modelOnly } : null;
     },
@@ -1345,7 +1345,7 @@ const ThreatsPage = {
 
                 // Per-rule origin chip: the Guardian model entry reads "ML"
                 // with its score; everything else reads "Rule".
-                const isMl = rule.source === 'model' || rule.rule_id === 'sv_guardian_model';
+                const isMl = rule.source === 'model' || rule.rule_id === 'aegis_guardian_model';
                 const origin = document.createElement('span');
                 origin.className = 'matched-rule-origin ' + (isMl ? 'origin-ml' : 'origin-rule');
                 if (isMl && typeof rule.confidence === 'number') {

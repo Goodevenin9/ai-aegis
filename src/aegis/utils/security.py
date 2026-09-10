@@ -212,7 +212,9 @@ def timeout_context(seconds: float):
     # Check if we're in the main thread
     is_main_thread = threading.current_thread() == threading.main_thread()
 
-    if is_main_thread:
+    has_posix_alarm = hasattr(signal, "SIGALRM") and hasattr(signal, "alarm")
+
+    if is_main_thread and has_posix_alarm:
         # Use signal-based timeout in main thread
         def timeout_handler(signum, frame):
             raise RegexTimeoutError(f"Operation timed out after {seconds} seconds")

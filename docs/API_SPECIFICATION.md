@@ -153,9 +153,9 @@ All requests are scanned for threats before forwarding. All responses are option
 
 ## Cloud API (Optional)
 
-For users connected to Aegis Cloud. Requires an API key from [app.aegis.example](https://app.aegis.example).
+For remote analysis through your self-hosted AI Aegis control plane. Set `AEGIS_CONTROL_PLANE_URL` and issue an API key through its admin API; see [Self-hosted control plane](SELF_HOSTED_CONTROL_PLANE.md).
 
-**Base URL:** `https://scan.aegis.example`
+**Base URL:** `http://127.0.0.1:8780`
 
 ### Authentication
 
@@ -168,7 +168,7 @@ X-Api-Key: your_api_key_here
 **Method:** `POST /analyze`
 
 ```bash
-curl -X POST https://scan.aegis.example/analyze \
+curl -X POST http://127.0.0.1:8780/analyze \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: sk_test_12345" \
   -d '{
@@ -227,12 +227,12 @@ if result.is_threat:
 ```bash
 export AEGIS_API_KEY="your_api_key_here"
 export AEGIS_USER_TIER="professional"
-export AEGIS_API_URL="https://scan.aegis.example"
+export AEGIS_API_URL="http://127.0.0.1:8780"
 ```
 
 ---
 
 ## Support
 
-- **Issues:** [GitHub Issues](https://github.com/Wanshanghao/ai-aegis/issues)
-- **Documentation:** [docs.aegis.example](https://docs.aegis.example)
+- **Issues:** [GitHub Issues](https://github.com/Goodevenin9/ai-aegis/issues)
+- **Documentation:** [docs.](https://docs.)

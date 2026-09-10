@@ -754,7 +754,7 @@ async def forwarder_health(forwarder_id: int) -> dict[str, Any]:
     breaker_base = 60.0
     breaker_cap = 60.0 * 60.0
     breaker_trip = 5
-    max_attempts = int(_os.environ.get("SV_SIEM_MAX_ATTEMPTS", "10"))
+    max_attempts = int(_os.environ.get("AEGIS_SIEM_MAX_ATTEMPTS", "10"))
     consecutive = int(fwd["consecutive_fails"] or 0)
     backoff_seconds: Optional[int] = None
     if consecutive >= breaker_trip:

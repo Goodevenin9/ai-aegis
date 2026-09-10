@@ -1,6 +1,6 @@
 {
   "name": "aegis",
-  "owner": { "name": "Aegis", "url": "https://aegis.example" },
+  "owner": { "name": "Aegis", "url": "https://github.com/Goodevenin9/ai-aegis" },
   "metadata": { "description": "Official Aegis marketplace — security & observability plugins for AI agent runtimes. Independent third-party project; not affiliated with or endorsed by Anthropic; product names used nominatively.", "version": "1.0.0" },
   "plugins": [
     { "name": "aegis-guard", "source": "./src/aegis/plugins/claude-code", "category": "security" }

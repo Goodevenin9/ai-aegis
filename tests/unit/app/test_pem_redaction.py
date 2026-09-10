@@ -1,6 +1,6 @@
 """Tests for the PEM private-key redaction patterns added in v4.3.
 
-Pair with the matching rule sv_community_output_003_pem_private_key_leak —
+Pair with the matching rule aegis_community_output_003_pem_private_key_leak —
 the rule fires the threat row, the redaction layer ensures the row written
 to threat_intel_records.text_content (and forwarded onward via SIEM) does
 NOT contain the leaked key body. Closes the self-defeating loop the legal

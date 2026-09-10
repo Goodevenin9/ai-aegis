@@ -62,9 +62,9 @@ def load_essential_registry(yaml_path: Optional[str] = None) -> dict:
     else:
         paths = [
             # When installed as package
-            Path(__file__).parent.parent.parent / "rules" / "tool_permissions" / "sv_tool_essential.yml",
+            Path(__file__).parent.parent.parent / "rules" / "tool_permissions" / "aegis_tool_essential.yml",
             # Development layout
-            Path(__file__).parent.parent.parent.parent / "rules" / "tool_permissions" / "sv_tool_essential.yml",
+            Path(__file__).parent.parent.parent.parent / "rules" / "tool_permissions" / "aegis_tool_essential.yml",
         ]
 
     for p in paths:

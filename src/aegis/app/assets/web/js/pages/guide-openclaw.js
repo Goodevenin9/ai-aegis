@@ -72,7 +72,7 @@ const GuideOpenclawPage = {
 
         // --- Block mode ---
         root.appendChild(h2('Block Mode (optional)'));
-        root.appendChild(p('Block Mode starts a proxy on port 8742 that intercepts LLM traffic so threats can be actively blocked. The plugin keeps monitoring; the proxy adds blocking. Enable it from the dashboard toggle (or svconfig.yml: block_mode: true), then point OpenClaw at the proxy and restart:'));
+        root.appendChild(p('Block Mode starts a proxy on port 8742 that intercepts LLM traffic so threats can be actively blocked. The plugin keeps monitoring; the proxy adds blocking. Enable it from the dashboard toggle (or aegis.yml: block_mode: true), then point OpenClaw at the proxy and restart:'));
         root.appendChild(code(`# Linux / macOS\nexport OPENAI_BASE_URL=http://127.0.0.1:8742/openai/v1\n\n# Windows (PowerShell)\n$env:OPENAI_BASE_URL="http://127.0.0.1:8742/openai/v1"\n\n# then\nopenclaw gateway`));
         root.appendChild(h3('Disabling Block Mode'));
         root.appendChild(p('Unset the env var and restart OpenClaw to connect directly to the provider. The plugin keeps monitoring without the proxy.'));
@@ -87,9 +87,9 @@ curl -X POST https://<your-engine-endpoint>/api/hooks/install
 
 # point the hooks at your engine endpoint (the URL from \`terraform output\`)
 export AEGIS_ENGINE_ENDPOINT=https://<your-engine-endpoint>`));
-        root.appendChild(note('Engine, not cloud.', 'AEGIS_ENGINE_ENDPOINT is the engine the hooks call for analysis: your local app OR your self-host / Terraform engine. It is NOT the Aegis cloud (scan.aegis.example). Legacy SV_BASE_URL / AEGIS_URL still work as fallbacks.'));
-        root.appendChild(p('Auth is optional. A private (in-VPC) endpoint needs no credential: the default and least friction. Only if you expose the endpoint publicly and gate it (Terraform ingress_token: enforced by a v4.9.0+ engine; older images set but ignore it) do you set a key; use a free Aegis account key or an SVET token: it gates inbound access only and forwards no data:'));
-        root.appendChild(code(`export AEGIS_API_KEY=<Aegis account key or SVET token>   # optional: public gated endpoint only`));
+        root.appendChild(note('Engine and control plane are separate.', 'AEGIS_ENGINE_ENDPOINT is the analysis engine called by hooks. AEGIS_CONTROL_PLANE_URL is the fleet-management service.'));
+        root.appendChild(p('Auth is optional for a private endpoint. For a public deployment, configure an Aegis API key at the gateway.'));
+        root.appendChild(code(`export AEGIS_API_KEY=<Aegis API key>   # public gated endpoint only`));
 
         root.appendChild(h2('Verify it works'));
         root.appendChild(p('1. Plugin status from the local app:'));
@@ -106,7 +106,7 @@ export AEGIS_ENGINE_ENDPOINT=https://<your-engine-endpoint>`));
         root.appendChild(code(`# Linux / macOS\nmkdir -p ~/.openclaw/plugins/aegis-guard\n\n# Windows (PowerShell)\nNew-Item -ItemType Directory -Force -Path "$env:APPDATA\\openclaw\\plugins\\aegis-guard"`));
         const fileList = document.createElement('ul');
         fileList.style.cssText = 'margin: 8px 0 8px 18px; color: var(--text-secondary); padding-left: 8px;';
-        [['openclaw.plugin.json', 'plugin manifest'], ['package.json', 'plugin metadata'], ['index.ts', 'main entry: runtime guards, fetch-to-Aegis'], ['config.ts', 'config resolver (env vars + svconfig.yml reads)']].forEach(([f, d]) => {
+        [['openclaw.plugin.json', 'plugin manifest'], ['package.json', 'plugin metadata'], ['index.ts', 'main entry: runtime guards, fetch-to-Aegis'], ['config.ts', 'config resolver (env vars + aegis.yml reads)']].forEach(([f, d]) => {
             const li = document.createElement('li'); li.style.cssText = 'margin: 4px 0;';
             li.appendChild(inline(f)); li.appendChild(document.createTextNode(' — ' + d)); fileList.appendChild(li);
         });
@@ -124,7 +124,7 @@ export AEGIS_ENGINE_ENDPOINT=https://<your-engine-endpoint>`));
         root.appendChild(h2('Possible issues'));
         root.appendChild(note('Plugin not loaded after install', 'restart the OpenClaw gateway: the plugin is loaded at gateway start. Confirm it appears in openclaw plugins list.'));
         root.appendChild(note('No tool activity showing', 'check curl http://localhost:8741/api/hooks/status returns installed: true, and that the gateway was restarted after install.'));
-        root.appendChild(note('Block Mode not blocking', 'confirm OPENAI_BASE_URL points at the proxy (port 8742) and the gateway was restarted with the env var set. The toggle/​svconfig must have block_mode enabled for the proxy to start.'));
+        root.appendChild(note('Block Mode not blocking', 'confirm OPENAI_BASE_URL points at the proxy (port 8742) and the gateway was restarted with the env var set. The toggle/​aegis config must have block_mode enabled for the proxy to start.'));
 
         // --- Privacy ---
         root.appendChild(h2('Privacy posture'));

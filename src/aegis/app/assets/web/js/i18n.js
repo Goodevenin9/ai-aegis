@@ -5,8 +5,8 @@
  *   - English is the source of truth in code. When lang === 'en' the DOM is
  *     never touched, so the original frontend renders byte-for-byte identical.
  *   - Switching to Chinese walks the DOM and translates rendered text nodes /
- *     attributes against a dictionary (window.SV_DICT) plus a pattern list
- *     (window.SV_PATTERNS) for dynamic strings like "3 threats detected".
+ *     attributes against a dictionary (window.AEGIS_DICT) plus a pattern list
+ *     (window.AEGIS_PATTERNS) for dynamic strings like "3 threats detected".
  *   - A MutationObserver keeps newly-rendered SPA content translated without
  *     re-rendering. Translated text no longer matches dict keys, so there is
  *     no feedback loop.
@@ -19,8 +19,8 @@
 (function () {
     'use strict';
 
-    var DICT = (typeof window !== 'undefined' && window.SV_DICT) || {};
-    var PATTERNS = (typeof window !== 'undefined' && window.SV_PATTERNS) || [];
+    var DICT = (typeof window !== 'undefined' && window.AEGIS_DICT) || {};
+    var PATTERNS = (typeof window !== 'undefined' && window.AEGIS_PATTERNS) || [];
 
     var STORAGE_KEY = 'ag-lang';
 
@@ -47,11 +47,13 @@
     // Elements whose content must stay machine-readable English.
     var SKIP_RE = /(^|\s)(code-block|code|terminal|term|log|logs|mono|monospace|command-box|console|output|env-var|inline-code|copied|language-|json|bash|clipboard|keyboard|code-)(\s|$)/i;
 
-    function hasSkippableAncestor(node) {
+    function hasSkippableAncestor(node, allowOwnFormControl) {
+        var ownElement = node && node.nodeType === Node.ELEMENT_NODE ? node : null;
         var el = node && node.nodeType === Node.ELEMENT_NODE ? node : (node && node.parentElement);
         while (el) {
             var tag = el.nodeName;
-            if (tag === 'CODE' || tag === 'PRE' || tag === 'SCRIPT' || tag === 'STYLE' || tag === 'TEXTAREA' || tag === 'INPUT') return true;
+            if (tag === 'CODE' || tag === 'PRE' || tag === 'SCRIPT' || tag === 'STYLE') return true;
+            if ((tag === 'TEXTAREA' || tag === 'INPUT') && !(allowOwnFormControl && el === ownElement)) return true;
             var cls = (typeof el.className === 'string') ? el.className : '';
             if (cls && SKIP_RE.test(cls)) return true;
             if (el.hasAttribute && el.hasAttribute('data-no-translate')) return true;
@@ -175,7 +177,9 @@
             return;
         }
         if (node.nodeType === Node.ELEMENT_NODE) {
-            if (hasSkippableAncestor(node)) return;
+            // User-entered form values stay untouched. The control's own
+            // placeholder/title/aria-label are interface copy and do translate.
+            if (hasSkippableAncestor(node, true)) return;
             for (var a = 0; a < ATTRS.length; a++) {
                 if (node.hasAttribute && node.hasAttribute(ATTRS[a])) {
                     var cur = node.getAttribute(ATTRS[a]);
@@ -208,6 +212,7 @@
                 var saved = localStorage.getItem(STORAGE_KEY);
                 if (saved === 'zh' || saved === 'en') this.lang = saved;
             } catch (_) { /* private mode */ }
+            document.documentElement.lang = this.lang === 'zh' ? 'zh-CN' : 'en';
             this._startObserver();
             if (this.lang === 'zh') this.apply();
             this._updateToggleButton();
@@ -216,6 +221,7 @@
         setLang: function (lang) {
             var next = (lang === 'zh') ? 'zh' : 'en';
             this.lang = next;
+            document.documentElement.lang = next === 'zh' ? 'zh-CN' : 'en';
             try { localStorage.setItem(STORAGE_KEY, next); } catch (_) { /* ignore */ }
             if (next === 'zh') {
                 this.apply();
@@ -270,8 +276,10 @@
             var btn = document.getElementById('lang-toggle-btn');
             if (!btn) return;
             var zh = this.lang === 'zh';
-            btn.textContent = zh ? 'EN' : '中文';
-            btn.title = zh ? 'Switch to English' : 'Switch to Chinese';
+            var label = btn.querySelector('.lang-toggle-label');
+            if (label) label.textContent = zh ? 'English' : '中文';
+            else btn.textContent = zh ? 'English' : '中文';
+            btn.title = zh ? '切换到英文' : 'Switch to Chinese';
             btn.setAttribute('aria-label', btn.title);
         },
 

@@ -33,6 +33,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 CMD ["python", "-m", "aegis.mcp"]
 
 # Labels for metadata
-LABEL maintainer="Aegis <support@aegis.example>"
+LABEL maintainer="Aegis <GitHub issues>"
 LABEL description="Aegis MCP Server - AI Threat Detection and Analysis"
 LABEL version="1.0.0"

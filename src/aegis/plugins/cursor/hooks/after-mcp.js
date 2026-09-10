@@ -58,7 +58,7 @@ async function main() {
   } catch {
     return; // malformed stdin — nothing to audit
   }
-  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || process.env.SV_BASE_URL || DEFAULT_BASE_URL;
+  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL;
   try {
     const toolName = (event && (event.tool_name || event.toolName)) || '';
     const candidates = normalize(toolName, {
@@ -66,13 +66,14 @@ async function main() {
       serverSlug: serverSlugFrom(event),
     });
     const sessionId = sessionIdFrom(event);
+    const resultText = extractResultText(event);
     const requestId = await postCallAudit(baseUrl, {
       toolName,
       candidates,
       toolInput: event && event.tool_input,
+      toolOutput: resultText,
       sessionId,
     });
-    const resultText = extractResultText(event);
     if (resultText.length > 0) {
       scanIncoming(baseUrl, resultText, {
         requestId,

@@ -46,18 +46,19 @@ async function main() {
   } catch {
     return; // malformed stdin — nothing to audit
   }
-  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || process.env.SV_BASE_URL || DEFAULT_BASE_URL;
+  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL;
   try {
     const sessionId = sessionIdFrom(event);
     const filePath = (event && typeof event.file_path === 'string') ? event.file_path : '';
     const editCount = Array.isArray(event && event.edits) ? event.edits.length : 0;
+    const written = newContentFrom(event);
     const requestId = await postCallAudit(baseUrl, {
       toolName: TOOL_NAME,
       candidates: normalize(TOOL_NAME),
       toolInput: `${filePath} (${editCount} edit${editCount === 1 ? '' : 's'})`,
+      toolOutput: written,
       sessionId,
     });
-    const written = newContentFrom(event);
     if (written.length > 0 && hasCredentialMarkers(written)) {
       scanOutgoing(baseUrl, written, {
         requestId, sessionId, toolName: TOOL_NAME, toolId: TOOL_NAME,

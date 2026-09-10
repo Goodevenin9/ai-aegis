@@ -324,6 +324,21 @@ async function audit(event, baseUrl) {
     runtime_kind: RUNTIME_KIND,
     session_id: sessionId,
   });
+  if (sessionId) {
+    let responseText = '';
+    try {
+      responseText = extractScanTextFromResponse(
+        event && (event.tool_response || event.toolResponse),
+      ).slice(0, THREAT_SCAN_RESPONSE_LIMIT);
+    } catch { /* event recording is best-effort */ }
+    postJsonAndForget(`${baseUrl}/api/runtime/events`, {
+      session_id: sessionId,
+      runtime_kind: RUNTIME_KIND,
+      event_type: 'after_tool_call',
+      text: responseText || null,
+      metadata: { tool_name: toolName, tool_id: toolId, action },
+    });
+  }
 
   // Threat-intel pass — only for tools whose `tool_input` is prose the
   // agent emitted in natural language (WebFetch.prompt, Skill/Task/Agent
@@ -442,7 +457,7 @@ async function main() {
     // on stdout; the audit POST simply doesn't happen.
     return;
   }
-  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || process.env.SV_BASE_URL || DEFAULT_BASE_URL;
+  const baseUrl = process.env.AEGIS_ENGINE_ENDPOINT || DEFAULT_BASE_URL;
   try {
     await audit(event, baseUrl);
   } catch {

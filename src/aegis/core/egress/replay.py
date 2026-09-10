@@ -51,8 +51,8 @@ from .engine import (
 # Baseline rule ids whose match depends on a command-derived flag that the
 # audit row does not carry. When the recorded verdict names one of these, the
 # flag is reconstructed from the rule id itself.
-_PUBLISH_RULE = "sv.egress.package_publish"
-_INLINE_REMOTE_RULE = "sv.egress.git_push_inline_url"
+_PUBLISH_RULE = "aegis.egress.package_publish"
+_INLINE_REMOTE_RULE = "aegis.egress.git_push_inline_url"
 
 
 def attempt_from_audit_row(row: dict) -> EgressAttempt:
@@ -177,7 +177,7 @@ def replay_policy(
         "known breakage, not all breakage.",
     ]
     if baseline_carryover == 0 and any(
-        (r.get("rule_id") or "").startswith("sv.egress.") for r in rows
+        (r.get("rule_id") or "").startswith("aegis.egress.") for r in rows
     ):
         caveats.append(
             "Baseline verdicts are carried over from the recorded row rather "

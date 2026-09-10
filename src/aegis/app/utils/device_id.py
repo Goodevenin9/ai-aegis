@@ -10,7 +10,7 @@ by device in their SOC / SIEM dashboards. Designed to be:
   - Different per physical device
   - Non-identifying when it leaves the box — we SHA-256 the raw
     machine UUID with a namespace prefix so the wire format is
-    ``sv-<24 hex chars>`` and the raw OS identifier never reaches a
+    ``aegis-<24 hex chars>`` and the raw OS identifier never reaches a
     log file or an outbound event
 
 Resolution order (first hit wins):
@@ -18,7 +18,7 @@ Resolution order (first hit wins):
   1. Cached file at ``{app_data_dir}/.device_id``. Preserved across
      app reinstalls as long as the user does not also wipe the app
      data dir. Returned verbatim if present.
-  2. OS-provided stable machine identifier, hashed into an sv- prefix
+  2. OS-provided stable machine identifier, hashed into an aegis- prefix
      and written to the cache file:
        - macOS   → ``ioreg`` IOPlatformUUID
        - Linux   → ``/etc/machine-id`` (fallback ``/var/lib/dbus/machine-id``)
@@ -47,7 +47,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 _FILE_NAME = ".device_id"
-_PREFIX = "sv-"
+_PREFIX = "aegis-"
 _HASH_NAMESPACE = "aegis-device-v1"
 _HASH_LEN = 24  # hex chars of SHA-256, keeps the ID short but collision-safe
 

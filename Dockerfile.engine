@@ -1,20 +1,17 @@
-# Aegis ENGINE — headless web-server image for self-host (BYOC / Terraform).
-# Built from the PUBLISHED PyPI package, pinned to a version (build-arg VERSION).
+# AI Aegis Engine — headless web-server image built from this repository.
 # Multi-platform: linux/amd64, linux/arm64.
-# Published to: ghcr.io/Wanshanghao/ai-aegis
+# Published to: ghcr.io/Goodevenin9/ai-aegis
 #
-# Contract expected by the terraform-<cloud>-aegis modules:
+# Runtime contract:
 #   - serves on $PORT (default 8741) bound to 0.0.0.0
 #   - data dir: $HOME/.local/share/aegis/threat-monitor (HOME=/home/aegis
 #     -> the modules' default persistence_mount_path)
-#   - if AEGIS_ENROLL_TOKEN (svet_*) is set, enrolls before serving
+#   - if AEGIS_ENROLL_TOKEN (aet_*) is set, enrolls before serving
 FROM python:3.11-slim
 
-# VERSION must be a released ai-aegis version on PyPI (e.g. 4.7.1).
-# EXTRA is the install extra: "app" works for all releases; 4.8.0+ may offer a
-# leaner "server" extra (no pywebview/watchdog).
-ARG VERSION
-ARG EXTRA=app
+ARG AEGIS_APT_MIRROR=""
+ARG AEGIS_APT_SECURITY_MIRROR=""
+ARG AEGIS_PIP_INDEX_URL=""
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -22,14 +19,28 @@ ENV PYTHONUNBUFFERED=1 \
     PORT=8741 \
     AEGIS_CONTAINER=1
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+RUN if [ -n "$AEGIS_APT_MIRROR" ]; then \
+        sed -i "s|http://deb.debian.org/debian|$AEGIS_APT_MIRROR|g" /etc/apt/sources.list.d/debian.sources; \
+    fi \
+    && if [ -n "$AEGIS_APT_SECURITY_MIRROR" ]; then \
+        sed -i "s|http://deb.debian.org/debian-security|$AEGIS_APT_SECURITY_MIRROR|g" /etc/apt/sources.list.d/debian.sources; \
+    fi \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends curl build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Pinned install of the released engine. `--web` runs headless (no native window;
-# webview/watchdog are present with [app] but a window is never created).
-RUN test -n "${VERSION}" || (echo "ERROR: --build-arg VERSION=<x.y.z> is required" && exit 1) \
-    && pip install --no-cache-dir "ai-aegis[${EXTRA}]==${VERSION}"
+WORKDIR /opt/ai-aegis
+COPY setup.py pyproject.toml MANIFEST.in README.md LICENSE NOTICE ./
+COPY benchmarks/ ./benchmarks/
+COPY src/ ./src/
+RUN if [ -n "$AEGIS_PIP_INDEX_URL" ]; then \
+        pip install --no-cache-dir --index-url "$AEGIS_PIP_INDEX_URL" ".[app]"; \
+    else \
+        pip install --no-cache-dir ".[app]"; \
+    fi \
+    && apt-get purge -y build-essential \
+    && apt-get autoremove -y \
+    && rm -rf /root/.cache
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
@@ -46,6 +57,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=5 \
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 LABEL org.opencontainers.image.title="Aegis Engine" \
-      org.opencontainers.image.description="Aegis threat-monitor engine — headless server image for self-host (BYOC / Terraform)." \
-      org.opencontainers.image.source="https://github.com/Wanshanghao/ai-aegis" \
+      org.opencontainers.image.description="AI Aegis threat-monitor engine for self-hosted deployments." \
+      org.opencontainers.image.source="https://github.com/Goodevenin9/ai-aegis" \
       org.opencontainers.image.licenses="Apache-2.0"

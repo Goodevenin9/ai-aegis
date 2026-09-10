@@ -72,7 +72,7 @@ technique-level pivots in Grafana, pre-flatten the array in Promtail.
 |---|---|---|
 | `class_uid` | encoder | 2001 = scan finding, 1007 = tool-call audit |
 | `severity` / `severity_id` | encoder | BLOCK / DETECTED / ALLOW + OCSF severity_id |
-| `device.uid` | scanner | stable per-machine hash (`sv-<24 hex>`) |
+| `device.uid` | scanner | stable per-machine hash (`aegis-<24 hex>`) |
 | `actor.user.name` | scanner | OS login of the user who triggered the scan |
 | `actor.process.name` | scanner | `source` identifier from the /analyze call |
 | `finding.techniques[].uid` | rule metadata | MITRE ATT&CK technique IDs |

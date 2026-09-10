@@ -46,11 +46,11 @@ from aegis.app.services import forwarder_secrets, siem_ocsf
 logger = logging.getLogger(__name__)
 
 
-POLL_INTERVAL_SECONDS = float(os.environ.get("SV_SIEM_POLL_SECONDS", "10"))
-BATCH_SIZE = int(os.environ.get("SV_SIEM_BATCH_SIZE", "50"))
-MAX_ATTEMPTS_PER_ROW = int(os.environ.get("SV_SIEM_MAX_ATTEMPTS", "10"))
-PURGE_KEEP_DAYS = int(os.environ.get("SV_SIEM_PURGE_DAYS", "7"))
-REQUEST_TIMEOUT_SECONDS = float(os.environ.get("SV_SIEM_HTTP_TIMEOUT", "15"))
+POLL_INTERVAL_SECONDS = float(os.environ.get("AEGIS_SIEM_POLL_SECONDS", "10"))
+BATCH_SIZE = int(os.environ.get("AEGIS_SIEM_BATCH_SIZE", "50"))
+MAX_ATTEMPTS_PER_ROW = int(os.environ.get("AEGIS_SIEM_MAX_ATTEMPTS", "10"))
+PURGE_KEEP_DAYS = int(os.environ.get("AEGIS_SIEM_PURGE_DAYS", "7"))
+REQUEST_TIMEOUT_SECONDS = float(os.environ.get("AEGIS_SIEM_HTTP_TIMEOUT", "15"))
 
 # Circuit breaker knobs — exponential backoff per destination
 _BREAKER_TRIP_AFTER = 5  # consecutive failures before backing off

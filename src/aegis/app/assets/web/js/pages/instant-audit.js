@@ -433,9 +433,9 @@ const InstantAuditPage = {
             return `<div class="ia-sec"><div class="ia-sec-h">External MCP servers</div>
                 <div class="ia-ok">No MCP tool calls found in the scanned window.</div></div>`;
         }
-        const rows = this._applySort('mcp', servers).map(sv => `
-            <tr><td class="ia-mono">${this._esc(sv.name)}</td>
-                <td class="ia-num">${sv.calls}</td><td class="ia-num">${sv.sessions}</td></tr>`).join('');
+        const rows = this._applySort('mcp', servers).map(aegis => `
+            <tr><td class="ia-mono">${this._esc(aegis.name)}</td>
+                <td class="ia-num">${aegis.calls}</td><td class="ia-num">${aegis.sessions}</td></tr>`).join('');
         return `<div class="ia-sec" data-sec="mcp"><div class="ia-sec-h">External MCP servers your sessions talked to</div>
             <div class="ia-tblwrap"><table class="ia-tbl"><thead>${this._thead('mcp')}</thead>
             <tbody>${rows}</tbody></table></div></div>`;
