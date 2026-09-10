@@ -22,7 +22,7 @@ setup(
     name="ai-aegis",
     version=get_version(),
     author="Aegis Team",
-    # author_email removed - contact via GitHub issues
+    # author_email removed - contact via Gitee issues
     description="Real-time AI threat monitoring. Protect your apps from prompt injection, leaks, and attacks in just a few lines of code.",
     long_description=long_description,
     long_description_content_type="text/markdown",
