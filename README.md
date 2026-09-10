@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1><img src="docs/favicon.png" alt="Aegis" width="40" height="40"> Aegis</h1>
+<h1><img src="https://gitee.com/wan-xianghao/ai-aegis/raw/master/docs/favicon.png" alt="Aegis" width="40" height="40"> Aegis</h1>
 
 <h3>Security &amp; Observability for AI Agents</h3>
 
@@ -24,7 +24,7 @@
 | **GitHub Copilot CLI** | Native plugin | `copilot-cli` |
 | **Cursor** | Native plugin | `cursor` |
 | **OpenClaw / ClawdBot** | Native plugin | `openclaw` |
-| **LangChain / LangGraph / CrewAI / Hermes** | LLM Proxy 集成，详见 [USECASES](docs/USECASES.md) | 见各用例 |
+| **LangChain / LangGraph / CrewAI / Hermes** | LLM Proxy 集成，详见 [USECASES](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/USECASES.md) | 见各用例 |
 
 <div align="center">
 
@@ -35,13 +35,13 @@
 [![Python](https://img.shields.io/pypi/pyversions/ai-aegis.svg?style=for-the-badge)](https://pypi.org/project/ai-aegis)
 [![Downloads/month](https://img.shields.io/pypi/dm/ai-aegis?style=for-the-badge&label=downloads%2Fmonth&color=orange)](https://pypistats.org/packages/ai-aegis)
 [![Downloads total](https://img.shields.io/pepy/dt/ai-aegis?style=for-the-badge&label=downloads%20total&color=orange)](https://pepy.tech/project/ai-aegis)
-[Getting Started](docs/GETTING_STARTED.md) · [Verify your install](SECURITY.md#verifying-your-download) · [Dashboard Screenshots](#screenshots)
+[Getting Started](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/GETTING_STARTED.md) · [Verify your install](https://gitee.com/wan-xianghao/ai-aegis/blob/master/SECURITY.md#verifying-your-download) · [Dashboard Screenshots](#screenshots)
 
 </div>
 
 > **开源与归属**：AI Aegis 采用 Apache License 2.0。项目包含经许可演进的
-> 上游代码和模型资产，法定版权、来源与变更说明统一记录在 [NOTICE](NOTICE)
-> 与 [LICENSE](LICENSE) 中；产品界面、命令、配置和插件均使用 AI Aegis 标识。
+> 上游代码和模型资产，法定版权、来源与变更说明统一记录在 [NOTICE](https://gitee.com/wan-xianghao/ai-aegis/blob/master/NOTICE)
+> 与 [LICENSE](https://gitee.com/wan-xianghao/ai-aegis/blob/master/LICENSE) 中；产品界面、命令、配置和插件均使用 AI Aegis 标识。
 
 <br>
 
@@ -59,11 +59,11 @@
 > - **中英文界面**：一键切换，满足不同使用者习惯
 > - 支持 Claude Code / Codex / Copilot CLI / Cursor / OpenClaw 等主流 Agent
 >
-> 本版本基于 Apache-2.0 开源项目二次开发，版本历史见 [CHANGELOG](CHANGELOG.md)。
+> 本版本基于 Apache-2.0 开源项目二次开发，版本历史见 [CHANGELOG](https://gitee.com/wan-xianghao/ai-aegis/blob/master/CHANGELOG.md)。
 
 ## How It Works
 
-<img src="docs/aegis-architecture.svg" alt="Aegis Architecture" width="100%">
+<img src="https://gitee.com/wan-xianghao/ai-aegis/raw/master/docs/aegis-architecture.svg" alt="Aegis Architecture" width="100%">
 
 **Aegis** protects your AI agents at three layers:
 
@@ -128,8 +128,8 @@ See [Configuration](#configuration) for proxy or web/api port settings.
 
 <table>
 <tr>
-<td width="58%"><img src="docs/screenshots/agent-map.png" alt="Agent Map" width="100%"><br><em>Agent Map — your whole fleet at a glance: device → harness → agent → tool, across tree / radial / mesh / Sankey views. Blocked calls pop red, secret-touching agents wear a lock. Click any node to drill into its trace.</em></td>
-<td width="42%"><img src="docs/screenshots/agent-runs.png" alt="Traces" width="100%"><br><em>Traces — a turn-by-turn waterfall of every tool call with its allow / block verdict, risk, and reason. Here a prompt-injection and a credential-exfiltration attempt are both caught and blocked.</em></td>
+<td width="58%"><img src="https://gitee.com/wan-xianghao/ai-aegis/raw/master/docs/screenshots/agent-map.png" alt="Agent Map" width="100%"><br><em>Agent Map — your whole fleet at a glance: device → harness → agent → tool, across tree / radial / mesh / Sankey views. Blocked calls pop red, secret-touching agents wear a lock. Click any node to drill into its trace.</em></td>
+<td width="42%"><img src="https://gitee.com/wan-xianghao/ai-aegis/raw/master/docs/screenshots/agent-runs.png" alt="Traces" width="100%"><br><em>Traces — a turn-by-turn waterfall of every tool call with its allow / block verdict, risk, and reason. Here a prompt-injection and a credential-exfiltration attempt are both caught and blocked.</em></td>
 </tr>
 </table>
 
@@ -137,10 +137,10 @@ See [Configuration](#configuration) for proxy or web/api port settings.
 
 <table>
 <tr>
-<td width="25%"><img src="docs/screenshots/tool-call-history.png" alt="Tool Call History" width="100%"><br><em>Tool Call History — 305 calls, 158 blocked: bash rm -rf, gmail_send to attacker, use_aws_cli stopped</em></td>
-<td width="25%"><img src="docs/screenshots/dashboard.png" alt="Dashboard" width="100%"><br><em>Dashboard — threat counts, cost metrics, and tool permission status</em></td>
-<td width="25%"><img src="docs/screenshots/costs-light.png" alt="LLM Cost Tracker" width="100%"><br><em>LLM Cost Tracker — per-agent spend, budgets, and token breakdown</em></td>
-<td width="25%"><img src="docs/screenshots/skill-scanner.png" alt="Skill Scanner" width="100%"><br><em>Skill Scanner — static security analysis for AI agent skills</em></td>
+<td width="25%"><img src="https://gitee.com/wan-xianghao/ai-aegis/raw/master/docs/screenshots/tool-call-history.png" alt="Tool Call History" width="100%"><br><em>Tool Call History — 305 calls, 158 blocked: bash rm -rf, gmail_send to attacker, use_aws_cli stopped</em></td>
+<td width="25%"><img src="https://gitee.com/wan-xianghao/ai-aegis/raw/master/docs/screenshots/dashboard.png" alt="Dashboard" width="100%"><br><em>Dashboard — threat counts, cost metrics, and tool permission status</em></td>
+<td width="25%"><img src="https://gitee.com/wan-xianghao/ai-aegis/raw/master/docs/screenshots/costs-light.png" alt="LLM Cost Tracker" width="100%"><br><em>LLM Cost Tracker — per-agent spend, budgets, and token breakdown</em></td>
+<td width="25%"><img src="https://gitee.com/wan-xianghao/ai-aegis/raw/master/docs/screenshots/skill-scanner.png" alt="Skill Scanner" width="100%"><br><em>Skill Scanner — static security analysis for AI agent skills</em></td>
 </tr>
 </table>
 
@@ -211,7 +211,7 @@ Runs entirely on your machine. No accounts required. No data leaves your infrast
 
 <br>
 
-**Performance:** Rule-based analysis (default) adds ~10–50ms per request. Optional AI analysis adds 1–3s depending on the model and provider — shown on the dashboard so you can measure it against your actual traffic. Tool-permission decisions (`allow` / `block` / `log_only`): see the [Tool Permissions guide](docs/TOOL_PERMISSIONS.md).
+**Performance:** Rule-based analysis (default) adds ~10–50ms per request. Optional AI analysis adds 1–3s depending on the model and provider — shown on the dashboard so you can measure it against your actual traffic. Tool-permission decisions (`allow` / `block` / `log_only`): see the [Tool Permissions guide](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/TOOL_PERMISSIONS.md).
 
 <br>
 
@@ -227,14 +227,14 @@ Runs entirely on your machine. No accounts required. No data leaves your infrast
 
 | Agent/Framework | Integration |
 |-----------------|-------------|
-| **LangChain** | [**`aegis-sdk-langchain`**](docs/USECASES.md#langchain) (tool-call SDK, recommended) or LLM Proxy |
-| **LangGraph** | [**`aegis-sdk-langgraph`**](docs/USECASES.md#langgraph) (tool-call SDK, recommended) or LLM Proxy |
-| **CrewAI** | [**`aegis-sdk-crewai`**](docs/USECASES.md#crewai) (tool-call SDK, recommended) or LLM Proxy |
-| **Hermes (hermes-agent)** | [**`aegis-sdk-hermes`**](docs/USECASES.md#hermes) (zero-config tool-call SDK, recommended) |
+| **LangChain** | [**`aegis-sdk-langchain`**](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/USECASES.md#langchain) (tool-call SDK, recommended) or LLM Proxy |
+| **LangGraph** | [**`aegis-sdk-langgraph`**](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/USECASES.md#langgraph) (tool-call SDK, recommended) or LLM Proxy |
+| **CrewAI** | [**`aegis-sdk-crewai`**](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/USECASES.md#crewai) (tool-call SDK, recommended) or LLM Proxy |
+| **Hermes (hermes-agent)** | [**`aegis-sdk-hermes`**](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/USECASES.md#hermes) (zero-config tool-call SDK, recommended) |
 | **Any OpenAI-compatible** | LLM Proxy — see Integrations in UI |
 | **OpenClaw / ClawdBot** *(LLM gateway agent)* | Native plugin (zero latency) — proxy only for block mode |
-| **n8n** | [Community Node](docs/USECASES.md#n8n) |
-| **Claude Desktop** | [MCP Server Guide](docs/MCP_GUIDE.md) |
+| **n8n** | [Community Node](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/USECASES.md#n8n) |
+| **Claude Desktop** | [MCP Server Guide](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/MCP_GUIDE.md) |
 | **Any OpenAI-compatible app** | LLM Proxy — set `OPENAI_BASE_URL` to proxy |
 | **Any HTTP Client** | `POST http://localhost:8741/analyze` with `{"text": "..."}` |
 
@@ -242,7 +242,7 @@ Runs entirely on your machine. No accounts required. No data leaves your infrast
 
 Native plugin with **ZERO latency** — runs inside the agent, no proxy needed. Install from the Integrations tab or `curl -X POST http://localhost:8741/api/hooks/install`. Enable block mode from the dashboard when you want to actively stop threats via proxy.
 
-[Full setup guide](docs/OPENCLAW.md)
+[Full setup guide](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/OPENCLAW.md)
 
 ### Claude Code
 
@@ -262,7 +262,7 @@ aegis-app --install-plugin claude-code
 /reload-plugins
 ```
 
-[Full setup guide](docs/CLAUDE_CODE.md)
+[Full setup guide](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/CLAUDE_CODE.md)
 
 <br>
 
@@ -366,12 +366,12 @@ The allow-list is enforced at enqueue time by `_assert_metadata_only()`. Even if
 
 | Platform | Template |
 |---|---|
-| Microsoft Sentinel | [`docs/siem/sentinel/aegis-workbook.json`](docs/siem/sentinel/aegis-workbook.json) |
-| Splunk | [`docs/siem/splunk/aegis-dashboard.xml`](docs/siem/splunk/aegis-dashboard.xml) |
-| Datadog | [`docs/siem/datadog/aegis-dashboard.json`](docs/siem/datadog/aegis-dashboard.json) |
-| Grafana (Loki) | [`docs/siem/grafana/aegis-dashboard.json`](docs/siem/grafana/aegis-dashboard.json) |
+| Microsoft Sentinel | [`docs/siem/sentinel/aegis-workbook.json`](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/siem/sentinel/aegis-workbook.json) |
+| Splunk | [`docs/siem/splunk/aegis-dashboard.xml`](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/siem/splunk/aegis-dashboard.xml) |
+| Datadog | [`docs/siem/datadog/aegis-dashboard.json`](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/siem/datadog/aegis-dashboard.json) |
+| Grafana (Loki) | [`docs/siem/grafana/aegis-dashboard.json`](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/siem/grafana/aegis-dashboard.json) |
 
-Each carries severity counters, events-over-time by severity, actor and MITRE-ish breakdowns, and a recent-high-severity log feed. **MIT-licensed, AS-IS.** Full install steps + field reference in [`docs/siem/README.md`](docs/siem/README.md); trademark + upstream licenses in [`docs/siem/NOTICE`](docs/siem/NOTICE).
+Each carries severity counters, events-over-time by severity, actor and MITRE-ish breakdowns, and a recent-high-severity log feed. **MIT-licensed, AS-IS.** Full install steps + field reference in [`docs/siem/README.md`](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/siem/README.md); trademark + upstream licenses in [`docs/siem/NOTICE`](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/siem/NOTICE).
 
 > Starter templates — import-test in your own stack and adjust queries / facets / sourcetypes before relying on them for production detections.
 
@@ -483,7 +483,7 @@ No Python required. Download and run.
 
 ### Deploy to your own cloud (self-host)
 
-Run the engine and managed-device control plane in **your own server or cloud tenant** with the included Docker Compose deployment. It provides real device enrollment, signed policy distribution and application receipts. See [Self-hosted Control Plane](docs/SELF_HOSTED_CONTROL_PLANE.md), then point agents at the engine with `AEGIS_ENGINE_ENDPOINT`.
+Run the engine and managed-device control plane in **your own server or cloud tenant** with the included Docker Compose deployment. It provides real device enrollment, signed policy distribution and application receipts. See [Self-hosted Control Plane](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/SELF_HOSTED_CONTROL_PLANE.md), then point agents at the engine with `AEGIS_ENGINE_ENDPOINT`.
 
 <br>
 
@@ -604,11 +604,11 @@ After updating, restart Aegis.
 
 ## Documentation
 
-- [Installation Guide](docs/INSTALLATION.md) — Binary installers, pip, service setup
-- [Use Cases & Examples](docs/USECASES.md) — LangChain, LangGraph, CrewAI, Hermes, n8n, FastAPI
-- [MCP Server Guide](docs/MCP_GUIDE.md) — Claude Desktop, Cursor integration
-- [API Reference](docs/API_SPECIFICATION.md) — REST API endpoints
-- [Security Policy](.github/SECURITY.md) — Vulnerability disclosure
+- [Installation Guide](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/INSTALLATION.md) — Binary installers, pip, service setup
+- [Use Cases & Examples](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/USECASES.md) — LangChain, LangGraph, CrewAI, Hermes, n8n, FastAPI
+- [MCP Server Guide](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/MCP_GUIDE.md) — Claude Desktop, Cursor integration
+- [API Reference](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/API_SPECIFICATION.md) — REST API endpoints
+- [Security Policy](https://gitee.com/wan-xianghao/ai-aegis/blob/master/.github/SECURITY.md) — Vulnerability disclosure
 
 <br>
 
@@ -621,7 +621,7 @@ pip install -e ".[dev]"
 pytest tests/ -v
 ```
 
-[Contributing Guidelines](docs/legal/CONTRIBUTOR_AGREEMENT.md) · [Code of Conduct](.github/CODE_OF_CONDUCT.md)
+[Contributing Guidelines](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/legal/CONTRIBUTOR_AGREEMENT.md) · [Code of Conduct](https://gitee.com/wan-xianghao/ai-aegis/blob/master/.github/CODE_OF_CONDUCT.md)
 
 ## Cloud (optional, opt-in)
 
@@ -629,16 +629,16 @@ A separate cloud product handles MCP tool-permission policy sync across enrolled
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE).
+Apache License 2.0 — see [LICENSE](https://gitee.com/wan-xianghao/ai-aegis/blob/master/LICENSE).
 
-The starter SIEM dashboard templates under [`docs/siem/`](docs/siem/) (Splunk XML, Sentinel workbook, Datadog + Grafana JSON) are MIT-licensed — see [`docs/siem/LICENSE`](docs/siem/LICENSE) and [`docs/siem/NOTICE`](docs/siem/NOTICE) for trademark disclaimers.
+The starter SIEM dashboard templates under [`docs/siem/`](https://gitee.com/wan-xianghao/ai-aegis/tree/master/docs/siem/) (Splunk XML, Sentinel workbook, Datadog + Grafana JSON) are MIT-licensed — see [`docs/siem/LICENSE`](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/siem/LICENSE) and [`docs/siem/NOTICE`](https://gitee.com/wan-xianghao/ai-aegis/blob/master/docs/siem/NOTICE) for trademark disclaimers.
 
-**Aegis** is a trademark of Aegis. See [NOTICE](NOTICE).
+**Aegis** is a trademark of Aegis. See [NOTICE](https://gitee.com/wan-xianghao/ai-aegis/blob/master/NOTICE).
 
 ---
 
 <div align="center">
 
-**[Get Started](#install)** · **[Documentation](docs/)** · **[Gitee Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)**
+**[Get Started](#install)** · **[Documentation](https://gitee.com/wan-xianghao/ai-aegis/tree/master/docs/)** · **[Gitee Issues](https://gitee.com/wan-xianghao/ai-aegis/issues)**
 
 </div>
