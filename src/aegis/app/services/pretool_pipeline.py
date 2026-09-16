@@ -89,16 +89,43 @@ class PipelineConfig:
 
     confirm_threshold: int = 40
     block_threshold: int = 80
-    theme_shift_weight: int = 40
-    permission_probe_weight: int = 25
-    request_escalation_weight: int = 30
-    explicit_harm_weight: int = 40
+    # A single semantic label remains below the balanced friction threshold;
+    # two independent labels or a repeated label are required to intervene.
+    theme_shift_weight: int = 20
+    permission_probe_weight: int = 20
+    request_escalation_weight: int = 20
+    # One fallible model label is evidence, not user friction. Repeated turns
+    # or independent deterministic signals may still cross the thresholds.
+    explicit_harm_weight: int = 20
     repeated_retry_weight: int = 15
     third_retry_weight: int = 30
+    safe_turn_decay: int = 10
     max_drift_score: int = 100
     # Learned patterns are evidence, never an autonomous verdict.  Even after
     # repeated matches their lifetime contribution stays below confirm_threshold.
     max_immune_session_score: int = 25
+
+    @classmethod
+    def for_preset(cls, preset: str) -> "PipelineConfig":
+        """Return an auditable intervention profile without hidden heuristics."""
+
+        profiles = {
+            "observe": {
+                "confirm_threshold": 70,
+                "block_threshold": 95,
+                "explicit_harm_weight": 15,
+            },
+            "balanced": {},
+            "strict": {
+                "confirm_threshold": 30,
+                "block_threshold": 65,
+                "explicit_harm_weight": 20,
+            },
+        }
+        try:
+            return cls(**profiles[preset])
+        except KeyError as exc:
+            raise ValueError(f"unknown pipeline preset: {preset}") from exc
 
 
 @dataclass(frozen=True)
@@ -574,7 +601,12 @@ def _capability(
     return LayerResult(
         value=required,
         signals=tuple(signals),
-        requires_confirmation=bool(signals),
+        # A structured tool call outside the manifest is deterministic and
+        # asks immediately. An LLM-inferred capability is fallible evidence;
+        # it must combine with another signal or repeat before Friction acts.
+        requires_confirmation=any(
+            signal.code == "capability.undeclared" for signal in signals
+        ),
     )
 
 
@@ -617,20 +649,27 @@ def _radius(
     intent_evidence: tuple[IntentEvidence, ...] = (),
 ) -> LayerResult:
     signals: list[Signal] = []
-    radii = [
+    observed_radii = [
         _path_radius(path, context.project_root) for path in _paths_from_input(context.tool_input)
     ]
     text = _input_text(context.tool_input)
     if _URL.search(text) or context.tool_name.lower().startswith("mcp__"):
-        radii.append("external")
+        observed_radii.append("external")
     priority = {"project": 0, "local": 1, "user": 2, "system": 3, "external": 4}
     inferred = [item.requested_radius for item in intent_evidence if item.requested_radius != "none"]
-    radii.extend(inferred)
+    radii = observed_radii + inferred
     value = max(radii, key=lambda radius: priority[radius]) if radii else "local"
-    if value in {"user", "system", "external"}:
-        score = {"user": 10, "system": 20, "external": 15}[value]
+    observed_value = (
+        max(observed_radii, key=lambda radius: priority[radius])
+        if observed_radii else "local"
+    )
+    if observed_value in {"user", "system", "external"}:
+        score = {"user": 10, "system": 20, "external": 15}[observed_value]
         signals.append(
-            Signal("radius", f"radius.{value}", "medium", f"Operation radius: {value}", score)
+            Signal(
+                "radius", f"radius.{observed_value}", "medium",
+                f"Operation radius: {observed_value}", score,
+            )
         )
     for inferred_radius in sorted(set(inferred), key=lambda item: priority[item]):
         if inferred_radius in {"user", "system", "external"}:
@@ -788,6 +827,14 @@ def _drift(
 
     increment = sum(signal.score for signal in drift_worthy)
     increment += sum(signal.score for signal in signals)
+    if increment == 0 and context.base_decision == "allow":
+        state.drift_score = max(0, state.drift_score - config.safe_turn_decay)
+        # Safe activity cools retry memory gradually. Clearing the whole map
+        # would let an attacker interleave harmless reads between probes.
+        for fingerprint in tuple(state.attempts):
+            state.attempts[fingerprint] -= 1
+            if state.attempts[fingerprint] <= 0:
+                del state.attempts[fingerprint]
     state.drift_score = min(config.max_drift_score, state.drift_score + increment)
     if state.drift_score >= config.block_threshold:
         value = "critical"

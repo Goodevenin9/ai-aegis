@@ -96,11 +96,13 @@ const SessionSecurityPage = {
               <form id="ss-config-form"><b>Friction / Drift thresholds</b>
                 <label>Confirm <input name="confirm_threshold" type="number" min="1" max="99" value="${Number(cfg.confirm_threshold || 40)}"></label>
                 <label>Block <input name="block_threshold" type="number" min="2" max="100" value="${Number(cfg.block_threshold || 80)}"></label>
-                <label>Theme shift <input name="theme_shift_weight" type="number" min="0" max="100" value="${Number(cfg.theme_shift_weight || 40)}"></label>
-                <label>Permission probe <input name="permission_probe_weight" type="number" min="0" max="100" value="${Number(cfg.permission_probe_weight || 25)}"></label>
-                <label>Escalation <input name="request_escalation_weight" type="number" min="0" max="100" value="${Number(cfg.request_escalation_weight || 30)}"></label>
+                <label>Theme shift <input name="theme_shift_weight" type="number" min="0" max="100" value="${Number(cfg.theme_shift_weight == null ? 20 : cfg.theme_shift_weight)}"></label>
+                <label>Permission probe <input name="permission_probe_weight" type="number" min="0" max="100" value="${Number(cfg.permission_probe_weight == null ? 20 : cfg.permission_probe_weight)}"></label>
+                <label>Escalation <input name="request_escalation_weight" type="number" min="0" max="100" value="${Number(cfg.request_escalation_weight == null ? 20 : cfg.request_escalation_weight)}"></label>
+                <label>Explicit harm <input name="explicit_harm_weight" type="number" min="0" max="100" value="${Number(cfg.explicit_harm_weight == null ? 20 : cfg.explicit_harm_weight)}"></label>
                 <label>Retry 2+ <input name="repeated_retry_weight" type="number" min="0" max="100" value="${Number(cfg.repeated_retry_weight || 15)}"></label>
                 <label>Retry 3+ <input name="third_retry_weight" type="number" min="0" max="100" value="${Number(cfg.third_retry_weight || 30)}"></label>
+                <label>Safe-turn decay <input name="safe_turn_decay" type="number" min="0" max="100" value="${Number(cfg.safe_turn_decay == null ? 10 : cfg.safe_turn_decay)}"></label>
                 <label>Immunity cap <input name="max_immune_session_score" type="number" min="0" max="30" value="${Number(cfg.max_immune_session_score == null ? 25 : cfg.max_immune_session_score)}"></label>
                 <input name="max_drift_score" type="hidden" value="${Number(cfg.max_drift_score || 100)}">
                 <button class="ss-btn" type="submit">Save configuration</button><span id="ss-config-status"></span>
@@ -123,7 +125,7 @@ const SessionSecurityPage = {
     async _saveConfig(event) {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
-        const keys = ['confirm_threshold', 'block_threshold', 'theme_shift_weight', 'permission_probe_weight', 'request_escalation_weight', 'repeated_retry_weight', 'third_retry_weight', 'max_drift_score', 'max_immune_session_score'];
+        const keys = ['confirm_threshold', 'block_threshold', 'theme_shift_weight', 'permission_probe_weight', 'request_escalation_weight', 'explicit_harm_weight', 'repeated_retry_weight', 'third_retry_weight', 'safe_turn_decay', 'max_drift_score', 'max_immune_session_score'];
         const status = document.getElementById('ss-config-status');
         try {
             const run = await API.updateRuntimePipelineConfig(Object.fromEntries(keys.map(key => [key, Number(form.get(key))])));

@@ -20,7 +20,6 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 
 from aegis.app.services.external_benchmark_evaluation import (  # noqa: E402
     DeepSeekBenchmarkEvaluator,
-    DEEPSEEK_EVIDENCE_SCHEMA_VERSION,
     LIVE_REPLAY_VARIANTS,
     LiveSemanticDecision,
     REPLAY_VARIANTS,
@@ -51,7 +50,7 @@ def _commit(path: Path) -> str | None:
 def _is_dirty(path: Path) -> bool | None:
     try:
         return bool(subprocess.check_output(
-            ["git", "-C", str(path), "status", "--porcelain"], text=True,
+            ["git", "-C", str(path), "status", "--porcelain", "--untracked-files=no"], text=True,
             stderr=subprocess.DEVNULL, timeout=10,
         ).strip())
     except (OSError, subprocess.SubprocessError):
@@ -190,6 +189,11 @@ def main() -> int:
     parser.add_argument("--deepseek-api-key-file", type=Path)
     parser.add_argument("--deepseek-model", default="deepseek-v4-flash")
     parser.add_argument("--deepseek-concurrency", type=int, default=12)
+    parser.add_argument(
+        "--evidence-schema", choices=("legacy", "explicit-harm"),
+        default="explicit-harm",
+        help="DeepSeek evidence contract; legacy omits the explicit_harm label",
+    )
     parser.add_argument("--limit", type=int, help="Per-benchmark smoke-test limit")
     args = parser.parse_args()
     logging.disable(logging.CRITICAL)
@@ -222,6 +226,7 @@ def main() -> int:
             api_key,
             model=args.deepseek_model,
             concurrency=args.deepseek_concurrency,
+            include_explicit_harm=args.evidence_schema == "explicit-harm",
         )
     for corpus in corpora:
         _validate_counts(corpus)
@@ -232,7 +237,7 @@ def main() -> int:
             cache_dir = args.output_dir / "deepseek-cache"
             cache_dir.mkdir(parents=True, exist_ok=True)
             cache_path = cache_dir / (
-                f"{corpus.name}-{args.deepseek_model}-{DEEPSEEK_EVIDENCE_SCHEMA_VERSION}.jsonl"
+                f"{corpus.name}-{args.deepseek_model}-{evaluator.schema_version}.jsonl"
             )
             cached = _load_live_cache(cache_path)
             before = len(cached)
@@ -282,7 +287,8 @@ def main() -> int:
         },
         "deepseek": {
             "model": args.deepseek_model if evaluator else None,
-            "evidence_schema_version": DEEPSEEK_EVIDENCE_SCHEMA_VERSION if evaluator else None,
+            "evidence_schema_version": evaluator.schema_version if evaluator else None,
+            "includes_explicit_harm": evaluator.include_explicit_harm if evaluator else None,
             "paid_api_calls_for_result_set": total_represented_calls,
             "new_paid_api_calls_during_this_invocation": total_paid_calls,
             "api_responses_represented": total_represented_calls,

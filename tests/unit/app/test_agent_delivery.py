@@ -48,7 +48,7 @@ async def test_model_cannot_be_spent_by_an_unauthenticated_agent_request():
     assert error.value.status_code == 403
 
 
-def test_explicit_harm_survives_checkpoint_and_requires_review_without_topic_drift():
+def test_explicit_harm_survives_checkpoint_and_requires_repetition_for_review():
     evidence = parse_intent_evidence(json.dumps({
         "theme_shifted": False, "permission_probing": False, "request_escalation": False,
         "explicit_harm": True, "requested_capabilities": [], "requested_radius": "none",
@@ -62,8 +62,14 @@ def test_explicit_harm_survives_checkpoint_and_requires_review_without_topic_dri
         tool_name="Read", tool_input={"file_path": "README.md"}, session_id="session",
         runtime_kind="test", allowed_capabilities=frozenset({"file_read"}),
     ), restored)
-    assert decision.action == "confirm"
+    assert decision.action == "allow"
     assert any(s.code == "drift.explicit_harm" for s in decision.signals)
+    restored.observe_intent_evidence("session", evidence)
+    repeated = run_pretool_pipeline(PreToolContext(
+        tool_name="Read", tool_input={"file_path": "README.md"}, session_id="session",
+        runtime_kind="test", allowed_capabilities=frozenset({"file_read"}),
+    ), restored)
+    assert repeated.action == "confirm"
 
 
 def test_explicit_harm_rejects_string_booleans():

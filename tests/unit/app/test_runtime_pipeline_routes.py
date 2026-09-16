@@ -64,7 +64,7 @@ async def test_first_prompt_sets_baseline_and_second_prompt_queues_boolean_evide
             project_root="C:/project",
         )
     )
-    assert decision["drift_score"] == 65
+    assert decision["drift_score"] == 40
     assert decision["action"] == "confirm"
 
 
@@ -147,7 +147,7 @@ async def test_route_restores_persisted_drift_after_memory_store_replacement(tmp
             runtime_kind="codex",
         )
     )
-    assert restored["drift_score"] == 20
+    assert restored["drift_score"] == 10
     await db.disconnect()
 
 
@@ -182,7 +182,7 @@ async def test_route_rebuilds_state_from_verified_event_chain(tmp_path, monkeypa
             session_id="recover-me", runtime_kind="codex",
         )
     )
-    assert restored["drift_score"] == 20
+    assert restored["drift_score"] == 10
     await db.disconnect()
 
 

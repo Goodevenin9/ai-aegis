@@ -71,12 +71,13 @@ class PreToolDecisionRequest(BaseModel):
 class PipelineConfigRequest(BaseModel):
     confirm_threshold: int = Field(default=40, ge=1, le=99)
     block_threshold: int = Field(default=80, ge=2, le=100)
-    theme_shift_weight: int = Field(default=40, ge=0, le=100)
-    permission_probe_weight: int = Field(default=25, ge=0, le=100)
-    request_escalation_weight: int = Field(default=30, ge=0, le=100)
-    explicit_harm_weight: int = Field(default=40, ge=0, le=100)
+    theme_shift_weight: int = Field(default=20, ge=0, le=100)
+    permission_probe_weight: int = Field(default=20, ge=0, le=100)
+    request_escalation_weight: int = Field(default=20, ge=0, le=100)
+    explicit_harm_weight: int = Field(default=20, ge=0, le=100)
     repeated_retry_weight: int = Field(default=15, ge=0, le=100)
     third_retry_weight: int = Field(default=30, ge=0, le=100)
+    safe_turn_decay: int = Field(default=10, ge=0, le=100)
     max_drift_score: int = Field(default=100, ge=1, le=100)
     max_immune_session_score: int = Field(default=25, ge=0, le=30)
 
