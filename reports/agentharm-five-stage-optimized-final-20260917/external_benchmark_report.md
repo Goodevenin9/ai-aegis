@@ -6,14 +6,14 @@
 
 ```json
 {
-  "generated_at": "2026-09-17T05:13:05.545281+00:00",
-  "aegis_commit": "a3dd4b44fbf1790f000e1cb439afb92ae0fde315",
-  "aegis_worktree_dirty": false,
-  "implementation_sha256": "fa156b3368850afa38cfdcef613e385da38dcb92c9d72ba6b5e4422d31a5e2cc",
+  "generated_at": "2026-09-17T05:40:58.943739+00:00",
+  "aegis_commit": "ff6969c6fa3476c4e980a72c15d4c6e6d4cd81ce",
+  "aegis_worktree_dirty": true,
+  "implementation_sha256": "385e0c927a56381b27a1d2bcdf9dc9c9d9c5ef06cd3f8124813c1f6c942e825b",
   "agentdojo_commit": null,
   "python": "3.11.15",
   "platform": "Windows-10-10.0.26200-SP0",
-  "pipeline_config_sha256": "409dea4f8e79989237f8ac6b00aba09487cc7be3cec958160b2fc240f560c266",
+  "pipeline_config_sha256": "3b1adba1d396b4a5fa653c23c6c3cf9c242aebc0b7ed1a1b1d359798d2476e08",
   "network_sources": "official repositories/dataset cards listed in docs/BENCHMARK_RESEARCH.md",
   "tool_execution": "disabled",
   "calibration_status": "Pipeline defaults were selected using this same public AgentHarm split; results are in-sample post-calibration, not an independent generalization estimate.",
@@ -26,12 +26,15 @@
     "evidence_schema_version": "v4-orthogonal-explicit-harm",
     "includes_explicit_harm": true,
     "paid_api_calls_for_result_set": 352,
-    "new_paid_api_calls_during_this_invocation": 352,
+    "new_paid_api_calls_during_this_invocation": 8,
     "api_responses_represented": 352,
-    "input_tokens": 350755,
-    "output_tokens": 31214,
+    "focused_verifier_enabled": true,
+    "focused_verifier_candidates": 8,
+    "focused_verifier_responses": 8,
+    "input_tokens": 354810,
+    "output_tokens": 31270,
     "failed_samples": 0,
-    "estimated_cost_usd": 0.057846,
+    "estimated_cost_usd": 0.058429,
     "responses_reused_between_live_variants": true,
     "pricing_assumption_usd_per_million": {
       "input_cache_miss": 0.14,
@@ -56,19 +59,21 @@
 
 | 方案 | 攻击检出率 | 硬阻断率 | 正常误报率 | 正常确认率 | 正常硬阻断率 | Precision | F1 | P95延迟(ms) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| always_allow | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.0001 |
-| always_block | 100.00% | 100.00% | 100.00% | 0.00% | 100.00% | 50.00% | 66.67% | 0.0001 |
-| aegis_single_turn_local | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 20.7563 |
-| five_stage_rules | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 1.7803 |
-| five_stage_semantic | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 1.6343 |
-| deepseek_judge_live | 89.20% | 89.20% | 17.05% | 0.57% | 16.48% | 83.96% | 86.50% | 1133.9050 |
-| five_stage_deepseek_live | 65.91% | 23.30% | 10.80% | 6.25% | 4.55% | 85.93% | 74.60% | 1135.3848 |
+| always_allow | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.0002 |
+| always_block | 100.00% | 100.00% | 100.00% | 0.00% | 100.00% | 50.00% | 66.67% | 0.0002 |
+| aegis_single_turn_local | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 24.5029 |
+| five_stage_rules | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 1.5900 |
+| five_stage_semantic | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 0.00% | 1.7385 |
+| deepseek_judge_live | 89.20% | 89.20% | 17.05% | 0.57% | 16.48% | 83.96% | 86.50% | 1133.9052 |
+| five_stage_deepseek_live | 89.20% | 80.11% | 16.48% | 0.00% | 16.48% | 84.41% | 86.74% | 1135.6709 |
+| five_stage_deepseek_verified_live | 90.34% | 81.25% | 16.48% | 0.00% | 16.48% | 84.57% | 87.36% | 1251.9030 |
 
 ### 误报正权重证据共现
 
 - `always_block` 误报正权重证据共现：`decision.block`=176
 - `deepseek_judge_live` 误报正权重证据共现：`decision.block`=29、`decision.confirm`=1
-- `five_stage_deepseek_live` 误报正权重证据共现：`decision.block`=8、`semantic.explicit_harm`=19、`semantic.irreversible_impact`=18、`semantic.permission_probing`=3、`semantic.request_escalation`=6、`decision.confirm`=11
+- `five_stage_deepseek_live` 误报正权重证据共现：`decision.block`=29、`semantic.explicit_harm`=29、`semantic.irreversible_impact`=18、`semantic.permission_probing`=3、`semantic.request_escalation`=6
+- `five_stage_deepseek_verified_live` 误报正权重证据共现：`decision.block`=29、`semantic.explicit_harm`=29、`semantic.irreversible_impact`=18、`semantic.permission_probing`=3、`semantic.request_escalation`=6
 
 ## 解读边界
 
