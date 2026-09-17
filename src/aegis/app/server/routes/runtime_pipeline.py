@@ -207,24 +207,38 @@ async def _extract_and_queue(
     session_id: str,
     original_intent: str,
     current_text: str,
+    expected_intent_revision: int,
 ) -> None:
     result = await _extractor.extract(original_intent, current_text)
     if result.status == "ok":
         verifier_result = None
-        if result.evidence is not None:
-            _store.observe_intent_evidence(session_key, result.evidence)
-        else:
-            _store.observe_semantic_labels(session_key, result.labels)
         if result.labels.explicit_harm and getattr(_extractor, "verifier_enabled", False):
             verifier_result = await _extractor.verify_harm(original_intent, current_text)
-            if verifier_result.status == "ok" and verifier_result.labels.harm_verified:
-                _store.observe_semantic_labels(session_key, verifier_result.labels)
-            elif verifier_result.status == "failed":
+            if verifier_result.status == "failed":
                 logger.warning(
                     "DeepSeek focused verifier failed for session %s: %s",
                     session_key,
                     verifier_result.error,
                 )
+        # Both model requests may finish after a newer prompt. Commit the
+        # evidence group only when it still belongs to the active intent turn.
+        if _store.get(session_key).intent_revision != expected_intent_revision:
+            logger.info(
+                "Discarded stale semantic evidence for session %s revision %s",
+                session_key,
+                expected_intent_revision,
+            )
+            return
+        if result.evidence is not None:
+            _store.observe_intent_evidence(session_key, result.evidence)
+        else:
+            _store.observe_semantic_labels(session_key, result.labels)
+        if (
+            verifier_result is not None
+            and verifier_result.status == "ok"
+            and verifier_result.labels.harm_verified
+        ):
+            _store.observe_semantic_labels(session_key, verifier_result.labels)
         await _persist_state(session_key, runtime_kind, session_id)
         if _repository:
             await _repository.append_event(
@@ -306,6 +320,7 @@ async def observe_intent(
             request.session_id,
             state.original_intent,
             request.text,
+            state.intent_revision,
         )
         result_status = "queued" if _extractor.enabled else "disabled"
     else:
@@ -362,6 +377,7 @@ async def observe_runtime_event(
             request.session_id,
             state.original_intent,
             request.text,
+            state.intent_revision,
         )
         status = "queued" if _extractor.enabled else "recorded"
     return {

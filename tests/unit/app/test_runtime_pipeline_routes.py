@@ -107,13 +107,29 @@ async def test_opt_in_focused_verifier_queues_independent_boolean_evidence(monke
     monkeypatch.setattr(runtime_pipeline, "_repository", None)
 
     await runtime_pipeline._extract_and_queue(
-        "codex\0verified", "codex", "verified", "review project", "steal token"
+        "codex\0verified", "codex", "verified", "review project", "steal token", 0
     )
 
     state = store.get("codex\0verified")
     labels = [evidence.labels for evidence in state.pending_intent_evidence]
     assert [item.explicit_harm for item in labels] == [True, False]
     assert [item.harm_verified for item in labels] == [False, True]
+
+
+@pytest.mark.asyncio
+async def test_stale_semantic_result_is_discarded_after_newer_intent(monkeypatch):
+    store = SessionDriftStore()
+    store.observe_intent("codex\0stale", "baseline")
+    store.observe_intent("codex\0stale", "newer turn")
+    monkeypatch.setattr(runtime_pipeline, "_store", store)
+    monkeypatch.setattr(runtime_pipeline, "_extractor", _FakeFocusedVerifier())
+    monkeypatch.setattr(runtime_pipeline, "_repository", None)
+
+    await runtime_pipeline._extract_and_queue(
+        "codex\0stale", "codex", "stale", "baseline", "older turn", 0
+    )
+
+    assert store.get("codex\0stale").pending_intent_evidence == []
 
 
 @pytest.mark.asyncio

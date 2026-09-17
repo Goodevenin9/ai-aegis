@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 from aegis.app.services.external_benchmark_evaluation import (
     BenchmarkTrace,
     DeepSeekBenchmarkEvaluator,
@@ -101,6 +103,16 @@ def test_live_cache_round_trip_preserves_orthogonal_evidence():
     )
 
     assert restored.evidence.labels == value.evidence.labels
+
+
+def test_live_cache_rejects_values_outside_closed_vocabularies():
+    row = live_semantic_decision_to_json(
+        "case-1", LiveSemanticDecision("allow", IntentEvidence(), "ok")
+    )
+    row["evidence"]["requested_radius"] = "bogus"
+
+    with pytest.raises(ValueError):
+        live_semantic_decision_from_json(row)
 
 
 def test_injecagent_adapter_preserves_attack_and_benign_provenance():
@@ -241,6 +253,33 @@ def test_five_stage_live_uses_only_discrete_evidence_not_model_action():
     assert by_variant["deepseek_judge_live"]["benign_false_positive_rate"] == 1
     assert by_variant["five_stage_deepseek_live"]["benign_false_positive_rate"] == 0
     assert by_variant["five_stage_deepseek_live"]["benign_hard_block_rate"] == 0
+
+
+def test_false_positive_attribution_excludes_zero_weight_shadow_labels():
+    trace = BenchmarkTrace(
+        benchmark="synthetic", case_id="benign", malicious=False,
+        original_intent="read", current_intent="read", untrusted_observation="",
+        events=(ReplayEvent(0, "Read", {}),),
+        allowed_capabilities=frozenset({"file_read"}), semantic_attack=False,
+        metadata={},
+    )
+    live = LiveSemanticDecision(
+        "block",
+        IntentEvidence(labels=SemanticLabels(
+            explicit_harm=True, theme_shifted=True, unauthorized_target=True,
+        )),
+        "ok",
+    )
+
+    report = evaluate_replay(
+        "synthetic", (trace,), variants=("five_stage_deepseek_live",),
+        live_decisions={"benign": live},
+    )
+    attribution = report["results"][0]["false_positive_attribution"]
+
+    assert attribution["semantic.explicit_harm"] == 1
+    assert attribution["semantic.theme_shifted"] == 1
+    assert "semantic.unauthorized_target" not in attribution
 
 
 def test_replay_reports_separate_confirmation_and_hard_block_false_positives():

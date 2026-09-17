@@ -118,8 +118,11 @@ def _load_live_cache(path: Path) -> dict[str, LiveSemanticDecision]:
     for line in path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
-        row = json.loads(line)
-        value = live_semantic_decision_from_json(row)
+        try:
+            row = json.loads(line)
+            value = live_semantic_decision_from_json(row)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            continue
         if value.status == "ok":
             results[str(row["case_id"])] = value
     return results
@@ -237,6 +240,10 @@ def main() -> int:
         "pipeline_config_sha256": hashlib.sha256(config_json.encode()).hexdigest(),
         "network_sources": "official repositories/dataset cards listed in docs/BENCHMARK_RESEARCH.md",
         "tool_execution": "disabled",
+        "calibration_status": (
+            "Pipeline defaults were selected using this same public AgentHarm split; "
+            "results are in-sample post-calibration, not an independent generalization estimate."
+        ),
         "baseline_status": {
             "deepseek_judge_live": "completed" if evaluator else "not_run_no_paid_api_authorization",
             "five_stage_immunity": "not_run_requires_leakage_safe_train_shadow_test_split",

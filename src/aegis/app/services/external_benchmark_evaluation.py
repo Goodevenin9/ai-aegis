@@ -25,6 +25,7 @@ import aiohttp
 
 from aegis.app.services.pretool_pipeline import (
     IntentEvidence,
+    KNOWN_CAPABILITIES,
     PipelineConfig,
     PreToolContext,
     SemanticLabels,
@@ -102,16 +103,36 @@ def live_semantic_decision_to_json(
 def live_semantic_decision_from_json(row: Mapping[str, Any]) -> LiveSemanticDecision:
     """Restore a cached response without silently dropping new evidence."""
 
-    evidence = dict(row.get("evidence") or {})
+    if row.get("action") not in {"allow", "confirm", "block"}:
+        raise ValueError("cached action is outside the closed vocabulary")
+    raw_evidence = row.get("evidence")
+    if not isinstance(raw_evidence, Mapping):
+        raise ValueError("cached evidence must be an object")
+    evidence = dict(raw_evidence)
     label_fields = SemanticLabels().__dict__
+    expected_fields = set(label_fields) | {"requested_capabilities", "requested_radius"}
+    if set(evidence) != expected_fields:
+        raise ValueError("cached evidence does not match the current closed schema")
+    if any(type(evidence[name]) is not bool for name in label_fields):
+        raise ValueError("cached semantic labels must be literal booleans")
+    capabilities = evidence["requested_capabilities"]
+    if (
+        not isinstance(capabilities, list)
+        or any(type(item) is not str for item in capabilities)
+        or set(capabilities) - KNOWN_CAPABILITIES
+    ):
+        raise ValueError("cached capabilities are outside the closed vocabulary")
+    radius = evidence["requested_radius"]
+    if radius not in {"none", "project", "local", "user", "system", "external"}:
+        raise ValueError("cached radius is outside the closed vocabulary")
     return LiveSemanticDecision(
         action=str(row["action"]),
         evidence=IntentEvidence(
             labels=SemanticLabels(**{
                 name: evidence.get(name) is True for name in label_fields
             }),
-            requested_capabilities=frozenset(evidence.get("requested_capabilities") or []),
-            requested_radius=str(evidence.get("requested_radius") or "none"),  # type: ignore[arg-type]
+            requested_capabilities=frozenset(capabilities),
+            requested_radius=radius,  # type: ignore[arg-type]
         ),
         status=str(row.get("status") or "failed"),
         input_tokens=int(row.get("input_tokens") or 0),
@@ -748,12 +769,19 @@ def evaluate_replay(
                 false_positive_attribution[f"decision.{action}"] += 1
                 if variant == "five_stage_deepseek_live":
                     label_values = live.evidence.labels
-                    for name in (
-                        "theme_shifted", "permission_probing",
-                        "request_escalation", "explicit_harm", "unauthorized_target",
-                        "deception_or_evasion", "irreversible_impact", "harm_verified",
-                    ):
-                        if getattr(label_values, name):
+                    config = PipelineConfig()
+                    positive_weight_labels = {
+                        "theme_shifted": config.theme_shift_weight,
+                        "permission_probing": config.permission_probe_weight,
+                        "request_escalation": config.request_escalation_weight,
+                        "explicit_harm": config.explicit_harm_weight,
+                        "unauthorized_target": config.unauthorized_target_weight,
+                        "deception_or_evasion": config.deception_or_evasion_weight,
+                        "irreversible_impact": config.irreversible_impact_weight,
+                        "harm_verified": config.harm_verified_weight,
+                    }
+                    for name, weight in positive_weight_labels.items():
+                        if weight > 0 and getattr(label_values, name):
                             false_positive_attribution[f"semantic.{name}"] += 1
                 if action == "confirm":
                     benign_confirm_case_ids.append(trace.case_id)
@@ -857,6 +885,11 @@ def write_replay_reports(
     ]
     if run_metadata:
         lines.extend(("## 运行元数据", "", "```json", json.dumps(dict(run_metadata), ensure_ascii=False, indent=2), "```", ""))
+        calibration_status = run_metadata.get("calibration_status")
+        if calibration_status:
+            lines.extend(
+                ("## 校准与泛化边界", "", f"> {calibration_status}", "")
+            )
         baseline_status = run_metadata.get("baseline_status")
         if isinstance(baseline_status, Mapping):
             lines.extend(("## 未运行基线", ""))
@@ -891,10 +924,10 @@ def write_replay_reports(
             attribution = item.get("false_positive_attribution") or {}
             if attribution:
                 summary = "、".join(f"`{key}`={value}" for key, value in attribution.items())
-                attribution_lines.append(f"- `{item['variant']}` 误报归因：{summary}")
+                attribution_lines.append(f"- `{item['variant']}` 误报正权重证据共现：{summary}")
         lines.append("")
         if attribution_lines:
-            lines.extend(("### 误报归因", "", *attribution_lines, ""))
+            lines.extend(("### 误报正权重证据共现", "", *attribution_lines, ""))
     lines.extend(
         (
             "## 解读边界",

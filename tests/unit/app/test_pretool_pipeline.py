@@ -12,6 +12,7 @@ from aegis.app.services.pretool_pipeline import (
     SessionDriftStore,
     normalize_security_text,
     run_pretool_pipeline,
+    tool_effect_profile,
 )
 from aegis.app.services.semantic_evidence import (
     parse_harm_verification,
@@ -301,6 +302,34 @@ def test_irreversible_tool_effect_without_harm_context_remains_allowed():
     )
 
     assert decision.action == "allow"
+    assert "capability.harmful_high_impact" not in {
+        signal.code for signal in decision.signals
+    }
+
+
+@pytest.mark.parametrize("tool_name", ["get_order_status", "get_blog_post"])
+def test_read_only_tool_names_are_not_misclassified_by_noun_substrings(tool_name):
+    profile = tool_effect_profile(tool_name)
+
+    assert profile.category == "read_only"
+    assert profile.external_write is False
+    assert profile.high_impact is False
+
+
+def test_clean_semantic_turn_retracts_prior_harm_context():
+    store = SessionDriftStore()
+    store.observe_semantic_labels("session-1", SemanticLabels(explicit_harm=True))
+    run_pretool_pipeline(_context(), store)
+    store.observe_semantic_labels("session-1", SemanticLabels())
+
+    decision = run_pretool_pipeline(
+        _context(
+            tool_name="mcp__bank__transfer_money",
+            allowed_capabilities=frozenset({"network_outbound"}),
+        ),
+        store,
+    )
+
     assert "capability.harmful_high_impact" not in {
         signal.code for signal in decision.signals
     }

@@ -459,10 +459,7 @@ class SessionDriftStore:
             ],
             active_semantic_flags={
                 str(item) for item in list(value.get("active_semantic_flags") or [])
-                if str(item) in {
-                    "explicit_harm", "unauthorized_target", "deception_or_evasion",
-                    "irreversible_impact", "harm_verified",
-                }
+                if str(item) in {"explicit_harm", "harm_verified"}
             },
             semantic_context_remaining=max(
                 0, min(16, int(value.get("semantic_context_remaining", 0) or 0))
@@ -508,22 +505,33 @@ class ToolEffectProfile:
 def tool_effect_profile(tool_name: str) -> ToolEffectProfile:
     """Classify a tool by generic action semantics, not benchmark case IDs."""
 
-    lowered = str(tool_name or "").lower()
-    leaf = lowered.rsplit("__", 1)[-1]
-    if any(token in leaf for token in ("delete", "ransomware", "malware", "encrypt", "wipe", "overwrite")):
-        return ToolEffectProfile("destructive", high_impact=True)
-    if any(token in leaf for token in ("transfer", "purchase", "order", "payment", "paypal", "crypto")):
-        return ToolEffectProfile("financial", external_write=True, high_impact=True)
-    if any(token in leaf for token in ("login_data", "credential", "password", "secret", "token")):
+    raw_leaf = str(tool_name or "").rsplit("__", 1)[-1]
+    separated = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", raw_leaf).lower()
+    tokens = tuple(token for token in re.split(r"[^a-z0-9]+", separated) if token)
+    action = tokens[0] if tokens else ""
+    credential_tokens = {"login", "credential", "credentials", "password", "secret", "token"}
+    if credential_tokens.intersection(tokens):
         return ToolEffectProfile("credential_access", high_impact=True, sensitive_read=True)
-    if any(token in leaf for token in ("terminal", "exec", "shell", "powershell", "bash")):
-        return ToolEffectProfile("software_execution", high_impact=True)
-    if any(token in leaf for token in ("send", "post", "upload", "message", "comment", "reply", "submit", "follow", "repost", "share")):
-        return ToolEffectProfile("external_write", external_write=True)
-    if any(token in leaf for token in ("email", "contact", "database", "transaction", "friends_info", "credit_card")):
-        return ToolEffectProfile("sensitive_read", sensitive_read=True)
-    if any(token in leaf for token in ("read", "get", "query", "search", "download", "list")):
+    sensitive_tokens = {
+        "email", "emails", "contact", "contacts", "database", "transaction",
+        "friends", "credit", "card",
+    }
+    if action in {"read", "get", "query", "search", "download", "list", "fetch", "find"}:
+        if sensitive_tokens.intersection(tokens):
+            return ToolEffectProfile("sensitive_read", sensitive_read=True)
         return ToolEffectProfile("read_only")
+    if {"delete", "ransomware", "malware", "encrypt", "wipe", "overwrite"}.intersection(tokens):
+        return ToolEffectProfile("destructive", high_impact=True)
+    if {"transfer", "purchase", "payment", "paypal", "crypto"}.intersection(tokens) or (
+        action in {"place", "create"} and "order" in tokens
+    ):
+        return ToolEffectProfile("financial", external_write=True, high_impact=True)
+    if {"terminal", "exec", "execute", "shell", "powershell", "bash"}.intersection(tokens):
+        return ToolEffectProfile("software_execution", high_impact=True)
+    if action in {"send", "post", "upload", "message", "comment", "reply", "submit", "follow", "repost", "share", "publish"}:
+        return ToolEffectProfile("external_write", external_write=True)
+    if sensitive_tokens.intersection(tokens):
+        return ToolEffectProfile("sensitive_read", sensitive_read=True)
     return ToolEffectProfile()
 
 
@@ -1036,17 +1044,16 @@ def run_pretool_pipeline(
     legacy_labels = tuple(state.pending_labels)
     state.pending_labels.clear()
     semantic_labels = legacy_labels + tuple(item.labels for item in intent_evidence)
-    semantic_flag_names = (
-        "explicit_harm", "unauthorized_target", "deception_or_evasion",
-        "irreversible_impact", "harm_verified",
-    )
-    observed_flags = {
-        name for labels in semantic_labels for name in semantic_flag_names
+    harm_flag_names = ("explicit_harm", "harm_verified")
+    observed_harm_flags = {
+        name for labels in semantic_labels for name in harm_flag_names
         if getattr(labels, name)
     }
-    if observed_flags:
-        state.active_semantic_flags.update(observed_flags)
-        state.semantic_context_remaining = 8
+    if semantic_labels:
+        # A new semantic turn replaces, rather than refreshes, prior harm
+        # context. Orthogonal shadow labels cannot keep old harm alive.
+        state.active_semantic_flags = observed_harm_flags
+        state.semantic_context_remaining = 8 if observed_harm_flags else 0
     boundary = _boundary(context, state)
     capability = _capability(context, state, intent_evidence, config)
     radius = _radius(context, intent_evidence)
