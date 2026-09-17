@@ -7,7 +7,7 @@ from aegis.app.database.connection import DatabaseConnection
 from aegis.app.database.migrations import run_migrations
 from aegis.app.database.repositories.runtime_sessions import RuntimeSessionRepository
 from aegis.app.server.routes import runtime_pipeline
-from aegis.app.services.pretool_pipeline import SemanticLabels, SessionDriftStore
+from aegis.app.services.pretool_pipeline import IntentEvidence, SemanticLabels, SessionDriftStore
 from aegis.app.services.semantic_evidence import SemanticEvidenceResult
 
 
@@ -30,7 +30,11 @@ class _FakeFocusedVerifier(_FakeExtractor):
 
     async def extract(self, original_intent: str, current_text: str) -> SemanticEvidenceResult:
         self.calls.append((original_intent, current_text))
-        return SemanticEvidenceResult(SemanticLabels(explicit_harm=True), "ok")
+        evidence = IntentEvidence(
+            requested_capabilities=frozenset({"shell_exec", "network_outbound"}),
+            requested_radius="system",
+        )
+        return SemanticEvidenceResult(evidence.labels, "ok", evidence=evidence)
 
     async def verify_harm(
         self, original_intent: str, current_text: str
@@ -112,7 +116,7 @@ async def test_opt_in_focused_verifier_queues_independent_boolean_evidence(monke
 
     state = store.get("codex\0verified")
     labels = [evidence.labels for evidence in state.pending_intent_evidence]
-    assert [item.explicit_harm for item in labels] == [True, False]
+    assert [item.explicit_harm for item in labels] == [False, False]
     assert [item.harm_verified for item in labels] == [False, True]
 
 

@@ -292,6 +292,24 @@ def test_explicit_harm_plus_irreversible_tool_effect_confirms():
     }
 
 
+def test_explicit_harm_plus_external_write_confirms_from_independent_effect():
+    store = SessionDriftStore()
+    store.observe_semantic_labels("session-1", SemanticLabels(explicit_harm=True))
+
+    decision = run_pretool_pipeline(
+        _context(
+            tool_name="mcp__social__post_update",
+            allowed_capabilities=frozenset({"network_outbound"}),
+        ),
+        store,
+    )
+
+    assert decision.action == "confirm"
+    assert "capability.harmful_external_write" in {
+        signal.code for signal in decision.signals
+    }
+
+
 def test_irreversible_tool_effect_without_harm_context_remains_allowed():
     decision = run_pretool_pipeline(
         _context(
@@ -434,6 +452,30 @@ def test_one_model_response_cannot_stack_harm_capability_and_radius_as_three_vot
 
     assert decision.action == "allow"
     assert decision.drift_score < PipelineConfig().confirm_threshold
+
+
+def test_explicit_harm_plus_repeated_observed_external_actions_confirms():
+    store = SessionDriftStore()
+    store.observe_semantic_labels("session-1", SemanticLabels(explicit_harm=True))
+
+    first = run_pretool_pipeline(
+        _context(
+            tool_name="mcp__search__query_google_search",
+            allowed_capabilities=frozenset({"network_outbound"}),
+        ),
+        store,
+    )
+    second = run_pretool_pipeline(
+        _context(
+            tool_name="mcp__search__get_webpage",
+            allowed_capabilities=frozenset({"network_outbound"}),
+        ),
+        store,
+    )
+
+    assert first.action == "allow"
+    assert second.action == "confirm"
+    assert "radius.external" in {signal.code for signal in second.signals}
 
 
 @pytest.mark.parametrize(

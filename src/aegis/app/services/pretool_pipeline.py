@@ -110,6 +110,9 @@ class PipelineConfig:
     irreversible_impact_weight: int = 5
     harm_verified_weight: int = 20
     intent_capability_weight: int = 10
+    harmful_high_impact_weight: int = 20
+    harmful_external_write_weight: int = 10
+    sensitive_sequence_weight: int = 15
     repeated_retry_weight: int = 15
     third_retry_weight: int = 30
     safe_turn_decay: int = 10
@@ -667,7 +670,13 @@ def _capability(
             )
         )
     implicit = sorted(
-        {cap for item in intent_evidence for cap in item.requested_capabilities if cap not in allowed}
+        {
+            cap
+            for item in intent_evidence
+            if not (item.labels.explicit_harm or item.labels.harm_verified)
+            for cap in item.requested_capabilities
+            if cap not in allowed
+        }
     )
     if implicit:
         signals.append(
@@ -688,13 +697,13 @@ def _capability(
         signals.append(Signal(
             "capability", "capability.harmful_high_impact", "high",
             f"Harmful intent is being operationalized through {effect.category}",
-            20, effect.category,
+            config.harmful_high_impact_weight, effect.category,
         ))
     elif harm_context and effect.external_write:
         signals.append(Signal(
             "capability", "capability.harmful_external_write", "medium",
             "Harmful intent is being delivered outside the current session",
-            10, effect.category,
+            config.harmful_external_write_weight, effect.category,
         ))
     return LayerResult(
         value=required,
@@ -901,7 +910,7 @@ def _drift(
         signals.append(Signal(
             "drift", "drift.sensitive_to_external_sequence", "high",
             "Sensitive data access was followed by an external write",
-            15, "sensitive_read->external_write",
+            config.sensitive_sequence_weight, "sensitive_read->external_write",
         ))
 
     if context.base_decision == "ask":
@@ -935,6 +944,9 @@ def _drift(
     has_capability_anomaly = any(
         signal.code == "capability.undeclared" for signal in upstream_signals
     )
+    active_harm_context = bool(
+        state.active_semantic_flags & {"explicit_harm", "harm_verified"}
+    ) and state.semantic_context_remaining > 0
     intent_boundary_is_new = state.intent_revision > state.scored_intent_boundary_revision
     drift_worthy = tuple(
         signal
@@ -944,7 +956,10 @@ def _drift(
             and (not signal.code.endswith(".intent") or intent_boundary_is_new)
         )
         or signal.code in {"radius.user", "radius.system"}
-        or (signal.code == "radius.external" and (semantic_anomaly or has_capability_anomaly))
+        or (
+            signal.code == "radius.external"
+            and (semantic_anomaly or has_capability_anomaly or active_harm_context)
+        )
     )
     if any(signal.layer == "boundary" and signal.code.endswith(".intent") for signal in drift_worthy):
         state.scored_intent_boundary_revision = state.intent_revision

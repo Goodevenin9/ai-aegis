@@ -28,7 +28,10 @@ from aegis.app.services.immune_learning import (
     BehaviorProfile, ImmuneMatch, ImmuneMatchResult, ImmuneMatcher,
     extract_behavior_profile,
 )
-from aegis.app.services.semantic_evidence import DeepSeekSemanticExtractor
+from aegis.app.services.semantic_evidence import (
+    DeepSeekSemanticExtractor,
+    should_run_focused_verifier,
+)
 from aegis.app.services.pipeline_evaluation import VARIANTS, evaluate_variants, load_cases
 
 router = APIRouter(prefix="/runtime")
@@ -80,6 +83,9 @@ class PipelineConfigRequest(BaseModel):
     irreversible_impact_weight: int = Field(default=5, ge=0, le=100)
     harm_verified_weight: int = Field(default=20, ge=0, le=100)
     intent_capability_weight: int = Field(default=10, ge=0, le=100)
+    harmful_high_impact_weight: int = Field(default=20, ge=0, le=100)
+    harmful_external_write_weight: int = Field(default=10, ge=0, le=100)
+    sensitive_sequence_weight: int = Field(default=15, ge=0, le=100)
     repeated_retry_weight: int = Field(default=15, ge=0, le=100)
     third_retry_weight: int = Field(default=30, ge=0, le=100)
     safe_turn_decay: int = Field(default=10, ge=0, le=100)
@@ -212,7 +218,11 @@ async def _extract_and_queue(
     result = await _extractor.extract(original_intent, current_text)
     if result.status == "ok":
         verifier_result = None
-        if result.labels.explicit_harm and getattr(_extractor, "verifier_enabled", False):
+        should_verify = bool(
+            result.evidence is not None
+            and should_run_focused_verifier(result.evidence)
+        )
+        if should_verify and getattr(_extractor, "verifier_enabled", False):
             verifier_result = await _extractor.verify_harm(original_intent, current_text)
             if verifier_result.status == "failed":
                 logger.warning(

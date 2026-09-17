@@ -105,6 +105,9 @@ const SessionSecurityPage = {
                 <label>Irreversible impact <input name="irreversible_impact_weight" type="number" min="0" max="100" value="${Number(cfg.irreversible_impact_weight == null ? 5 : cfg.irreversible_impact_weight)}"></label>
                 <label>Focused verification <input name="harm_verified_weight" type="number" min="0" max="100" value="${Number(cfg.harm_verified_weight == null ? 20 : cfg.harm_verified_weight)}"></label>
                 <label>Inferred capability <input name="intent_capability_weight" type="number" min="0" max="100" value="${Number(cfg.intent_capability_weight == null ? 10 : cfg.intent_capability_weight)}"></label>
+                <label>Harm + high impact <input name="harmful_high_impact_weight" type="number" min="0" max="100" value="${Number(cfg.harmful_high_impact_weight == null ? 20 : cfg.harmful_high_impact_weight)}"></label>
+                <label>Harm + external write <input name="harmful_external_write_weight" type="number" min="0" max="100" value="${Number(cfg.harmful_external_write_weight == null ? 10 : cfg.harmful_external_write_weight)}"></label>
+                <label>Sensitive → external <input name="sensitive_sequence_weight" type="number" min="0" max="100" value="${Number(cfg.sensitive_sequence_weight == null ? 15 : cfg.sensitive_sequence_weight)}"></label>
                 <label>Retry 2+ <input name="repeated_retry_weight" type="number" min="0" max="100" value="${Number(cfg.repeated_retry_weight || 15)}"></label>
                 <label>Retry 3+ <input name="third_retry_weight" type="number" min="0" max="100" value="${Number(cfg.third_retry_weight || 30)}"></label>
                 <label>Safe-turn decay <input name="safe_turn_decay" type="number" min="0" max="100" value="${Number(cfg.safe_turn_decay == null ? 10 : cfg.safe_turn_decay)}"></label>
@@ -130,7 +133,7 @@ const SessionSecurityPage = {
     async _saveConfig(event) {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
-        const keys = ['confirm_threshold', 'block_threshold', 'theme_shift_weight', 'permission_probe_weight', 'request_escalation_weight', 'explicit_harm_weight', 'unauthorized_target_weight', 'deception_or_evasion_weight', 'irreversible_impact_weight', 'harm_verified_weight', 'intent_capability_weight', 'repeated_retry_weight', 'third_retry_weight', 'safe_turn_decay', 'max_drift_score', 'max_immune_session_score'];
+        const keys = ['confirm_threshold', 'block_threshold', 'theme_shift_weight', 'permission_probe_weight', 'request_escalation_weight', 'explicit_harm_weight', 'unauthorized_target_weight', 'deception_or_evasion_weight', 'irreversible_impact_weight', 'harm_verified_weight', 'intent_capability_weight', 'harmful_high_impact_weight', 'harmful_external_write_weight', 'sensitive_sequence_weight', 'repeated_retry_weight', 'third_retry_weight', 'safe_turn_decay', 'max_drift_score', 'max_immune_session_score'];
         const status = document.getElementById('ss-config-status');
         try {
             const run = await API.updateRuntimePipelineConfig(Object.fromEntries(keys.map(key => [key, Number(form.get(key))])));

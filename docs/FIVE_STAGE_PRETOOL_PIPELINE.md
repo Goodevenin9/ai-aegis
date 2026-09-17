@@ -54,13 +54,13 @@ P1 将同一次模型调用扩展为封闭证据契约：前三项仍是 Drift �
 
 这些默认值使用公开 AgentHarm 测试分片进行了同集校准，因此相关数字必须标注为“校准后样本内结果”，不能作为独立泛化成绩。对外宣称泛化能力前，需要冻结配置并在未参与调参的留出集或第二数据集上复测。
 
-状态机还会用确定性代码把结构化工具名归为只读、敏感读取、外部写入、软件执行、金融和破坏性效果。只有 `explicit_harm` 或可选复核信号仍在会话上下文中时，高影响工具及“敏感读取 → 外部写入”序列才产生额外证据；正常高影响业务不会仅因工具名称被阻断。
+状态机还会用确定性代码把结构化工具名归为只读、敏感读取、外部写入、软件执行、金融和破坏性效果。只有 `explicit_harm` 或可选复核信号仍在会话上下文中时，高影响工具、“敏感读取 → 外部写入”序列以及连续外部行为才产生额外证据；正常高影响业务不会仅因工具名称被阻断。
 
 ## 原型配置
 
 - `AEGIS_SESSION_CAPABILITIES=file_read,file_write,shell_exec,network_outbound`：当前会话声明的能力清单。未配置时采用只读默认值 `file_read`；写入、Shell 和外网能力需要确认。
 - `AEGIS_DRIFT_LLM_ENABLED=true`：开启 DeepSeek 语义证据提取；默认关闭。该开关也可在**安全运营页直接切换**（无需重启），并常显状态徽标——Drift 段的语义标签依赖它，关掉后多轮链会退化成单轮裁决。
-- `AEGIS_HARM_VERIFIER_ENABLED=true`：可选开启聚焦伤害复核，仅在首轮提取到 `explicit_harm` 时进行第二次模型调用并输出单个 `harm_verified` 布尔值；默认关闭，不影响默认延迟与调用费用。
+- `AEGIS_HARM_VERIFIER_ENABLED=true`：可选开启聚焦伤害复核。仅当首轮 `explicit_harm=false`、但封闭能力证据包含 `shell_exec` 且范围为 `local/system/external` 时进行第二次模型调用，并只输出单个 `harm_verified` 布尔值。默认关闭，不影响默认延迟与调用费用。
 - `AEGIS_DEEPSEEK_API_KEY`（或 `DEEPSEEK_API_KEY`）：DeepSeek API 密钥。也可在安全运营页写入，落用户数据目录下的 0600 文件并即时生效。
 - `AEGIS_DEEPSEEK_API_URL`：默认 `https://api.deepseek.com/chat/completions`。
 - `AEGIS_DEEPSEEK_MODEL`：默认 `deepseek-v4-flash`，也可显式覆盖为账户可用的兼容模型。

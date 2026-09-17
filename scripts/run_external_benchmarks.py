@@ -29,6 +29,7 @@ from aegis.app.services.external_benchmark_evaluation import (  # noqa: E402
     load_injecagent,
     live_semantic_decision_from_json,
     live_semantic_decision_to_json,
+    should_run_focused_verifier,
     write_replay_reports,
     _fetch_text,
 )
@@ -145,6 +146,11 @@ def main() -> int:
         default=("injecagent", "agentharm"),
     )
     parser.add_argument("--live-deepseek", action="store_true")
+    parser.add_argument(
+        "--focused-verifier",
+        action="store_true",
+        help="Run a second closed-boolean pass only for primary-negative shell intents",
+    )
     parser.add_argument("--deepseek-api-key-file", type=Path)
     parser.add_argument("--deepseek-model", default="deepseek-v4-flash")
     parser.add_argument("--deepseek-concurrency", type=int, default=12)
@@ -176,6 +182,8 @@ def main() -> int:
     total_input_tokens = 0
     total_output_tokens = 0
     total_failures = 0
+    total_focused_calls = 0
+    total_focused_candidates = 0
     evaluator = None
     if args.live_deepseek:
         if not args.deepseek_api_key_file:
@@ -187,10 +195,13 @@ def main() -> int:
             concurrency=args.deepseek_concurrency,
             include_explicit_harm=args.evidence_schema == "explicit-harm",
         )
+    elif args.focused_verifier:
+        parser.error("--focused-verifier requires --live-deepseek")
     for corpus in corpora:
         _validate_counts(corpus)
         traces = corpus.traces[:args.limit] if args.limit else corpus.traces
         live_results = None
+        focused_results = None
         variants = REPLAY_VARIANTS
         if evaluator is not None:
             cache_dir = args.output_dir / "deepseek-cache"
@@ -224,9 +235,58 @@ def main() -> int:
             total_input_tokens += sum(item.input_tokens for item in selected.values())
             total_output_tokens += sum(item.output_tokens for item in selected.values())
             total_failures += sum(item.status != "ok" for item in selected.values())
-            variants = REPLAY_VARIANTS + LIVE_REPLAY_VARIANTS
+            variants = REPLAY_VARIANTS + (
+                "deepseek_judge_live", "five_stage_deepseek_live",
+            )
+            if args.focused_verifier:
+                focused_candidates = [
+                    trace for trace in traces
+                    if should_run_focused_verifier(selected[trace.case_id].evidence)
+                ]
+                total_focused_candidates += len(focused_candidates)
+                focused_cache_path = cache_dir / (
+                    f"{corpus.name}-{args.deepseek_model}-v1-focused-shell-negative.jsonl"
+                )
+                focused_cached = _load_live_cache(focused_cache_path)
+                focused_before = sum(
+                    trace.case_id in focused_cached for trace in focused_candidates
+                )
+
+                def save_focused(case_id: str, value: LiveSemanticDecision) -> None:
+                    with focused_cache_path.open("a", encoding="utf-8") as handle:
+                        handle.write(json.dumps(
+                            live_semantic_decision_to_json(case_id, value),
+                            ensure_ascii=False,
+                        ) + "\n")
+
+                focused_results = asyncio.run(evaluator.evaluate_focused(
+                    focused_candidates,
+                    cached=focused_cached,
+                    on_result=save_focused,
+                ))
+                focused_results = {
+                    trace.case_id: focused_results[trace.case_id]
+                    for trace in focused_candidates
+                }
+                new_focused = max(0, len(focused_results) - focused_before)
+                total_paid_calls += new_focused
+                total_focused_calls += len(focused_results)
+                total_input_tokens += sum(
+                    item.input_tokens for item in focused_results.values()
+                )
+                total_output_tokens += sum(
+                    item.output_tokens for item in focused_results.values()
+                )
+                total_failures += sum(
+                    item.status != "ok" for item in focused_results.values()
+                )
+                variants += ("five_stage_deepseek_verified_live",)
         report = evaluate_replay(
-            corpus.name, traces, variants=variants, live_decisions=live_results
+            corpus.name,
+            traces,
+            variants=variants,
+            live_decisions=live_results,
+            focused_verifier_results=focused_results,
         )
         report["source_metadata"] = dict(corpus.metadata)
         reports.append(report)
@@ -257,6 +317,9 @@ def main() -> int:
             "paid_api_calls_for_result_set": total_represented_calls,
             "new_paid_api_calls_during_this_invocation": total_paid_calls,
             "api_responses_represented": total_represented_calls,
+            "focused_verifier_enabled": args.focused_verifier,
+            "focused_verifier_candidates": total_focused_candidates,
+            "focused_verifier_responses": total_focused_calls,
             "input_tokens": total_input_tokens,
             "output_tokens": total_output_tokens,
             "failed_samples": total_failures,
