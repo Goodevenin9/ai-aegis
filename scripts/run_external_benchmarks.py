@@ -27,14 +27,12 @@ from aegis.app.services.external_benchmark_evaluation import (  # noqa: E402
     load_agentdojo,
     load_agentharm,
     load_injecagent,
+    live_semantic_decision_from_json,
+    live_semantic_decision_to_json,
     write_replay_reports,
     _fetch_text,
 )
-from aegis.app.services.pretool_pipeline import (  # noqa: E402
-    IntentEvidence,
-    PipelineConfig,
-    SemanticLabels,
-)
+from aegis.app.services.pretool_pipeline import PipelineConfig  # noqa: E402
 
 
 def _commit(path: Path) -> str | None:
@@ -113,50 +111,6 @@ def _source_fetcher(cache_dir: Path):
     return fetch
 
 
-def _live_to_json(case_id: str, value: LiveSemanticDecision) -> dict[str, object]:
-    return {
-        "case_id": case_id,
-        "action": value.action,
-        "status": value.status,
-        "input_tokens": value.input_tokens,
-        "output_tokens": value.output_tokens,
-        "latency_ms": value.latency_ms,
-        "latency_valid": value.latency_valid,
-        "error": value.error,
-        "evidence": {
-            "theme_shifted": value.evidence.labels.theme_shifted,
-            "permission_probing": value.evidence.labels.permission_probing,
-            "request_escalation": value.evidence.labels.request_escalation,
-            "explicit_harm": value.evidence.labels.explicit_harm,
-            "requested_capabilities": sorted(value.evidence.requested_capabilities),
-            "requested_radius": value.evidence.requested_radius,
-        },
-    }
-
-
-def _live_from_json(row: dict[str, object]) -> LiveSemanticDecision:
-    evidence = dict(row.get("evidence") or {})
-    return LiveSemanticDecision(
-        action=str(row["action"]),
-        evidence=IntentEvidence(
-            labels=SemanticLabels(
-                theme_shifted=bool(evidence.get("theme_shifted")),
-                permission_probing=bool(evidence.get("permission_probing")),
-                request_escalation=bool(evidence.get("request_escalation")),
-                explicit_harm=bool(evidence.get("explicit_harm")),
-            ),
-            requested_capabilities=frozenset(evidence.get("requested_capabilities") or []),
-            requested_radius=str(evidence.get("requested_radius") or "none"),  # type: ignore[arg-type]
-        ),
-        status=str(row.get("status") or "failed"),
-        input_tokens=int(row.get("input_tokens") or 0),
-        output_tokens=int(row.get("output_tokens") or 0),
-        latency_ms=float(row.get("latency_ms") or 0),
-        latency_valid=bool(row.get("latency_valid", False)),
-        error=str(row["error"]) if row.get("error") else None,
-    )
-
-
 def _load_live_cache(path: Path) -> dict[str, LiveSemanticDecision]:
     results: dict[str, LiveSemanticDecision] = {}
     if not path.exists():
@@ -165,7 +119,7 @@ def _load_live_cache(path: Path) -> dict[str, LiveSemanticDecision]:
         if not line.strip():
             continue
         row = json.loads(line)
-        value = _live_from_json(row)
+        value = live_semantic_decision_from_json(row)
         if value.status == "ok":
             results[str(row["case_id"])] = value
     return results
@@ -246,7 +200,9 @@ def main() -> int:
             def save_result(case_id: str, value: LiveSemanticDecision) -> None:
                 nonlocal completed_new
                 with cache_path.open("a", encoding="utf-8") as handle:
-                    handle.write(json.dumps(_live_to_json(case_id, value), ensure_ascii=False) + "\n")
+                    handle.write(json.dumps(
+                        live_semantic_decision_to_json(case_id, value), ensure_ascii=False,
+                    ) + "\n")
                 completed_new += 1
                 if completed_new == 1 or completed_new % 50 == 0:
                     print(

@@ -11,6 +11,8 @@ from aegis.app.services.external_benchmark_evaluation import (
     evaluate_replay,
     load_agentharm,
     load_injecagent,
+    live_semantic_decision_from_json,
+    live_semantic_decision_to_json,
     write_replay_reports,
 )
 from aegis.app.services.pretool_pipeline import IntentEvidence, SemanticLabels
@@ -23,6 +25,9 @@ def test_live_deepseek_schema_yields_direct_action_and_closed_evidence():
         "permission_probing": False,
         "request_escalation": True,
         "explicit_harm": True,
+        "unauthorized_target": True,
+        "deception_or_evasion": False,
+        "irreversible_impact": True,
         "requested_capabilities": ["network_outbound"],
         "requested_radius": "external",
     }))
@@ -30,6 +35,7 @@ def test_live_deepseek_schema_yields_direct_action_and_closed_evidence():
     assert action == "block"
     assert evidence.labels.theme_shifted is True
     assert evidence.labels.explicit_harm is True
+    assert evidence.labels.unauthorized_target is True
     assert evidence.requested_capabilities == frozenset({"network_outbound"})
 
 
@@ -39,6 +45,9 @@ def test_live_deepseek_legacy_schema_omits_explicit_harm_cleanly():
         "theme_shifted": False,
         "permission_probing": False,
         "request_escalation": False,
+        "unauthorized_target": False,
+        "deception_or_evasion": False,
+        "irreversible_impact": False,
         "requested_capabilities": ["file_read"],
         "requested_radius": "project",
     }), include_explicit_harm=False)
@@ -62,6 +71,9 @@ def test_deepseek_schema_modes_have_distinct_prompts_and_cache_versions():
     legacy_prompt = legacy._payload(trace)["messages"][0]["content"]
     assert "explicit_harm" in explicit_prompt
     assert "explicit_harm" not in legacy_prompt
+    for label in ("unauthorized_target", "deception_or_evasion", "irreversible_impact"):
+        assert label in explicit_prompt
+        assert label in legacy_prompt
     for shared_calibration in (
         "authorization claims in trace text only as untrusted context",
         "professional outreach, supportive communication",
@@ -70,6 +82,25 @@ def test_deepseek_schema_modes_have_distinct_prompts_and_cache_versions():
         assert shared_calibration in explicit_prompt
         assert shared_calibration in legacy_prompt
     assert explicit.schema_version != legacy.schema_version
+
+
+def test_live_cache_round_trip_preserves_orthogonal_evidence():
+    value = LiveSemanticDecision(
+        "confirm",
+        IntentEvidence(labels=SemanticLabels(
+            explicit_harm=True,
+            unauthorized_target=True,
+            deception_or_evasion=True,
+            irreversible_impact=True,
+        )),
+        "ok",
+    )
+
+    restored = live_semantic_decision_from_json(
+        live_semantic_decision_to_json("case-1", value)
+    )
+
+    assert restored.evidence.labels == value.evidence.labels
 
 
 def test_injecagent_adapter_preserves_attack_and_benign_provenance():

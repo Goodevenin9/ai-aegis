@@ -25,6 +25,19 @@ class _FakeExtractor:
         )
 
 
+class _FakeFocusedVerifier(_FakeExtractor):
+    verifier_enabled = True
+
+    async def extract(self, original_intent: str, current_text: str) -> SemanticEvidenceResult:
+        self.calls.append((original_intent, current_text))
+        return SemanticEvidenceResult(SemanticLabels(explicit_harm=True), "ok")
+
+    async def verify_harm(
+        self, original_intent: str, current_text: str
+    ) -> SemanticEvidenceResult:
+        return SemanticEvidenceResult(SemanticLabels(harm_verified=True), "ok")
+
+
 @pytest.mark.asyncio
 async def test_first_prompt_sets_baseline_and_second_prompt_queues_boolean_evidence(monkeypatch):
     store = SessionDriftStore()
@@ -84,6 +97,23 @@ async def test_anonymous_intent_is_not_shared_or_sent_to_llm(monkeypatch):
 
     assert response["status"] == "skipped_anonymous"
     assert extractor.calls == []
+
+
+@pytest.mark.asyncio
+async def test_opt_in_focused_verifier_queues_independent_boolean_evidence(monkeypatch):
+    store = SessionDriftStore()
+    monkeypatch.setattr(runtime_pipeline, "_store", store)
+    monkeypatch.setattr(runtime_pipeline, "_extractor", _FakeFocusedVerifier())
+    monkeypatch.setattr(runtime_pipeline, "_repository", None)
+
+    await runtime_pipeline._extract_and_queue(
+        "codex\0verified", "codex", "verified", "review project", "steal token"
+    )
+
+    state = store.get("codex\0verified")
+    labels = [evidence.labels for evidence in state.pending_intent_evidence]
+    assert [item.explicit_harm for item in labels] == [True, False]
+    assert [item.harm_verified for item in labels] == [False, True]
 
 
 @pytest.mark.asyncio

@@ -19,7 +19,7 @@ AI Aegis single-turn verdict ──> Boundary → Capability → Radius → Drif
 | Boundary | NFKC/零宽字符归一化、中文越狱、高危 Shell、敏感路径规则 | 否 | Critical 可直接 block |
 | Capability | 结构化工具名映射后，与会话能力清单做集合匹配 | 否 | 缺失能力产生 confirm |
 | Radius | 解析结构化路径、URL 和远程 MCP，分类 project/local/user/system/external | 否 | 否，仅输出证据 |
-| Drift | 固定权重状态机，累积语义标签与同类风险重试 | DeepSeek 只输出 3 个 bool | 分数达到阈值可 confirm/block |
+| Drift | 固定权重状态机，累积封闭语义标签、工具效果序列与同类风险重试 | DeepSeek 只输出离散证据，不输出分数 | 分数达到阈值可 confirm/block |
 | Friction | 合并单轮基线判定和四层信号的确定性决策表 | 否；解释也由模板生成 | 唯一最终裁决点 |
 
 P0 DeepSeek 的 Drift 输出契约为：
@@ -34,30 +34,37 @@ P0 DeepSeek 的 Drift 输出契约为：
 
 模型不能返回漂移分数、阈值或 allow/block。非布尔输出、超时、网络错误均不会进入状态机。
 
-P1 将同一次模型调用扩展为五字段封闭证据契约：前三项仍是 Drift 布尔标签，另外两项只能是能力枚举集合和影响半径枚举。它们分别进入 Capability 与 Radius，仍不携带分数或裁决：
+P1 将同一次模型调用扩展为封闭证据契约：前三项仍是 Drift 布尔标签，能力与影响半径只能来自固定枚举。召回优化版又增加 `explicit_harm`、`unauthorized_target`、`deception_or_evasion`、`irreversible_impact` 四个正交事实；它们仍不携带分数或裁决：
 
 ```json
 {
   "theme_shifted": false,
   "permission_probing": false,
   "request_escalation": false,
+  "explicit_harm": false,
+  "unauthorized_target": false,
+  "deception_or_evasion": false,
+  "irreversible_impact": false,
   "requested_capabilities": ["file_read"],
   "requested_radius": "project"
 }
 ```
 
-允许的能力为 `file_read / file_write / shell_exec / network_outbound / unknown_tool`，半径为 `none / project / local / user / system / external`。多出字段、未知枚举、字符串形式的布尔值都会整包拒绝。
+允许的能力为 `file_read / file_write / shell_exec / network_outbound / unknown_tool`，半径为 `none / project / local / user / system / external`。多出字段、未知枚举、字符串形式的布尔值都会整包拒绝。为控制误报，`unauthorized_target` 与 `deception_or_evasion` 默认处于影子模式（记录但权重为 0），`irreversible_impact` 默认仅 5 分；生产策略可显式调整。
+
+状态机还会用确定性代码把结构化工具名归为只读、敏感读取、外部写入、软件执行、金融和破坏性效果。只有 `explicit_harm` 或可选复核信号仍在会话上下文中时，高影响工具及“敏感读取 → 外部写入”序列才产生额外证据；正常高影响业务不会仅因工具名称被阻断。
 
 ## 原型配置
 
 - `AEGIS_SESSION_CAPABILITIES=file_read,file_write,shell_exec,network_outbound`：当前会话声明的能力清单。未配置时采用只读默认值 `file_read`；写入、Shell 和外网能力需要确认。
 - `AEGIS_DRIFT_LLM_ENABLED=true`：开启 DeepSeek 语义证据提取；默认关闭。该开关也可在**安全运营页直接切换**（无需重启），并常显状态徽标——Drift 段的语义标签依赖它，关掉后多轮链会退化成单轮裁决。
+- `AEGIS_HARM_VERIFIER_ENABLED=true`：可选开启聚焦伤害复核，仅在首轮提取到 `explicit_harm` 时进行第二次模型调用并输出单个 `harm_verified` 布尔值；默认关闭，不影响默认延迟与调用费用。
 - `AEGIS_DEEPSEEK_API_KEY`（或 `DEEPSEEK_API_KEY`）：DeepSeek API 密钥。也可在安全运营页写入，落用户数据目录下的 0600 文件并即时生效。
 - `AEGIS_DEEPSEEK_API_URL`：默认 `https://api.deepseek.com/chat/completions`。
-- `AEGIS_DEEPSEEK_MODEL`：默认 `deepseek-chat`。
+- `AEGIS_DEEPSEEK_MODEL`：默认 `deepseek-v4-flash`，也可显式覆盖为账户可用的兼容模型。
 - `AEGIS_HEADLESS=true`：无人值守模式，将 `confirm` 自动升级为 `block`；常见 CI 真值也由 Claude hook 识别。
 
-默认漂移阈值为 40（confirm）和 80（block）。主题偏移、权限试探、请求升级分别固定增加 40、25、30；相同风险操作第二次/第三次重试额外增加 15/30。所有值集中在 `PipelineConfig`，便于离线评测和 A/B 调参。
+默认漂移阈值为 40（confirm）和 80（block）。主题偏移、权限试探、请求升级和明确伤害标签默认各增加 20；相同风险操作第二次/第三次重试额外增加 15/30。所有值集中在 `PipelineConfig`，便于离线评测和 A/B 调参。
 
 ## 审计与边界
 

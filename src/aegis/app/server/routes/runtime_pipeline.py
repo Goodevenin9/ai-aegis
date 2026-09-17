@@ -75,6 +75,11 @@ class PipelineConfigRequest(BaseModel):
     permission_probe_weight: int = Field(default=20, ge=0, le=100)
     request_escalation_weight: int = Field(default=20, ge=0, le=100)
     explicit_harm_weight: int = Field(default=20, ge=0, le=100)
+    unauthorized_target_weight: int = Field(default=0, ge=0, le=100)
+    deception_or_evasion_weight: int = Field(default=0, ge=0, le=100)
+    irreversible_impact_weight: int = Field(default=5, ge=0, le=100)
+    harm_verified_weight: int = Field(default=20, ge=0, le=100)
+    intent_capability_weight: int = Field(default=10, ge=0, le=100)
     repeated_retry_weight: int = Field(default=15, ge=0, le=100)
     third_retry_weight: int = Field(default=30, ge=0, le=100)
     safe_turn_decay: int = Field(default=10, ge=0, le=100)
@@ -205,10 +210,21 @@ async def _extract_and_queue(
 ) -> None:
     result = await _extractor.extract(original_intent, current_text)
     if result.status == "ok":
+        verifier_result = None
         if result.evidence is not None:
             _store.observe_intent_evidence(session_key, result.evidence)
         else:
             _store.observe_semantic_labels(session_key, result.labels)
+        if result.labels.explicit_harm and getattr(_extractor, "verifier_enabled", False):
+            verifier_result = await _extractor.verify_harm(original_intent, current_text)
+            if verifier_result.status == "ok" and verifier_result.labels.harm_verified:
+                _store.observe_semantic_labels(session_key, verifier_result.labels)
+            elif verifier_result.status == "failed":
+                logger.warning(
+                    "DeepSeek focused verifier failed for session %s: %s",
+                    session_key,
+                    verifier_result.error,
+                )
         await _persist_state(session_key, runtime_kind, session_id)
         if _repository:
             await _repository.append_event(
@@ -219,6 +235,14 @@ async def _extract_and_queue(
                 payload={
                     "status": result.status,
                     "labels": result.labels.__dict__,
+                    "focused_verifier": (
+                        {
+                            "status": verifier_result.status,
+                            "labels": verifier_result.labels.__dict__,
+                            "error": verifier_result.error,
+                        }
+                        if verifier_result is not None else None
+                    ),
                     "intent_evidence": (
                         {
                             "requested_capabilities": sorted(

@@ -14,6 +14,7 @@ from aegis.app.services.pretool_pipeline import (
     run_pretool_pipeline,
 )
 from aegis.app.services.semantic_evidence import (
+    parse_harm_verification,
     parse_intent_evidence,
     parse_semantic_labels,
     redact_semantic_text,
@@ -254,6 +255,158 @@ def test_single_explicit_harm_label_cannot_trigger_user_friction_by_itself():
     assert "drift.explicit_harm" in {signal.code for signal in decision.signals}
 
 
+def test_two_orthogonal_semantic_facts_confirm_without_model_owned_score():
+    store = SessionDriftStore()
+    store.observe_semantic_labels(
+        "session-1",
+        SemanticLabels(explicit_harm=True, unauthorized_target=True),
+    )
+
+    decision = run_pretool_pipeline(
+        _context(), store, PipelineConfig(unauthorized_target_weight=20)
+    )
+
+    assert decision.action == "confirm"
+    assert decision.drift_score == 40
+    assert {"drift.explicit_harm", "drift.unauthorized_target"} <= {
+        signal.code for signal in decision.signals
+    }
+
+
+def test_explicit_harm_plus_irreversible_tool_effect_confirms():
+    store = SessionDriftStore()
+    store.observe_semantic_labels("session-1", SemanticLabels(explicit_harm=True))
+
+    decision = run_pretool_pipeline(
+        _context(
+            tool_name="mcp__bank__transfer_money",
+            allowed_capabilities=frozenset({"network_outbound"}),
+        ),
+        store,
+    )
+
+    assert decision.action == "confirm"
+    assert "capability.harmful_high_impact" in {
+        signal.code for signal in decision.signals
+    }
+
+
+def test_irreversible_tool_effect_without_harm_context_remains_allowed():
+    decision = run_pretool_pipeline(
+        _context(
+            tool_name="mcp__bank__transfer_money",
+            allowed_capabilities=frozenset({"network_outbound"}),
+        ),
+        SessionDriftStore(),
+    )
+
+    assert decision.action == "allow"
+    assert "capability.harmful_high_impact" not in {
+        signal.code for signal in decision.signals
+    }
+
+
+def test_harm_context_detects_sensitive_read_followed_by_external_write():
+    store = SessionDriftStore()
+    store.observe_semantic_labels("session-1", SemanticLabels(explicit_harm=True))
+    first = run_pretool_pipeline(
+        _context(
+            tool_name="mcp__mail__get_latest_emails",
+            allowed_capabilities=frozenset({"network_outbound"}),
+        ),
+        store,
+    )
+    second = run_pretool_pipeline(
+        _context(
+            tool_name="mcp__mail__send_email",
+            allowed_capabilities=frozenset({"network_outbound"}),
+        ),
+        store,
+    )
+
+    assert first.action == "allow"
+    assert second.action == "confirm"
+    assert "drift.sensitive_to_external_sequence" in {
+        signal.code for signal in second.signals
+    }
+
+
+def test_benign_sensitive_read_to_external_write_has_no_sequence_penalty():
+    store = SessionDriftStore()
+    for tool_name in ("mcp__mail__get_latest_emails", "mcp__mail__send_email"):
+        decision = run_pretool_pipeline(
+            _context(
+                tool_name=tool_name,
+                allowed_capabilities=frozenset({"network_outbound"}),
+            ),
+            store,
+        )
+
+    assert decision.action == "allow"
+    assert "drift.sensitive_to_external_sequence" not in {
+        signal.code for signal in decision.signals
+    }
+
+
+def test_one_new_semantic_fact_remains_evidence_not_a_verdict():
+    store = SessionDriftStore()
+    store.observe_semantic_labels(
+        "session-1", SemanticLabels(unauthorized_target=True)
+    )
+
+    decision = run_pretool_pipeline(_context(), store)
+
+    assert decision.action == "allow"
+    assert decision.drift_score == 0
+    signal = next(
+        signal for signal in decision.signals
+        if signal.code == "drift.unauthorized_target"
+    )
+    assert signal.score == 0
+
+
+def test_shadow_weight_semantic_fact_does_not_activate_radius_scoring():
+    store = SessionDriftStore()
+    store.observe_semantic_labels(
+        "session-1", SemanticLabels(unauthorized_target=True)
+    )
+
+    decision = run_pretool_pipeline(
+        _context(
+            tool_name="mcp__search__query_google_search",
+            allowed_capabilities=frozenset({"network_outbound"}),
+        ),
+        store,
+        PipelineConfig(unauthorized_target_weight=0),
+    )
+
+    assert decision.action == "allow"
+    assert decision.drift_score == 0
+
+
+def test_one_model_response_cannot_stack_harm_capability_and_radius_as_three_votes():
+    store = SessionDriftStore()
+    store.observe_intent_evidence(
+        "session-1",
+        IntentEvidence(
+            labels=SemanticLabels(explicit_harm=True),
+            requested_capabilities=frozenset({"file_write"}),
+            requested_radius="external",
+        ),
+    )
+
+    decision = run_pretool_pipeline(
+        _context(
+            tool_name="mcp__search__query_google_search",
+            allowed_capabilities=frozenset({"network_outbound"}),
+        ),
+        store,
+    )
+
+    assert decision.action == "allow"
+    assert decision.drift_score < PipelineConfig().confirm_threshold
+
+
 @pytest.mark.parametrize(
     "labels",
     (
@@ -464,6 +617,22 @@ def test_p1_intent_evidence_uses_closed_capability_and_radius_vocabularies():
     )
 
 
+def test_enhanced_intent_evidence_accepts_only_closed_orthogonal_labels():
+    evidence = parse_intent_evidence(
+        '{"theme_shifted":false,"permission_probing":false,'
+        '"request_escalation":false,"explicit_harm":true,'
+        '"unauthorized_target":true,"deception_or_evasion":false,'
+        '"irreversible_impact":true,"requested_capabilities":["network_outbound"],'
+        '"requested_radius":"external"}'
+    )
+
+    assert evidence.labels == SemanticLabels(
+        explicit_harm=True,
+        unauthorized_target=True,
+        irreversible_impact=True,
+    )
+
+
 def test_p1_intent_capability_and_radius_are_evidence_not_model_verdicts():
     store = SessionDriftStore()
     store.observe_intent_evidence(
@@ -553,3 +722,13 @@ def test_p2_shadow_antibody_is_visible_but_never_affects_drift():
     assert decision.drift_score == 0
     assert decision.immune_matches[0]["effective"] is False
     assert "drift.immune_shadow_match" in {signal.code for signal in decision.signals}
+
+
+def test_focused_harm_verification_accepts_only_one_literal_boolean():
+    assert parse_harm_verification('{"harm_verified": true}') is True
+    with pytest.raises(ValueError):
+        parse_harm_verification(
+            '{"harm_verified": true, "decision": "block"}'
+        )
+    with pytest.raises(ValueError):
+        parse_harm_verification('{"harm_verified": "yes"}')

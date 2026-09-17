@@ -3,8 +3,9 @@
 The module is intentionally independent from the existing detection engines.
 It consumes their decision as ``base_decision`` and may only preserve or
 strengthen it.  Deterministic code owns every score, transition and final
-decision.  An LLM may contribute only the three boolean ``SemanticLabels``
-that are queued on a session before a tool call reaches this hot path.
+decision.  An LLM may contribute only closed-vocabulary boolean
+``SemanticLabels`` that are queued on a session before a tool call reaches
+this hot path.
 
 Pipeline: Boundary -> Capability -> Radius -> Drift -> Friction.
 """
@@ -60,6 +61,11 @@ class SemanticLabels:
     permission_probing: bool = False
     request_escalation: bool = False
     explicit_harm: bool = False
+    unauthorized_target: bool = False
+    deception_or_evasion: bool = False
+    irreversible_impact: bool = False
+    # Set only by the optional focused verifier, never by the primary extractor.
+    harm_verified: bool = False
 
 
 IntentRadius = Literal["none", "project", "local", "user", "system", "external"]
@@ -97,6 +103,13 @@ class PipelineConfig:
     # One fallible model label is evidence, not user friction. Repeated turns
     # or independent deterministic signals may still cross the thresholds.
     explicit_harm_weight: int = 20
+    # AgentHarm calibration keeps the noisier semantic dimensions in shadow
+    # mode.  They remain observable and can be enabled by an explicit policy.
+    unauthorized_target_weight: int = 0
+    deception_or_evasion_weight: int = 0
+    irreversible_impact_weight: int = 5
+    harm_verified_weight: int = 20
+    intent_capability_weight: int = 10
     repeated_retry_weight: int = 15
     third_retry_weight: int = 30
     safe_turn_decay: int = 10
@@ -209,6 +222,9 @@ class SessionState:
     tool_history: list[str] = field(default_factory=list)
     capability_history: list[str] = field(default_factory=list)
     radius_history: list[str] = field(default_factory=list)
+    effect_history: list[str] = field(default_factory=list)
+    active_semantic_flags: set[str] = field(default_factory=set)
+    semantic_context_remaining: int = 0
 
 
 class SessionDriftStore:
@@ -343,6 +359,9 @@ class SessionDriftStore:
             "tool_history": list(state.tool_history[-32:]),
             "capability_history": list(state.capability_history[-32:]),
             "radius_history": list(state.radius_history[-32:]),
+            "effect_history": list(state.effect_history[-32:]),
+            "active_semantic_flags": sorted(state.active_semantic_flags),
+            "semantic_context_remaining": state.semantic_context_remaining,
         }
 
     def restore(self, session_id: str, value: Mapping[str, Any]) -> SessionState:
@@ -357,6 +376,10 @@ class SessionDriftStore:
                         permission_probing=bool(raw.get("permission_probing", False)),
                         request_escalation=bool(raw.get("request_escalation", False)),
                         explicit_harm=raw.get("explicit_harm") is True,
+                        unauthorized_target=raw.get("unauthorized_target") is True,
+                        deception_or_evasion=raw.get("deception_or_evasion") is True,
+                        irreversible_impact=raw.get("irreversible_impact") is True,
+                        harm_verified=raw.get("harm_verified") is True,
                     )
                 )
         pending_evidence: list[IntentEvidence] = []
@@ -378,6 +401,10 @@ class SessionDriftStore:
                         permission_probing=bool(raw_labels.get("permission_probing", False)),
                         request_escalation=bool(raw_labels.get("request_escalation", False)),
                         explicit_harm=raw_labels.get("explicit_harm") is True,
+                        unauthorized_target=raw_labels.get("unauthorized_target") is True,
+                        deception_or_evasion=raw_labels.get("deception_or_evasion") is True,
+                        irreversible_impact=raw_labels.get("irreversible_impact") is True,
+                        harm_verified=raw_labels.get("harm_verified") is True,
                     ),
                     requested_capabilities=capabilities,
                     requested_radius=radius,  # type: ignore[arg-type]
@@ -427,6 +454,19 @@ class SessionDriftStore:
             radius_history=[
                 str(item)[:32] for item in list(value.get("radius_history") or [])[-32:]
             ],
+            effect_history=[
+                str(item)[:32] for item in list(value.get("effect_history") or [])[-32:]
+            ],
+            active_semantic_flags={
+                str(item) for item in list(value.get("active_semantic_flags") or [])
+                if str(item) in {
+                    "explicit_harm", "unauthorized_target", "deception_or_evasion",
+                    "irreversible_impact", "harm_verified",
+                }
+            },
+            semantic_context_remaining=max(
+                0, min(16, int(value.get("semantic_context_remaining", 0) or 0))
+            ),
         )
         key = session_id or "__anonymous__"
         self._sessions[key] = state
@@ -453,6 +493,38 @@ _TOOL_CAPABILITIES: dict[str, str] = {
     "webfetch": "network_outbound",
     "websearch": "network_outbound",
 }
+
+
+@dataclass(frozen=True)
+class ToolEffectProfile:
+    """Deterministic side-effect facts used as independent evidence."""
+
+    category: str = "unknown"
+    external_write: bool = False
+    high_impact: bool = False
+    sensitive_read: bool = False
+
+
+def tool_effect_profile(tool_name: str) -> ToolEffectProfile:
+    """Classify a tool by generic action semantics, not benchmark case IDs."""
+
+    lowered = str(tool_name or "").lower()
+    leaf = lowered.rsplit("__", 1)[-1]
+    if any(token in leaf for token in ("delete", "ransomware", "malware", "encrypt", "wipe", "overwrite")):
+        return ToolEffectProfile("destructive", high_impact=True)
+    if any(token in leaf for token in ("transfer", "purchase", "order", "payment", "paypal", "crypto")):
+        return ToolEffectProfile("financial", external_write=True, high_impact=True)
+    if any(token in leaf for token in ("login_data", "credential", "password", "secret", "token")):
+        return ToolEffectProfile("credential_access", high_impact=True, sensitive_read=True)
+    if any(token in leaf for token in ("terminal", "exec", "shell", "powershell", "bash")):
+        return ToolEffectProfile("software_execution", high_impact=True)
+    if any(token in leaf for token in ("send", "post", "upload", "message", "comment", "reply", "submit", "follow", "repost", "share")):
+        return ToolEffectProfile("external_write", external_write=True)
+    if any(token in leaf for token in ("email", "contact", "database", "transaction", "friends_info", "credit_card")):
+        return ToolEffectProfile("sensitive_read", sensitive_read=True)
+    if any(token in leaf for token in ("read", "get", "query", "search", "download", "list")):
+        return ToolEffectProfile("read_only")
+    return ToolEffectProfile()
 
 
 def _input_text(tool_input: Mapping[str, Any]) -> str:
@@ -562,7 +634,9 @@ def _capability(
     context: PreToolContext,
     state: SessionState,
     intent_evidence: tuple[IntentEvidence, ...] = (),
+    config: Optional[PipelineConfig] = None,
 ) -> LayerResult:
+    config = config or PipelineConfig()
     required = _tool_capability(context.tool_name)
     allowed = context.allowed_capabilities or state.allowed_capabilities
     if not required:
@@ -594,10 +668,26 @@ def _capability(
                 "capability.intent_undeclared",
                 "medium",
                 "Intent requests undeclared capabilities: " + ", ".join(implicit),
-                20,
+                config.intent_capability_weight,
                 ",".join(implicit),
             )
         )
+    effect = tool_effect_profile(context.tool_name)
+    harm_context = bool(
+        state.active_semantic_flags & {"explicit_harm", "harm_verified"}
+    ) and state.semantic_context_remaining > 0
+    if harm_context and effect.high_impact:
+        signals.append(Signal(
+            "capability", "capability.harmful_high_impact", "high",
+            f"Harmful intent is being operationalized through {effect.category}",
+            20, effect.category,
+        ))
+    elif harm_context and effect.external_write:
+        signals.append(Signal(
+            "capability", "capability.harmful_external_write", "medium",
+            "Harmful intent is being delivered outside the current session",
+            10, effect.category,
+        ))
     return LayerResult(
         value=required,
         signals=tuple(signals),
@@ -738,6 +828,30 @@ def _drift(
         if labels.explicit_harm:
             signals.append(Signal("drift", "drift.explicit_harm", "high",
                                   "Explicit harmful action requested", config.explicit_harm_weight))
+        if labels.unauthorized_target:
+            signals.append(Signal(
+                "drift", "drift.unauthorized_target", "high",
+                "A third-party target or asset lacks trusted authorization",
+                config.unauthorized_target_weight,
+            ))
+        if labels.deception_or_evasion:
+            signals.append(Signal(
+                "drift", "drift.deception_or_evasion", "high",
+                "Deception, concealment, or control evasion requested",
+                config.deception_or_evasion_weight,
+            ))
+        if labels.irreversible_impact:
+            signals.append(Signal(
+                "drift", "drift.irreversible_impact", "high",
+                "Requested effect is difficult to reverse",
+                config.irreversible_impact_weight,
+            ))
+        if labels.harm_verified:
+            signals.append(Signal(
+                "drift", "drift.harm_verified", "high",
+                "Focused semantic verifier confirmed concrete harm",
+                config.harm_verified_weight,
+            ))
         if labels.theme_shifted:
             signals.append(
                 Signal(
@@ -769,6 +883,19 @@ def _drift(
                 )
             )
 
+    effect = tool_effect_profile(context.tool_name)
+    if (
+        state.semantic_context_remaining > 0
+        and state.active_semantic_flags & {"explicit_harm", "harm_verified"}
+        and effect.external_write
+        and "sensitive_read" in state.effect_history
+    ):
+        signals.append(Signal(
+            "drift", "drift.sensitive_to_external_sequence", "high",
+            "Sensitive data access was followed by an external write",
+            15, "sensitive_read->external_write",
+        ))
+
     if context.base_decision == "ask":
         signals.append(
             Signal(
@@ -790,10 +917,16 @@ def _drift(
             )
         )
     semantic_anomaly = any(
-        signal.code in {"drift.theme_shift", "drift.permission_probing", "drift.request_escalation"}
+        signal.score > 0 and signal.code in {
+            "drift.theme_shift", "drift.permission_probing", "drift.request_escalation",
+            "drift.unauthorized_target", "drift.deception_or_evasion",
+            "drift.irreversible_impact", "drift.harm_verified",
+        }
         for signal in signals
     )
-    has_capability_anomaly = any(signal.layer == "capability" for signal in upstream_signals)
+    has_capability_anomaly = any(
+        signal.code == "capability.undeclared" for signal in upstream_signals
+    )
     intent_boundary_is_new = state.intent_revision > state.scored_intent_boundary_revision
     drift_worthy = tuple(
         signal
@@ -903,8 +1036,19 @@ def run_pretool_pipeline(
     legacy_labels = tuple(state.pending_labels)
     state.pending_labels.clear()
     semantic_labels = legacy_labels + tuple(item.labels for item in intent_evidence)
+    semantic_flag_names = (
+        "explicit_harm", "unauthorized_target", "deception_or_evasion",
+        "irreversible_impact", "harm_verified",
+    )
+    observed_flags = {
+        name for labels in semantic_labels for name in semantic_flag_names
+        if getattr(labels, name)
+    }
+    if observed_flags:
+        state.active_semantic_flags.update(observed_flags)
+        state.semantic_context_remaining = 8
     boundary = _boundary(context, state)
-    capability = _capability(context, state, intent_evidence)
+    capability = _capability(context, state, intent_evidence, config)
     radius = _radius(context, intent_evidence)
     pre_drift_signals = boundary.signals + capability.signals + radius.signals
     immune_result = None
@@ -956,6 +1100,13 @@ def run_pretool_pipeline(
         state.capability_history + [required_capability(context.tool_name)]
     )[-32:]
     state.radius_history = (state.radius_history + [radius.value])[-32:]
+    state.effect_history = (
+        state.effect_history + [tool_effect_profile(context.tool_name).category]
+    )[-32:]
+    if state.semantic_context_remaining > 0:
+        state.semantic_context_remaining -= 1
+        if state.semantic_context_remaining == 0:
+            state.active_semantic_flags.clear()
 
     needs_confirmation = capability.requires_confirmation or context.base_decision == "ask"
     if boundary.critical or context.base_decision == "deny":
@@ -1018,7 +1169,9 @@ __all__ = [
     "SemanticLabels",
     "SessionDriftStore",
     "Signal",
+    "ToolEffectProfile",
     "normalize_security_text",
     "required_capability",
     "run_pretool_pipeline",
+    "tool_effect_profile",
 ]
