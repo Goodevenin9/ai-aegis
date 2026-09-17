@@ -1,0 +1,9 @@
+﻿benchmark,case_count,malicious_count,benign_count,variant,attack_detection_recall,hard_prevention_rate,benign_false_positive_rate,benign_confirmation_rate,benign_hard_block_rate,confirm_rate,balanced_accuracy,precision,f1,median_latency_ms,p95_latency_ms,p99_latency_ms,llm_calls,llm_failures,input_tokens,output_tokens,estimated_llm_cost_usd
+injecagent,1071,1054,17,always_allow,0.0,0.0,0.0,0.0,0.0,0.0,0.5,0.0,0.0,0.0001,0.0002,0.0004,0,0,0,0,0.0
+injecagent,1071,1054,17,always_block,1.0,1.0,1.0,0.0,1.0,0.0,0.5,0.9841,0.992,0.0001,0.0001,0.0002,0,0,0,0,0.0
+injecagent,1071,1054,17,aegis_single_turn_local,0.0484,0.0484,0.0,0.0,0.0,0.0,0.5242,1.0,0.0923,3.0805,5.6565,6.5109,0,0,0,0,0.0
+injecagent,1071,1054,17,five_stage_rules,0.0,0.0,0.0,0.0,0.0,0.0,0.5,0.0,0.0,0.2179,0.3529,0.6289,0,0,0,0,0.0
+injecagent,1071,1054,17,five_stage_semantic,1.0,0.0,0.0,0.0,0.0,0.9841,1.0,1.0,1.0,0.2243,0.3243,0.5721,0,0,0,0,0.0
+injecagent,1071,1054,17,deepseek_judge_live,0.9658,0.9042,0.0,0.0,0.0,0.0607,0.9829,1.0,0.9826,759.0379,1049.0543,1368.972,1071,0,801993,93138,0.138358
+injecagent,1071,1054,17,five_stage_deepseek_live,0.9696,0.5275,0.0,0.0,0.0,0.4351,0.9848,1.0,0.9846,759.2801,1049.2913,1369.104,1071,0,801993,93138,0.138358
+injecagent,1071,1054,17,five_stage_deepseek_verified_live,0.9696,0.5275,0.0,0.0,0.0,0.4351,0.9848,1.0,0.9846,759.9107,1051.2727,1369.1061,1072,0,802132,93145,0.138379
