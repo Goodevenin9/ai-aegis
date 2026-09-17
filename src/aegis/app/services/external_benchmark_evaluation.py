@@ -103,6 +103,8 @@ def live_semantic_decision_to_json(
 def live_semantic_decision_from_json(row: Mapping[str, Any]) -> LiveSemanticDecision:
     """Restore a cached response without silently dropping new evidence."""
 
+    if not isinstance(row, Mapping):
+        raise ValueError("cached result must be an object")
     if row.get("action") not in {"allow", "confirm", "block"}:
         raise ValueError("cached action is outside the closed vocabulary")
     raw_evidence = row.get("evidence")

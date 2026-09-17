@@ -113,6 +113,8 @@ def test_live_cache_rejects_values_outside_closed_vocabularies():
 
     with pytest.raises(ValueError):
         live_semantic_decision_from_json(row)
+    with pytest.raises(ValueError):
+        live_semantic_decision_from_json([])  # type: ignore[arg-type]
 
 
 def test_injecagent_adapter_preserves_attack_and_benign_provenance():

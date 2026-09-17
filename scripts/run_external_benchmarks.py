@@ -120,6 +120,8 @@ def _load_live_cache(path: Path) -> dict[str, LiveSemanticDecision]:
             continue
         try:
             row = json.loads(line)
+            if not isinstance(row, dict) or not isinstance(row.get("case_id"), str):
+                continue
             value = live_semantic_decision_from_json(row)
         except (TypeError, ValueError, json.JSONDecodeError):
             continue
