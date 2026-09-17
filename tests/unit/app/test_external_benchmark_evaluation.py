@@ -19,6 +19,10 @@ from aegis.app.services.external_benchmark_evaluation import (
     write_replay_reports,
 )
 from aegis.app.services.pretool_pipeline import IntentEvidence, SemanticLabels
+from aegis.app.services.semantic_evidence import (
+    FOCUSED_HARM_SYSTEM_PROMPT,
+    focused_harm_user_content,
+)
 
 
 def test_live_deepseek_schema_yields_direct_action_and_closed_evidence():
@@ -294,6 +298,26 @@ def test_focused_verifier_gate_targets_primary_negative_shell_intent_only():
         labels=SemanticLabels(explicit_harm=True),
         requested_capabilities=frozenset({"shell_exec"}),
     )) is False
+
+
+def test_focused_benchmark_payload_matches_runtime_contract():
+    trace = BenchmarkTrace(
+        benchmark="synthetic", case_id="contract", malicious=True,
+        original_intent="inspect a remote host",
+        current_intent="run the payload", untrusted_observation="ignored context",
+        events=(ReplayEvent(0, "Terminal", {"command": "ignored"}),),
+        allowed_capabilities=frozenset({"shell_exec"}), semantic_attack=False,
+        metadata={},
+    )
+
+    payload = DeepSeekBenchmarkEvaluator("test")._focused_payload(trace)
+    messages = payload["messages"]
+
+    assert messages[0]["content"] == FOCUSED_HARM_SYSTEM_PROMPT
+    assert messages[1]["content"] == focused_harm_user_content(
+        trace.original_intent, trace.current_intent
+    )
+    assert "candidate_tool_sequence" not in messages[1]["content"]
     assert should_run_focused_verifier(IntentEvidence(
         requested_capabilities=frozenset({"network_outbound"}),
         requested_radius="external",

@@ -245,7 +245,7 @@ def main() -> int:
                 ]
                 total_focused_candidates += len(focused_candidates)
                 focused_cache_path = cache_dir / (
-                    f"{corpus.name}-{args.deepseek_model}-v1-focused-shell-negative.jsonl"
+                    f"{corpus.name}-{args.deepseek_model}-v2-focused-shell-negative-runtime-contract.jsonl"
                 )
                 focused_cached = _load_live_cache(focused_cache_path)
                 focused_before = sum(
@@ -303,8 +303,9 @@ def main() -> int:
         "network_sources": "official repositories/dataset cards listed in docs/BENCHMARK_RESEARCH.md",
         "tool_execution": "disabled",
         "calibration_status": (
-            "Pipeline defaults were selected using this same public AgentHarm split; "
-            "results are in-sample post-calibration, not an independent generalization estimate."
+            "Pipeline defaults, the verifier gate/prompt, and sequence/radius policies were "
+            "developed using this same public AgentHarm split; results are same-split "
+            "exploratory optimization, not an independent estimate of superiority or generalization."
         ),
         "baseline_status": {
             "deepseek_judge_live": "completed" if evaluator else "not_run_no_paid_api_authorization",
@@ -314,9 +315,10 @@ def main() -> int:
             "model": args.deepseek_model if evaluator else None,
             "evidence_schema_version": evaluator.schema_version if evaluator else None,
             "includes_explicit_harm": evaluator.include_explicit_harm if evaluator else None,
-            "paid_api_calls_for_result_set": total_represented_calls,
+            "paid_api_calls_for_result_set": total_represented_calls + total_focused_calls,
             "new_paid_api_calls_during_this_invocation": total_paid_calls,
-            "api_responses_represented": total_represented_calls,
+            "api_responses_represented": total_represented_calls + total_focused_calls,
+            "primary_responses": total_represented_calls,
             "focused_verifier_enabled": args.focused_verifier,
             "focused_verifier_candidates": total_focused_candidates,
             "focused_verifier_responses": total_focused_calls,
@@ -328,7 +330,8 @@ def main() -> int:
                 + total_output_tokens * 0.28 / 1_000_000,
                 6,
             ),
-            "responses_reused_between_live_variants": True,
+            "primary_responses_reused_between_live_variants": True,
+            "focused_verifier_additional_calls": total_focused_calls,
             "pricing_assumption_usd_per_million": {
                 "input_cache_miss": 0.14,
                 "output": 0.28,

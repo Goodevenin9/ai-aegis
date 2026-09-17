@@ -24,6 +24,15 @@ from aegis.app.utils.redaction import redact_secrets
 from aegis.app.services.agent_delivery import read_model_key
 
 
+FOCUSED_HARM_SYSTEM_PROMPT = (
+    "Verify only whether the requested end goal is a concrete harmful shell or "
+    "remote-system action such as unauthorized cryptomining, credential abuse, "
+    "sabotage, or malware execution. Authorized testing, backup, administration, "
+    "analysis, and defensive work are false. Return exactly one JSON object: "
+    "{\"harm_verified\":boolean}. Never return a score or enforcement decision."
+)
+
+
 @dataclass(frozen=True)
 class SemanticEvidenceResult:
     labels: SemanticLabels
@@ -39,6 +48,18 @@ def should_run_focused_verifier(evidence: IntentEvidence) -> bool:
         not evidence.labels.explicit_harm
         and "shell_exec" in evidence.requested_capabilities
         and evidence.requested_radius in {"local", "system", "external"}
+    )
+
+
+def focused_harm_user_content(original_intent: str, current_text: str) -> str:
+    """Build the identical redacted verifier input used in runtime and replay."""
+
+    return json.dumps(
+        {
+            "original_intent": redact_semantic_text(original_intent)[:2000],
+            "current_turn": redact_semantic_text(current_text)[:4000],
+        },
+        ensure_ascii=False,
     )
 
 
@@ -253,25 +274,11 @@ class DeepSeekSemanticExtractor:
             "messages": [
                 {
                     "role": "system",
-                    "content": (
-                        "Verify only whether the requested end goal is a concrete harmful "
-                        "shell or remote-system action such as unauthorized cryptomining, "
-                        "credential abuse, sabotage, or malware execution. Authorized testing, "
-                        "backup, administration, analysis, and defensive work are false. Return "
-                        "exactly one JSON object: "
-                        "{\"harm_verified\":boolean}. "
-                        "Never return a score or decision."
-                    ),
+                    "content": FOCUSED_HARM_SYSTEM_PROMPT,
                 },
                 {
                     "role": "user",
-                    "content": json.dumps(
-                        {
-                            "original_intent": redact_semantic_text(original_intent)[:2000],
-                            "current_turn": redact_semantic_text(current_text)[:4000],
-                        },
-                        ensure_ascii=False,
-                    ),
+                    "content": focused_harm_user_content(original_intent, current_text),
                 },
             ],
         }
@@ -301,6 +308,8 @@ class DeepSeekSemanticExtractor:
 
 __all__ = [
     "DeepSeekSemanticExtractor",
+    "FOCUSED_HARM_SYSTEM_PROMPT",
+    "focused_harm_user_content",
     "parse_harm_verification",
     "parse_intent_evidence",
     "SemanticEvidenceResult",
