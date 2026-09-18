@@ -17,6 +17,7 @@ recursive-include src/aegis/plugins/cursor/.cursor-plugin *
 recursive-include src/aegis/guardian *.json.gz
 recursive-include src/aegis/guardian *.sha256
 include benchmarks/chinese_agent_security_p1.jsonl
+include benchmarks/developer_workflows_v1.jsonl
 global-exclude __pycache__
 global-exclude *.py[co]
 global-exclude *.pyo
