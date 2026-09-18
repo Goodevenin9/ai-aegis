@@ -5,6 +5,12 @@ const SessionSecurityPage = {
     selected: null,
     currentDetail: null,
     thresholds: { confirm: 40, block: 80 },
+    manifests: [],
+    manifestPresets: {
+        readonly: ['file_read'],
+        local: ['file_read', 'file_write', 'shell_exec'],
+        full: ['file_read', 'file_write', 'shell_exec', 'network_outbound'],
+    },
 
     async render(container) {
         container.textContent = '';
@@ -89,7 +95,8 @@ const SessionSecurityPage = {
         const root = document.getElementById('ss-policy');
         const cfg = (policyData && policyData.config) || {};
         const capabilities = (manifestData && manifestData.known_capabilities) || [];
-        const defaults = ((manifestData && manifestData.manifests) || [])
+        this.manifests = (manifestData && manifestData.manifests) || [];
+        const defaults = this.manifests
             .find(item => item.runtime_kind === 'default' && item.manifest_id === 'default') || {};
         root.innerHTML = `
             <div class="ss-policy-grid">
@@ -115,19 +122,111 @@ const SessionSecurityPage = {
                 <input name="max_drift_score" type="hidden" value="${Number(cfg.max_drift_score || 100)}">
                 <button class="ss-btn" type="submit">Save configuration</button><span id="ss-config-status"></span>
               </form>
-              <form id="ss-manifest-form"><b>Default capability Manifest</b>
-                <label>Runtime <input name="runtime_kind" value="${this._esc(defaults.runtime_kind || 'default')}"></label>
-                <label>Manifest ID <input name="manifest_id" value="${this._esc(defaults.manifest_id || 'default')}"></label>
-                <label>Session ID <input name="session_id" value="${this._esc(defaults.session_id || '*')}" placeholder="* or exact session"></label>
-                <label>Project root <input name="project_root" value="${this._esc(defaults.project_root || '')}" placeholder="C:/workspace/project"></label>
-                <div class="ss-capabilities">${capabilities.map(cap => `<label><input type="checkbox" name="capability" value="${this._esc(cap)}" ${(defaults.allowed_capabilities || ['file_read']).includes(cap) ? 'checked' : ''}>${this._esc(cap)}</label>`).join('')}</div>
-                <button class="ss-btn" type="submit">Save Manifest</button><span id="ss-manifest-status"></span>
+              <form id="ss-manifest-form" class="ss-manifest-card"><div class="ss-manifest-heading"><div><b>Developer capability Manifest</b><small>Declare normal project abilities without disabling the five-stage pipeline.</small></div><span class="ss-manifest-state" id="ss-manifest-state">READ ONLY</span></div>
+                <div class="ss-preset-grid" role="group" aria-label="Manifest presets">
+                  <button type="button" class="ss-preset active" data-manifest-preset="readonly"><b>Read only</b><small>Inspect code without changes</small></button>
+                  <button type="button" class="ss-preset" data-manifest-preset="local"><b>Local development</b><small>Read, edit, test and build</small></button>
+                  <button type="button" class="ss-preset" data-manifest-preset="full"><b>Full development</b><small>Add outbound network access</small></button>
+                </div>
+                <div class="ss-manifest-fields">
+                  <label>Runtime <select name="runtime_kind"><option value="default">All supported agents</option><option value="claude-code">Claude Code</option><option value="codex">Codex</option><option value="cursor">Cursor</option><option value="copilot-cli">GitHub Copilot CLI</option></select></label>
+                  <label>Manifest ID <input name="manifest_id" value="${this._esc(defaults.manifest_id || 'default')}" placeholder="default"></label>
+                  <label>Session scope <input name="session_id" value="${this._esc(defaults.session_id || '*')}" placeholder="* or exact session"></label>
+                  <label class="ss-project-root">Project root <input name="project_root" value="${this._esc(defaults.project_root || '')}" placeholder="C:/workspace/project"><small>Required for write, shell or network access. Use the repository root.</small></label>
+                </div>
+                <details class="ss-advanced"><summary>Advanced capability selection</summary><div class="ss-capabilities">${capabilities.map(cap => `<label><input type="checkbox" name="capability" value="${this._esc(cap)}" ${(defaults.allowed_capabilities || ['file_read']).includes(cap) ? 'checked' : ''}>${this._esc(cap)}</label>`).join('')}</div></details>
+                <div class="ss-manifest-summary" id="ss-manifest-summary"></div>
+                <div class="ss-manifest-warning" id="ss-manifest-warning"></div>
+                <button class="ss-btn" type="submit">Save and activate Manifest</button><span class="ss-save-status" id="ss-manifest-status" role="status"></span>
+                ${this.manifests.length ? `<div class="ss-saved-manifests"><small>Saved Manifests</small>${this.manifests.map((item, index) => `<button type="button" data-manifest-index="${index}">${this._esc(item.runtime_kind)} · ${this._esc(item.manifest_id)} · ${this._esc(item.session_id || '*')}</button>`).join('')}</div>` : ''}
               </form>
-              <div><b>Chinese A/B evaluation</b><p>${dataset ? `${Number(dataset.case_count)} cases · ${Number(dataset.benign)} benign · ${Number(dataset.malicious)} malicious` : 'Dataset unavailable'}</p><button class="ss-btn" id="ss-run-eval">Run three-way evaluation</button><div id="ss-eval-result"></div></div>
+              <div class="ss-evaluation-card"><b>Chinese A/B evaluation</b><p>${dataset ? `${Number(dataset.case_count)} cases · ${Number(dataset.benign)} benign · ${Number(dataset.malicious)} malicious` : 'Dataset unavailable'}</p><button class="ss-btn" id="ss-run-eval">Run three-way evaluation</button><div id="ss-eval-result"></div></div>
             </div>`;
         document.getElementById('ss-config-form').addEventListener('submit', event => this._saveConfig(event));
         document.getElementById('ss-manifest-form').addEventListener('submit', event => this._saveManifest(event));
+        document.querySelectorAll('[data-manifest-preset]').forEach(button => {
+            button.addEventListener('click', () => this._applyManifestPreset(button.dataset.manifestPreset));
+        });
+        document.querySelectorAll('#ss-manifest-form input[name="capability"]').forEach(input => {
+            input.addEventListener('change', () => this._syncManifestSummary());
+        });
+        document.querySelector('#ss-manifest-form input[name="project_root"]')
+            .addEventListener('input', () => this._syncManifestSummary());
+        document.querySelectorAll('[data-manifest-index]').forEach(button => {
+            button.addEventListener('click', () => this._loadManifest(Number(button.dataset.manifestIndex)));
+        });
+        if (defaults.runtime_kind) {
+            document.querySelector('#ss-manifest-form select[name="runtime_kind"]').value = defaults.runtime_kind;
+        }
+        this._syncManifestSummary();
         document.getElementById('ss-run-eval').addEventListener('click', () => this._runEvaluation());
+    },
+
+    _selectedCapabilities() {
+        return [...document.querySelectorAll('#ss-manifest-form input[name="capability"]:checked')]
+            .map(input => input.value);
+    },
+
+    _applyManifestPreset(preset) {
+        const selected = new Set(this.manifestPresets[preset] || []);
+        document.querySelectorAll('#ss-manifest-form input[name="capability"]').forEach(input => {
+            input.checked = selected.has(input.value);
+        });
+        document.querySelectorAll('[data-manifest-preset]').forEach(button => {
+            button.classList.toggle('active', button.dataset.manifestPreset === preset);
+        });
+        this._syncManifestSummary();
+    },
+
+    _manifestPresetFor(capabilities) {
+        const selected = [...capabilities].sort().join('|');
+        return Object.entries(this.manifestPresets)
+            .find(([, values]) => [...values].sort().join('|') === selected)?.[0] || 'custom';
+    },
+
+    _syncManifestSummary() {
+        const form = document.getElementById('ss-manifest-form');
+        if (!form) return;
+        const capabilities = this._selectedCapabilities();
+        const preset = this._manifestPresetFor(capabilities);
+        const labels = { readonly: 'READ ONLY', local: 'LOCAL DEV', full: 'FULL DEV', custom: 'CUSTOM' };
+        const state = document.getElementById('ss-manifest-state');
+        state.textContent = labels[preset];
+        state.className = `ss-manifest-state ${preset}`;
+        document.querySelectorAll('[data-manifest-preset]').forEach(button => {
+            button.classList.toggle('active', button.dataset.manifestPreset === preset);
+        });
+        const root = form.querySelector('[name="project_root"]').value.trim();
+        document.getElementById('ss-manifest-summary').innerHTML = `
+            <b>Effective scope</b><span>${root ? this._esc(root) : 'Project root is not set'}</span>
+            <div>${capabilities.map(cap => `<code>${this._esc(cap)}</code>`).join('') || '<em>No capabilities selected</em>'}</div>`;
+        const warning = document.getElementById('ss-manifest-warning');
+        if (preset === 'full') {
+            warning.className = 'ss-manifest-warning high';
+            warning.innerHTML = '<b>Full development is broad.</b><span>Normal coding becomes frictionless, but Git push, publishing, deployment and external writes still need action-level policies. Boundary and Drift remain active.</span>';
+        } else if (preset === 'local') {
+            warning.className = 'ss-manifest-warning medium';
+            warning.innerHTML = '<b>Recommended starting point.</b><span>Local edits, tests and builds are allowed. Documentation and MCP network calls still request review.</span>';
+        } else {
+            warning.className = 'ss-manifest-warning low';
+            warning.innerHTML = '<b>Lowest-friction risk.</b><span>Only project reads are declared. Writes, shell commands and network calls request review.</span>';
+        }
+    },
+
+    _loadManifest(index) {
+        const manifest = this.manifests[index];
+        const form = document.getElementById('ss-manifest-form');
+        if (!manifest || !form) return;
+        form.querySelector('[name="runtime_kind"]').value = manifest.runtime_kind || 'default';
+        form.querySelector('[name="manifest_id"]').value = manifest.manifest_id || 'default';
+        form.querySelector('[name="session_id"]').value = manifest.session_id || '*';
+        form.querySelector('[name="project_root"]').value = manifest.project_root || '';
+        const selected = new Set(manifest.allowed_capabilities || []);
+        form.querySelectorAll('[name="capability"]').forEach(input => {
+            input.checked = selected.has(input.value);
+        });
+        this._syncManifestSummary();
+        document.getElementById('ss-manifest-status').textContent = 'Loaded. Review and save to activate changes.';
     },
 
     async _saveConfig(event) {
@@ -145,14 +244,24 @@ const SessionSecurityPage = {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
         const status = document.getElementById('ss-manifest-status');
+        const capabilities = form.getAll('capability');
+        const projectRoot = String(form.get('project_root') || '').trim();
+        const requiresRoot = capabilities.some(cap => cap !== 'file_read');
+        if (requiresRoot && !/^(?:[a-zA-Z]:[\\/]|\/)/.test(projectRoot)) {
+            status.textContent = 'Enter an absolute project root before enabling write, shell or network access.';
+            event.currentTarget.querySelector('[name="project_root"]').focus();
+            return;
+        }
+        const preset = this._manifestPresetFor(capabilities);
+        if (preset === 'full' && !window.confirm('Full development also enables outbound network access. Continue with this project-scoped Manifest?')) return;
         try {
             await API.updateRuntimeManifest(form.get('runtime_kind'), form.get('manifest_id'), {
-                allowed_capabilities: form.getAll('capability'),
-                project_root: form.get('project_root') || null,
-                description: 'Configured from Session Security P1',
+                allowed_capabilities: capabilities,
+                project_root: projectRoot || null,
+                description: `Developer Manifest (${preset}) configured from Session Security`,
                 session_id: form.get('session_id') || '*',
             });
-            status.textContent = 'Saved';
+            status.textContent = 'Saved and active for matching sessions.';
         } catch (error) { status.textContent = error.message; }
     },
 
@@ -230,7 +339,7 @@ const SessionSecurityPage = {
         if (document.getElementById('ss-style')) return;
         const style = document.createElement('style'); style.id = 'ss-style';
         style.textContent = `
-            .ss-controls,.ss-list,.ss-detail,.ss-panel{background:var(--bg-card);border:1px solid var(--border-default);border-radius:12px}.ss-controls{padding:14px;margin-bottom:16px}.ss-policy-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.ss-policy-grid form,.ss-policy-grid>div{display:flex;flex-direction:column;gap:7px}.ss-policy-grid label{display:flex;justify-content:space-between;gap:8px;color:var(--text-secondary);font-size:12px}.ss-policy-grid input{width:130px;background:var(--bg-primary);border:1px solid var(--border-default);border-radius:6px;color:var(--text-primary);padding:5px}.ss-capabilities{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}.ss-capabilities label{justify-content:flex-start}.ss-capabilities input{width:auto}.ss-btn{margin-top:8px;padding:7px 10px;border:1px solid var(--border-default);border-radius:7px;background:var(--accent-primary);color:white;cursor:pointer}.ss-policy-grid table{width:100%;margin-top:9px;border-collapse:collapse;font-size:11px}.ss-policy-grid td,.ss-policy-grid th{padding:4px;border-bottom:1px solid var(--border-default);text-align:left}.ss-shell{display:grid;grid-template-columns:minmax(220px,28%) 1fr;gap:16px}.ss-list{padding:14px;align-self:start}.ss-detail{padding:18px;min-width:0}.ss-title{font-weight:700;color:var(--text-primary);margin-bottom:10px}.ss-session{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;border:0;border-radius:9px;padding:10px;background:transparent;color:var(--text-primary);cursor:pointer}.ss-session:hover,.ss-session.active{background:var(--bg-hover)}.ss-session span{min-width:0}.ss-session small{display:block;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ss-session strong,.ss-score{color:#10b981}.ss-session .guarded,.ss-score.guarded{color:#60a5fa}.ss-session .elevated,.ss-score.elevated{color:#f59e0b}.ss-session .critical,.ss-score.critical{color:#ef4444}.ss-head{display:flex;justify-content:space-between;gap:20px}.ss-intent{color:var(--text-secondary);font-size:13px}.ss-score{text-align:center}.ss-score b{display:block;font-size:32px}.ss-score span{font-size:10px;letter-spacing:1px}.ss-stages{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}.ss-stages div{padding:10px;border:1px solid var(--border-default);border-radius:9px}.ss-stages b,.ss-stages span{display:block}.ss-stages span{font-size:10px;color:var(--text-muted);margin-top:3px}.ss-panel{padding:14px;margin-top:12px}.ss-explanation{display:flex;flex-direction:column;gap:5px;color:var(--text-secondary);font-size:12px}.ss-curve{width:100%;height:150px;overflow:visible}.ss-curve polyline{fill:none;stroke:var(--accent-primary);stroke-width:3}.ss-curve circle{fill:var(--accent-primary)}.ss-curve line{stroke-width:1;stroke-dasharray:5 5}.ss-curve .warn{stroke:#f59e0b}.ss-curve .block{stroke:#ef4444}.ss-integrity{float:right;font-size:10px;letter-spacing:.7px}.ss-integrity.ok{color:#10b981}.ss-integrity.bad{color:#ef4444}.ss-event{display:grid;grid-template-columns:12px 1fr;gap:9px;padding:9px 0;border-top:1px solid var(--border-default)}.ss-event i{width:8px;height:8px;border-radius:50%;background:var(--accent-primary);margin-top:6px}.ss-event header{display:flex;gap:10px;align-items:center}.ss-event header span{color:var(--text-muted);font-size:11px}.ss-event em{margin-left:auto;font-style:normal;font-size:10px;text-transform:uppercase}.ss-event p{margin:3px 0 0;color:var(--text-secondary);font-size:12px;white-space:pre-wrap;word-break:break-word;max-height:70px;overflow:auto}.ss-empty{padding:50px 12px;text-align:center;color:var(--text-muted)}.ss-empty.compact{padding:24px}@media(max-width:1000px){.ss-policy-grid{grid-template-columns:1fr}.ss-shell{grid-template-columns:1fr}.ss-stages{grid-template-columns:repeat(2,1fr)}}`;
+            .ss-controls,.ss-list,.ss-detail,.ss-panel{background:var(--bg-card);border:1px solid var(--border-default);border-radius:12px}.ss-controls{padding:14px;margin-bottom:16px}.ss-policy-grid{display:grid;grid-template-columns:minmax(230px,.7fr) minmax(480px,1.3fr);grid-template-areas:"config manifest" "evaluation manifest";gap:18px;align-items:start}.ss-policy-grid form,.ss-policy-grid>div{display:flex;flex-direction:column;gap:7px}#ss-config-form{grid-area:config}.ss-manifest-card{grid-area:manifest}.ss-evaluation-card{grid-area:evaluation}.ss-policy-grid label{display:flex;justify-content:space-between;gap:8px;color:var(--text-secondary);font-size:12px}.ss-policy-grid input,.ss-policy-grid select{width:150px;background:var(--bg-primary);border:1px solid var(--border-default);border-radius:6px;color:var(--text-primary);padding:6px}.ss-manifest-card{padding:14px;border:1px solid var(--border-default);border-radius:11px;background:color-mix(in srgb,var(--bg-card) 86%,var(--accent-primary) 4%)}.ss-manifest-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.ss-manifest-heading small{display:block;margin-top:4px;color:var(--text-muted);line-height:1.4}.ss-manifest-state{border-radius:999px;padding:4px 8px;font-size:9px;font-weight:800;letter-spacing:.7px;background:rgba(16,185,129,.12);color:#10b981;white-space:nowrap}.ss-manifest-state.local{background:rgba(96,165,250,.12);color:#60a5fa}.ss-manifest-state.full{background:rgba(245,158,11,.13);color:#f59e0b}.ss-manifest-state.custom{background:rgba(124,108,255,.13);color:var(--accent-primary)}.ss-preset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:5px 0}.ss-preset{min-width:0;text-align:left;padding:9px;border:1px solid var(--border-default);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);cursor:pointer}.ss-preset:hover,.ss-preset.active{border-color:var(--accent-primary);background:color-mix(in srgb,var(--accent-primary) 10%,var(--bg-primary))}.ss-preset b,.ss-preset small{display:block}.ss-preset small{margin-top:3px;color:var(--text-muted);font-size:9px;line-height:1.3}.ss-manifest-fields{display:grid;grid-template-columns:1fr 1fr;gap:7px}.ss-manifest-fields label{align-items:center}.ss-manifest-fields .ss-project-root{grid-column:1/-1}.ss-manifest-fields .ss-project-root input{width:58%}.ss-project-root small{max-width:145px;font-size:9px;line-height:1.3}.ss-advanced{border-top:1px solid var(--border-default);padding-top:7px}.ss-advanced summary{cursor:pointer;color:var(--text-secondary);font-size:11px}.ss-capabilities{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-top:8px}.ss-capabilities label{justify-content:flex-start}.ss-capabilities input{width:auto}.ss-manifest-summary{padding:9px;border-radius:8px;background:var(--bg-primary);font-size:11px;color:var(--text-secondary)}.ss-manifest-summary>b,.ss-manifest-summary>span{display:block}.ss-manifest-summary span{margin:3px 0 7px;word-break:break-all}.ss-manifest-summary code{display:inline-block;margin:2px 4px 0 0;padding:2px 5px;border-radius:4px;background:var(--bg-hover);color:var(--text-primary);font-size:9px}.ss-manifest-warning{display:flex;flex-direction:column;gap:3px;border-left:3px solid #10b981;padding:8px 10px;background:rgba(16,185,129,.07);font-size:10px;color:var(--text-secondary)}.ss-manifest-warning.medium{border-color:#60a5fa;background:rgba(96,165,250,.07)}.ss-manifest-warning.high{border-color:#f59e0b;background:rgba(245,158,11,.08)}.ss-manifest-warning b{color:var(--text-primary)}.ss-save-status{font-size:11px;color:var(--text-secondary)}.ss-saved-manifests{display:flex;flex-wrap:wrap;gap:5px;border-top:1px solid var(--border-default);padding-top:8px}.ss-saved-manifests small{width:100%;color:var(--text-muted)}.ss-saved-manifests button{border:1px solid var(--border-default);border-radius:6px;background:var(--bg-primary);color:var(--text-secondary);padding:4px 6px;font-size:9px;cursor:pointer}.ss-btn{margin-top:8px;padding:7px 10px;border:1px solid var(--border-default);border-radius:7px;background:var(--accent-primary);color:white;cursor:pointer}.ss-policy-grid table{width:100%;margin-top:9px;border-collapse:collapse;font-size:11px}.ss-policy-grid td,.ss-policy-grid th{padding:4px;border-bottom:1px solid var(--border-default);text-align:left}.ss-shell{display:grid;grid-template-columns:minmax(220px,28%) 1fr;gap:16px}.ss-list{padding:14px;align-self:start}.ss-detail{padding:18px;min-width:0}.ss-title{font-weight:700;color:var(--text-primary);margin-bottom:10px}.ss-session{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;border:0;border-radius:9px;padding:10px;background:transparent;color:var(--text-primary);cursor:pointer}.ss-session:hover,.ss-session.active{background:var(--bg-hover)}.ss-session span{min-width:0}.ss-session small{display:block;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ss-session strong,.ss-score{color:#10b981}.ss-session .guarded,.ss-score.guarded{color:#60a5fa}.ss-session .elevated,.ss-score.elevated{color:#f59e0b}.ss-session .critical,.ss-score.critical{color:#ef4444}.ss-head{display:flex;justify-content:space-between;gap:20px}.ss-intent{color:var(--text-secondary);font-size:13px}.ss-score{text-align:center}.ss-score b{display:block;font-size:32px}.ss-score span{font-size:10px;letter-spacing:1px}.ss-stages{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}.ss-stages div{padding:10px;border:1px solid var(--border-default);border-radius:9px}.ss-stages b,.ss-stages span{display:block}.ss-stages span{font-size:10px;color:var(--text-muted);margin-top:3px}.ss-panel{padding:14px;margin-top:12px}.ss-explanation{display:flex;flex-direction:column;gap:5px;color:var(--text-secondary);font-size:12px}.ss-curve{width:100%;height:150px;overflow:visible}.ss-curve polyline{fill:none;stroke:var(--accent-primary);stroke-width:3}.ss-curve circle{fill:var(--accent-primary)}.ss-curve line{stroke-width:1;stroke-dasharray:5 5}.ss-curve .warn{stroke:#f59e0b}.ss-curve .block{stroke:#ef4444}.ss-integrity{float:right;font-size:10px;letter-spacing:.7px}.ss-integrity.ok{color:#10b981}.ss-integrity.bad{color:#ef4444}.ss-event{display:grid;grid-template-columns:12px 1fr;gap:9px;padding:9px 0;border-top:1px solid var(--border-default)}.ss-event i{width:8px;height:8px;border-radius:50%;background:var(--accent-primary);margin-top:6px}.ss-event header{display:flex;gap:10px;align-items:center}.ss-event header span{color:var(--text-muted);font-size:11px}.ss-event em{margin-left:auto;font-style:normal;font-size:10px;text-transform:uppercase}.ss-event p{margin:3px 0 0;color:var(--text-secondary);font-size:12px;white-space:pre-wrap;word-break:break-word;max-height:70px;overflow:auto}.ss-empty{padding:50px 12px;text-align:center;color:var(--text-muted)}.ss-empty.compact{padding:24px}@media(max-width:900px){.ss-policy-grid{grid-template-columns:1fr;grid-template-areas:"manifest" "config" "evaluation"}.ss-manifest-fields{grid-template-columns:1fr}.ss-manifest-fields .ss-project-root{grid-column:auto}}@media(max-width:620px){.ss-preset-grid{grid-template-columns:1fr}.ss-project-root small{display:none}.ss-manifest-fields .ss-project-root input{width:150px}.ss-shell{grid-template-columns:1fr}.ss-stages{grid-template-columns:repeat(2,1fr)}}`;
         document.head.appendChild(style);
     },
 };
