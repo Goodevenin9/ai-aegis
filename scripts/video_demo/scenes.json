@@ -1,0 +1,110 @@
+[
+  {
+    "kind": "card",
+    "label": "01 · PRODUCT",
+    "title": "AI Aegis（灵盾）全功能演示",
+    "subtitle": "面向企业自研 Agent 与高校实验室的开源运行时安全治理与可观测平台",
+    "zh": "从工具调用前拦截，到会话级漂移分析、审计与安全运营。",
+    "en": "From pre-tool enforcement to session drift analysis, audit, and security operations.",
+    "narration": "AI Aegis is an open-source runtime security, governance, and observability platform for enterprise agents and university laboratories. This demonstration covers the complete product workflow."
+  },
+  {
+    "kind": "page", "route": "/dashboard", "scroll": 0.42, "label": "02 · DASHBOARD",
+    "zh": "统一仪表盘汇总运行时、工具调用、威胁、密钥泄露与模型成本。",
+    "en": "The unified dashboard summarizes runtimes, tool calls, threats, secret leakage, and model cost.",
+    "narration": "The unified dashboard presents the current protection posture, guarded runtimes, tool activity, threat severity, secret detections, and estimated model spending in one operational view."
+  },
+  {
+    "kind": "page", "route": "/threats", "scroll": 0.55, "label": "03 · THREAT MONITOR",
+    "zh": "108 条社区规则与本地 Guardian 模型检测注入、越狱、泄密和危险行为。",
+    "en": "One hundred and eight community rules and local Guardian ML detect injection, jailbreaks, leakage, and dangerous behavior.",
+    "narration": "Threat Monitor combines one hundred and eight community rules with the optional local Guardian model. It identifies prompt injection, jailbreak attempts, secret leakage, and dangerous agent behavior while preserving the evidence behind every verdict."
+  },
+  {
+    "kind": "page", "route": "/session-security", "scroll": 0.48, "label": "04 · FIVE-STAGE PIPELINE",
+    "zh": "Boundary、Capability、Radius、Drift、Friction 五段管线进行证据堆叠裁决。",
+    "en": "Boundary, Capability, Radius, Drift, and Friction form an evidence-stacking decision pipeline.",
+    "narration": "The core innovation is the five-stage PreTool pipeline. Boundary catches deterministic violations. Capability and Radius compare the action with its declared scope. Drift accumulates session risk. Friction produces the final allow, confirm, or block decision."
+  },
+  {
+    "kind": "page", "route": "/security-operations", "scroll": 0.54, "label": "05 · SECURITY COPILOT",
+    "zh": "安全 Copilot 统一证据导入、混合检索、受治理记忆、免疫学习与人工审批。",
+    "en": "Security Copilot unifies evidence ingestion, hybrid retrieval, governed memory, immune learning, and human approval.",
+    "narration": "Security Copilot turns detections into an investigation workflow. It can ingest redacted evidence, search the security knowledge base, preserve governed memories, learn session-level attack patterns in shadow mode, and require human approval before sensitive agent actions."
+  },
+  {
+    "kind": "page", "route": "/tool-permissions", "scroll": 0.58, "label": "06 · MANIFEST & JIT",
+    "zh": "Manifest 声明工具、路径、网络和动作范围；越界调用进入限时 JIT 授权。",
+    "en": "The Manifest declares tool, path, network, and action scope; exceptions enter time-limited JIT approval.",
+    "narration": "Developer Manifests reduce false positives by declaring the tools, paths, destinations, and actions an agent actually needs. Out-of-scope operations are not blindly allowed. They enter an auditable, time-limited just-in-time approval workflow."
+  },
+  {
+    "kind": "page", "route": "/agent-runs", "scroll": 0.55, "label": "07 · TRACES",
+    "zh": "每个会话串联提示、模型响应、工具调用、裁决、Token 与估算成本。",
+    "en": "Each trace links prompts, model responses, tool calls, verdicts, tokens, and estimated cost.",
+    "narration": "The trace view reconstructs each agent session as a causal timeline. Prompts, model generations, tool calls, enforcement verdicts, tokens, and estimated cost remain connected through trace identifiers for replay and incident analysis."
+  },
+  {
+    "kind": "page", "route": "/tool-activity", "scroll": 0.56, "label": "08 · TOOL AUDIT",
+    "zh": "工具活动与资产清单展示谁调用了什么、参数范围、裁决结果及哈希链状态。",
+    "en": "Tool activity and inventory show who called what, the argument scope, verdict, and hash-chain status.",
+    "narration": "Tool Activity provides the operational ledger. It records the runtime, tool, arguments after redaction, policy outcome, and hash-chain integrity. The same evidence also builds an inventory of agent tools and servers."
+  },
+  {
+    "kind": "page", "route": "/instant-audit", "scroll": 0.48, "label": "09 · INSTANT AUDIT",
+    "zh": "即时审计可扫描本地历史会话，发现破坏性命令、明文密钥与异常成本。",
+    "en": "Instant Audit scans local session history for destructive commands, plaintext secrets, and unusual cost.",
+    "narration": "Instant Audit is an opt-in, local review of agent history already stored on the workstation. It searches for destructive commands, exposed credentials, risky file access, and unusual spending without sending the source history to a cloud service."
+  },
+  {
+    "kind": "page", "route": "/costs", "scroll": 0.52, "label": "10 · COST & TOKENS",
+    "zh": "成本中心按 Agent、模型和时间追踪 Token，并支持预算、告警与阻断策略。",
+    "en": "Cost controls track tokens by agent, model, and time, with budgets, warnings, and enforcement.",
+    "narration": "Cost and Tokens turns model usage into an auditable control. Teams can compare providers, inspect per-agent usage, configure pricing, set daily budgets, and warn or block before spending exceeds policy."
+  },
+  {
+    "kind": "page", "route": "/skill-scanner", "scroll": 0.48, "label": "11 · SUPPLY CHAIN",
+    "zh": "Skill Scanner 在安装前检查脚本、网络访问、权限要求和隐藏风险。",
+    "en": "Skill Scanner checks scripts, network access, requested permissions, and hidden risk before installation.",
+    "narration": "Protection starts before runtime. Skill Scanner reviews an agent skill package for executable scripts, network access, suspicious permissions, and hidden behaviors, then produces policy evidence before the package is trusted."
+  },
+  {
+    "kind": "page", "route": "/governance", "scroll": 0.48, "label": "12 · GOVERNANCE",
+    "zh": "治理面板将规则、权限、出口、成本与审计状态汇总为可检查的安全姿态。",
+    "en": "Governance consolidates rules, permissions, egress, cost, and audit state into an inspectable posture.",
+    "narration": "Agent Governance summarizes whether the controls that matter are actually enabled. It connects detection rules, tool permission policy, network egress, cost limits, audit integrity, and integration coverage into a practical protection posture."
+  },
+  {
+    "kind": "page", "route": "/mcp-policies", "scroll": 0.42, "label": "13 · ENTERPRISE POLICY",
+    "zh": "企业策略支持集中下发 MCP 工具规则，并保留签名、版本和同步审计。",
+    "en": "Enterprise policy centrally distributes MCP tool rules with signatures, versions, and synchronization audit.",
+    "narration": "For enterprise deployment, organization-managed MCP policies can be synchronized to enrolled devices. The viewer preserves policy identity, version, origin, and synchronization evidence while local enforcement remains available offline."
+  },
+  {
+    "kind": "page", "route": "/guide-connect-agents", "scroll": 0.55, "label": "14 · CONNECT AGENTS",
+    "zh": "连接向导覆盖 Claude Code、Codex、Copilot CLI、Cursor、OpenClaw 与主流框架。",
+    "en": "The connection workflow covers Claude Code, Codex, Copilot CLI, Cursor, OpenClaw, and major frameworks.",
+    "narration": "AI Aegis connects to common agent runtimes through native hooks, the SDK, or a compatible proxy. Guided setup and verification are provided for Claude Code, Codex, Copilot CLI, Cursor, OpenClaw, LangChain, LangGraph, CrewAI, Hermes, n8n, and Ollama."
+  },
+  {
+    "kind": "page", "route": "/siem-export", "scroll": 0.5, "label": "15 · SIEM / OCSF",
+    "zh": "威胁和审计事件可按 OCSF 结构转发到企业 SIEM，默认仅发送元数据。",
+    "en": "Threat and audit events can be forwarded in OCSF form to enterprise SIEM, metadata-only by default.",
+    "narration": "Security events can be normalized to OCSF and forwarded to Splunk, Datadog, Microsoft Sentinel, Chronicle, QRadar, OpenTelemetry, or an HTTPS webhook. Metadata-only defaults and destination controls preserve the system boundary."
+  },
+  {
+    "kind": "page", "route": "/settings", "scroll": 0.48, "label": "16 · LOCAL BY DEFAULT",
+    "zh": "系统可无云端密钥启动；敏感字段默认脱敏，模型增强和外发均由管理员显式配置。",
+    "en": "The system starts without a cloud key; redaction is default, while model enhancement and export require explicit configuration.",
+    "narration": "The product remains usable without a cloud model key. Deterministic rules, local storage, audit, manifests, and governance work offline. Model-assisted evidence extraction and external forwarding are explicit, configurable enhancements rather than hidden dependencies."
+  },
+  {
+    "kind": "card",
+    "label": "17 · DELIVERY",
+    "title": "可运行 · 可测试 · 可解释 · 可治理",
+    "subtitle": "Apache 2.0 开源社区版 + 面向企业自研 Agent 的治理与审计能力",
+    "zh": "AI Aegis：让 Agent 的每一次行动有边界、有证据、可追溯。",
+    "en": "AI Aegis gives every agent action a boundary, evidence, and an audit trail.",
+    "narration": "AI Aegis is designed to be runnable, testable, explainable, and governable. It gives every agent action a boundary, supporting evidence, and a traceable audit trail."
+  }
+]
