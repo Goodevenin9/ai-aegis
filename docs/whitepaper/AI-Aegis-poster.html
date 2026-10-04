@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>AI Aegis（灵盾）· 海报</title>
+<style>
+  :root{
+    --navy:#0b1b4d; --ink:#121a30; --muted:#5a6478; --line:#e2e6f2; --soft:#f4f6fd;
+    --accent:#5b3df5; --accent2:#7c6cff; --cyan:#17a8dc; --teal:#0e9f6e; --amber:#d97706; --red:#dc4a4a;
+  }
+  @page{ size:594mm 841mm; margin:0; }
+  *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  html,body{ margin:0; padding:0; }
+  body{ font-family:"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif; color:var(--ink); }
+  .poster{ width:594mm; height:841mm; overflow:hidden; padding:16mm 16mm 13mm; display:flex; flex-direction:column; gap:8mm; }
+
+  .head{ display:flex; align-items:center; gap:14mm; background:linear-gradient(120deg,#0b1b4d 0%,#241a6e 52%,#5b3df5 100%); color:#fff; border-radius:13mm; padding:13mm 15mm; position:relative; overflow:hidden; }
+  .head:after{ content:""; position:absolute; right:-60mm; top:-70mm; width:230mm; height:230mm; border-radius:50%; background:radial-gradient(circle,rgba(23,168,220,.45),transparent 66%); }
+  .head .logo{ width:50mm; height:50mm; background:#fff; border-radius:11mm; padding:6mm; flex-shrink:0; box-shadow:0 5mm 14mm rgba(0,0,0,.28); }
+  .head .ttl{ position:relative; z-index:1; }
+  .head h1{ margin:0; font-size:50pt; letter-spacing:.5px; }
+  .head h1 span{ font-size:25pt; color:#cfc7ff; font-weight:400; }
+  .head .sub{ font-size:17.5pt; color:#d9d3ff; margin-top:2.5mm; }
+  .head .en{ font-size:11.5pt; color:#b3aaf0; margin-top:1.5mm; }
+  .head .team{ margin-top:5mm; font-size:13.5pt; color:#efeaff; display:flex; gap:7mm; flex-wrap:wrap; }
+  .head .team b{ color:#fff; }
+
+  .hero{ display:flex; align-items:center; justify-content:space-between; gap:10mm; background:#eef0ff; border:1.2mm solid var(--accent); border-radius:9mm; padding:8mm 13mm; }
+  .hero .big{ font-size:31pt; font-weight:800; color:var(--accent); line-height:1.12; }
+  .hero .big small{ display:block; font-size:13pt; font-weight:400; color:var(--muted); margin-top:2mm; }
+  .hero .chips{ display:flex; gap:5mm; flex-wrap:wrap; justify-content:flex-end; }
+  .chip{ background:#fff; border:0.6mm solid var(--line); border-radius:999px; padding:3.5mm 6.5mm; font-size:12.5pt; color:#2a2f45; }
+  .chip b{ color:var(--accent); }
+
+  .pipe{ display:flex; align-items:stretch; gap:3mm; }
+  .stage{ flex:1; background:#fff; border:0.7mm solid var(--line); border-top:2.6mm solid var(--accent); border-radius:8mm; padding:7mm 6mm; text-align:center; }
+  .stage b{ display:block; font-size:19pt; color:var(--accent); }
+  .stage small{ display:block; font-size:11.5pt; color:var(--muted); line-height:1.45; margin-top:2.5mm; }
+  .arrow{ align-self:center; color:var(--accent); font-size:26pt; font-weight:800; }
+
+  .cols{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:7mm; flex:1; }
+  .col{ display:flex; flex-direction:column; gap:7mm; justify-content:flex-start; min-width:0; }
+  .col > :last-child{ flex:1 1 auto; }
+  .card{ background:#fff; border:0.7mm solid var(--line); border-radius:9mm; padding:9mm 9.5mm; }
+  .card h2{ margin:0 0 5mm; font-size:20pt; color:var(--ink); padding-bottom:3mm; border-bottom:1mm solid var(--accent); }
+  .card h2 em{ font-style:normal; color:var(--accent); font-size:12.5pt; }
+  .card p{ margin:3mm 0; font-size:13pt; color:#2a2f45; line-height:1.62; }
+  .card ul{ margin:1mm 0; padding-left:7mm; }
+  .card li{ font-size:13pt; margin:3.4mm 0; line-height:1.52; }
+  .card li b{ color:var(--accent); }
+  .card pre{ background:#f2f4fc; border:0.4mm solid var(--line); border-left:1.6mm solid var(--accent); border-radius:5mm; padding:5mm; font-family:Consolas,monospace; font-size:10.5pt; line-height:1.5; white-space:pre-wrap; margin:2mm 0 0; }
+
+  .kpi{ display:grid; grid-template-columns:repeat(3,1fr); gap:4mm; }
+  .k{ background:var(--soft); border:0.6mm solid var(--line); border-radius:7mm; padding:5.5mm 4mm; text-align:center; }
+  .k b{ display:block; font-size:29pt; color:var(--accent); line-height:1; }
+  .k span{ display:block; font-size:10.5pt; color:var(--muted); margin-top:2mm; }
+
+  table{ width:100%; border-collapse:collapse; font-size:11.5pt; margin-top:2mm; }
+  th,td{ border:0.5mm solid var(--line); padding:3.6mm 3mm; text-align:left; }
+  th{ background:#eceffb; font-weight:600; }
+  td b{ color:var(--teal); }
+
+  .flow{ display:flex; flex-direction:column; gap:2.6mm; }
+  .step{ display:flex; align-items:center; gap:4mm; background:var(--soft); border:0.5mm solid var(--line); border-radius:6mm; padding:4mm 5mm; font-size:12pt; }
+  .step i{ width:7mm; height:7mm; border-radius:50%; background:var(--accent); color:#fff; font-size:9.5pt; font-style:normal; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .step.active i{ background:var(--teal); }
+
+  .warn{ border-left:2.6mm solid var(--amber); background:#fff8ec; border-radius:5mm; padding:6mm 7mm; }
+  .ok{ border-left:2.6mm solid var(--teal); background:#eefaf4; border-radius:5mm; padding:6mm 7mm; }
+  .tag{ display:inline-block; font-size:10pt; color:#fff; background:var(--accent); border-radius:4mm; padding:1mm 4mm; margin:0 2mm 2mm 0; }
+
+  .band2{ display:grid; grid-template-columns:1.3fr 1fr; gap:7mm; }
+  .flow2{ display:flex; align-items:center; gap:4mm; flex-wrap:wrap; margin:3mm 0; }
+  .flow2 span{ background:#eef0ff; border:0.5mm solid var(--line); border-radius:5mm; padding:2.6mm 5mm; font-size:12pt; color:#2a2f45; }
+  .flow2 i{ color:var(--accent); font-style:normal; font-weight:700; }
+
+  .foot{ display:flex; justify-content:space-between; align-items:center; background:#0b1b4d; color:#cfd6f0; border-radius:8mm; padding:6.5mm 12mm; font-size:12.5pt; }
+  .foot b{ color:#fff; } .foot code{ color:#9fe3ff; font-size:12pt; }
+</style>
+</head>
+<body>
+<div class="poster">
+
+  <div class="head">
+    <img class="logo" src="logo-mark.png" alt="AI Aegis">
+    <div class="ttl">
+      <h1>AI Aegis <span>（灵盾）</span></h1>
+      <div class="sub">面向 AI Agent 的实时执行前安全防护与安全运营平台</div>
+      <div class="en">Real-time, deterministic pre-execution guardrail &amp; security-operations plane for autonomous agents</div>
+      <div class="team">
+        <span>团队 <b>Goodevenin9 团队</b></span>
+        <span>总负责人 <b>万翔浩</b></span>
+        <span>副负责人 <b>李香颐</b></span>
+        <span>指导老师 <b>韩东岐 老师</b></span>
+        <span>版本 <b>v1.0.3</b></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="big">LLM 提取证据 · 代码负责裁决
+      <small>热路径 0 次大模型调用；同输入可复现；只升不放</small>
+    </div>
+    <div class="chips">
+      <span class="chip"><b>确定性</b> 状态机裁决</span>
+      <span class="chip"><b>封闭契约</b> 布尔/枚举</span>
+      <span class="chip"><b>跨轮次</b> 会话级</span>
+      <span class="chip"><b>不可绕过</b> Manifest</span>
+    </div>
+  </div>
+
+  <div class="pipe">
+    <div class="stage"><b>Boundary</b><small>归一化 · 越狱 · 高危 Shell · 敏感路径</small></div>
+    <div class="arrow">→</div>
+    <div class="stage"><b>Capability</b><small>工具名映射 ↔ 会话能力清单集合匹配</small></div>
+    <div class="arrow">→</div>
+    <div class="stage"><b>Radius</b><small>路径 / URL / MCP → 影响范围分类</small></div>
+    <div class="arrow">→</div>
+    <div class="stage"><b>Drift</b><small>固定权重状态机累积会话风险</small></div>
+    <div class="arrow">→</div>
+    <div class="stage"><b>Friction</b><small>确定性决策表 · 唯一裁决点</small></div>
+  </div>
+
+  <div class="cols">
+
+    <!-- col 1 -->
+    <div class="col">
+      <div class="card">
+        <h2>问题 · <em>Agent 攻击面</em></h2>
+        <ul>
+          <li><b>直接提示注入</b> — 指令覆盖 / 系统提示提取</li>
+          <li><b>间接与工具结果注入</b> — 恶意指令藏在 MCP 返回值</li>
+          <li><b>权限试探与升级</b> — 跨轮次逐步索取更高权限</li>
+          <li><b>数据外泄</b> — 敏感读取 → 外部写入序列</li>
+          <li><b>不可逆破坏</b> — 删除 / 发布 / 强推 / 删凭据</li>
+          <li><b>供应链投毒</b> — 被污染的 Skill / MCP 工具</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>现有方案 · <em>四类不足</em></h2>
+        <ul>
+          <li><b>单轮视角</b>：看不见跨轮试探与主题偏移</li>
+          <li><b>裁决不可复现</b>：交给 LLM 判官，无法回归与定责</li>
+          <li><b>事后而非事前</b>：告警时副作用已发生</li>
+          <li><b>运营与防护割裂</b>：缺少统一证据链</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>系统架构 · <em>四层</em></h2>
+        <ul>
+          <li><b>接入层</b> — 原生 Hook / 插件 / 代理 / 框架 SDK / MCP</li>
+          <li><b>本地引擎</b> — 规则 + Guardian ML + 五段管线 + 治理</li>
+          <li><b>审计存储</b> — SQLite + SHA-256 哈希链</li>
+          <li><b>运营平面</b> — LangGraph · RAG · 记忆 · 免疫 · 审批</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>集成与部署</h2>
+        <ul>
+          <li><b>一键安装</b> — <code>pip install ai-aegis[app]</code></li>
+          <li><b>容器</b> — 4 份 Compose（demo / agent / self-host / nginx）</li>
+          <li><b>插件</b> — Claude Code · Codex · Copilot CLI · Cursor · OpenClaw</li>
+          <li><b>SIEM</b> — Splunk / Datadog / Sentinel / QRadar / Chronicle / OTLP</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- col 2 -->
+    <div class="col">
+      <div class="card">
+        <h2>核心创新</h2>
+        <ul>
+          <li><b>① 证据/裁决分离</b> — 模型只给布尔/枚举，分数与裁决由代码定</li>
+          <li><b>② 会话级五段管线</b> — 从单轮升级到跨轮状态机</li>
+          <li><b>③ 三重正交防线</b> — 规则 + 离线 ML + 会话状态</li>
+          <li><b>④ 不可绕过 Manifest</b> — 插件自报不能放宽</li>
+          <li><b>⑤ 只升不放</b> — 只能升级拒绝，绝不静默放宽</li>
+          <li><b>⑥ 受治理免疫学习</b> — 人工激活 · 贡献封顶 · 不能独立阻断</li>
+          <li><b>⑦ 统一哈希链审计</b> — 自动判定与人工操作同链</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>五段证据契约 <em>（封闭）</em></h2>
+        <pre>{"theme_shifted": false, "permission_probing": false,
+ "request_escalation": false, "explicit_harm": false,
+ "requested_capabilities": ["file_read"],
+ "requested_radius": "project"}
+多余字段 / 未知枚举 / 非布尔 → 整包拒绝</pre>
+      </div>
+      <div class="card">
+        <h2>关键技术指标</h2>
+        <div class="kpi">
+          <div class="k"><b>5</b><span>段裁决管线</span></div>
+          <div class="k"><b>108</b><span>检测规则</span></div>
+          <div class="k"><b>217</b><span>REST 端点</span></div>
+          <div class="k"><b>1,555</b><span>基准响应</span></div>
+          <div class="k"><b>73k+</b><span>行 Python</span></div>
+          <div class="k"><b>1,090+</b><span>测试通过</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>治理控制面</h2>
+        <p>工具权限与频率限制 · JIT 即时授权 · Egress 出站治理 · 成本预算 · 设备与云策略同步 · 受治理长期记忆 · 证据 RAG（Recall@k / MRR）</p>
+      </div>
+    </div>
+
+    <!-- col 3 -->
+    <div class="col">
+      <div class="card">
+        <h2>评测结果 <em>（机器报告可复现）</em></h2>
+        <table>
+          <thead><tr><th>数据集</th><th>Judge</th><th>五段</th></tr></thead>
+          <tbody>
+            <tr><td>InjecAgent</td><td>100/0%</td><td><b>100/0%</b></td></tr>
+            <tr><td>AgentHarm 旧</td><td>90/23%</td><td>38/20%</td></tr>
+            <tr><td>AgentDojo</td><td>63/13%</td><td>43/14%</td></tr>
+            <tr><td>AgentHarm v2</td><td>95/38%</td><td><b>95/53%</b></td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:10.5pt;color:var(--muted);margin-top:2mm">检出率 / 误报率；离线 PreTool 网关回放</p>
+      </div>
+      <div class="card">
+        <h2>免疫学习 · <em>生命周期</em></h2>
+        <div class="flow">
+          <div class="step"><i>1</i>Candidate · 从已确认会话学习</div>
+          <div class="step"><i>2</i>Shadow · 记录但<b>不影响判定</b></div>
+          <div class="step active"><i>3</i>Active · <b>人工批准后</b>方可影响 Drift</div>
+          <div class="step"><i>4</i>Decaying → Retired · 衰减与归档</div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>差异化</h2>
+        <ul>
+          <li>正交于「LLM 判官」的<b>确定性裁决</b></li>
+          <li>覆盖 Claude Code / Codex / Copilot CLI / Cursor / OpenClaw</li>
+          <li>框架 SDK：LangChain / LangGraph / CrewAI / Hermes</li>
+          <li>防护 + 运营 + 治理<b>共用一条审计链</b></li>
+        </ul>
+      </div>
+      <div class="warn">
+        <b style="font-size:13.5pt">诚实边界（主动声明）</b>
+        <p style="font-size:11pt;margin:2.5mm 0 0">
+          外部基准为离线回放，非原生 ASR；<code>five_stage_semantic</code> 为上界；AgentHarm 优化为同分片探索性；哈希链仅事后篡改可发现，不防内存攻击。
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="band2">
+    <div class="card">
+      <h2>统一事件链 · <em>跨运行时同一审计</em></h2>
+      <div class="flow2">
+        <span>before_prompt_build</span><i>→</i><span>llm_input</span><i>→</i><span>llm_output</span><i>→</i><span>before_tool_call</span><i>→</i><span>after_tool_call</span>
+      </div>
+      <p style="font-size:11.5pt;color:var(--muted);margin:1mm 0 0">Claude Code · Codex · Copilot CLI · Cursor · OpenClaw · LangChain / LangGraph / CrewAI / Hermes 收敛到同一判定语义与同一条 SHA-256 哈希链（带 traceId 串联）。</p>
+    </div>
+    <div class="card">
+      <h2>评测可复现</h2>
+      <pre>python scripts/run_external_benchmarks.py \
+    --benchmarks injecagent agentharm --output-dir &lt;dir&gt;
+python scripts/run_live_integration.py   # 插件 → hook → API → 审计</pre>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span><b>AI Aegis（灵盾）</b> · Apache-2.0 · 技术说明书 v1.0.3 · 2026-10</span>
+    <span>GitHub <code>github.com/Goodevenin9/ai-aegis</code> &nbsp;·&nbsp; Gitee <code>gitee.com/wan-xianghao/ai-aegis</code></span>
+  </div>
+
+</div>
+</body>
+</html>
