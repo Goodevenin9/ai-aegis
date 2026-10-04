@@ -26,7 +26,7 @@
       <div class="kpi"><b>5</b><span>stage deterministic PreToolUse pipeline</span></div>
       <div class="kpi"><b>108</b><span>built-in rules + offline Guardian ML</span></div>
       <div class="kpi"><b>217</b><span>REST endpoints / 34 front-end pages</span></div>
-      <div class="kpi"><b>1,555</b><span>real model responses replayed</span></div>
+      <div class="kpi"><b>1,432</b><span>paid benchmark model calls (0 failures)</span></div>
       <div class="kpi"><b>73k+</b><span>lines of Python (183 files)</span></div>
       <div class="kpi"><b>1,090+</b><span>automated tests passing</span></div>
     </div>
@@ -99,7 +99,7 @@ Every automated verdict and human action is written to the same SHA-256 hash-cha
     <tr><td>Interface surface</td><td>217 REST endpoints</td><td>Detection, governance, audit, operations, cloud sync</td></tr>
     <tr><td>Front end</td><td>34 pages · bilingual</td><td>Vanilla-JS SPA, no build-time dependency</td></tr>
     <tr><td>Audit</td><td>SHA-256 hash chain</td><td>Post-hoc tamper <em>detection</em> (not in-memory tamper prevention)</td></tr>
-    <tr><td>External benchmarks</td><td>1,555 real model responses</td><td>InjecAgent / AgentHarm / AgentDojo offline replay</td></tr>
+    <tr><td>External benchmarks</td><td>1,432 paid calls · 0 failures</td><td>InjecAgent / AgentHarm offline PreTool replay</td></tr>
     <tr><td>Engineering scale</td><td>183 Python files · 73k+ lines</td><td>Apache-2.0, one-command pip install</td></tr>
     <tr><td>Automated tests</td><td>1,090+ passing</td><td>Unit / plugin E2E / JS contract / live integration</td></tr>
   </tbody>
@@ -484,40 +484,77 @@ interrupts the analysis path. It can be disabled globally with <code>AEGIS_ML_EN
 <!-- 11 -->
 <div class="section">
 <h1>11 · Evaluation Method &amp; Results</h1>
-<div class="box warn"><div class="t">Read this first: evidence grading</div>External benchmarks are an <b>offline PreTool gateway replay</b>, not the native ASR (attack-success rate) of an upstream agent. Figures labelled &ldquo;upper bound&rdquo; or &ldquo;same-split exploratory&rdquo; must not be cited alone as generalisation claims.</div>
-<h2>11.1 Datasets</h2>
+<div class="box warn"><div class="t">Read this first: scope and evidence grading</div>The following is an <b>offline PreTool gateway replay</b>; no candidate tool was ever executed. Detection / block rates <b>cannot</b> be compared directly with upstream native ASR, Utility or Harm Score. Figures labelled &ldquo;upper bound&rdquo; or &ldquo;same-split exploratory&rdquo; must not be cited alone as generalisation claims.</div>
+
+<h2>11.1 Data and run scope</h2>
 <table>
-  <thead><tr><th>Dataset</th><th>Size</th><th>Nature</th></tr></thead>
+  <thead><tr><th>Dataset</th><th>Samples</th><th>Attack / benign</th><th>Paid calls</th><th>Failures</th><th>Est. cost</th></tr></thead>
   <tbody>
-    <tr><td>InjecAgent</td><td>1,071</td><td>Tool-call injection</td></tr>
-    <tr><td>AgentHarm Public</td><td>352 (176 attack / 176 benign)</td><td>Harmful agent tasks</td></tr>
-    <tr><td>AgentDojo Catalog</td><td>132</td><td>Attack catalog</td></tr>
-    <tr><td>In-house Chinese agent dataset</td><td>51 + three offline controls</td><td>Chinese sessions</td></tr>
+    <tr><td>InjecAgent</td><td>1,071</td><td>1,054 / 17</td><td>1,072</td><td>0</td><td>$0.138379</td></tr>
+    <tr><td>AgentHarm Public</td><td>352</td><td>176 / 176</td><td>360</td><td>0</td><td>$0.058092</td></tr>
+    <tr><td colspan="2"><b>Total</b></td><td>1,230 / 193</td><td><b>1,432</b></td><td><b>0</b></td><td><b>$0.196471</b></td></tr>
   </tbody>
 </table>
-<p class="small">The historical full report contains 1,555 real model responses with a 1,555 / 1,555 DeepSeek success rate. The recorded judge does not call an external API during offline replay.</p>
+<p class="small">Model <code>deepseek-v4-flash</code>; evidence schema <code>v4-orthogonal-explicit-harm</code>; focused verifier enabled. InjecAgent ran on commit <code>38ab971</code>, AgentHarm on <code>d8c907f</code>; implementation fingerprint <code>implementation_sha256=80d2e13c…</code>, policy fingerprint <code>pipeline_config_sha256=3b1adba1…</code>. The two live variants reuse each sample's primary response; the verified variant adds a focused call only for gated samples. Earlier archived runs also covered AgentDojo Catalog (132) and an in-house Chinese agent set (51-case prototype: single-turn 58.33% / recorded judge 83.33% / five-stage 91.67%).</p>
 
 <h2>11.2 Results</h2>
+<h3>11.2.1 InjecAgent (1,071: 1,054 attack / 17 benign)</h3>
 <table>
-  <thead><tr><th>Dataset</th><th>DeepSeek-Judge recall / FPR</th><th>Five-stage + DeepSeek recall / FPR</th></tr></thead>
+  <thead><tr><th>Variant</th><th>Attack recall</th><th>Hard block</th><th>Benign FPR</th><th>Precision</th><th>F1</th><th>P95 latency (ms)</th></tr></thead>
   <tbody>
-    <tr><td>InjecAgent</td><td>100% / 0%</td><td>100% / 0%</td></tr>
-    <tr><td>AgentHarm Public (old six-field)</td><td>90% / 23%</td><td>38% / 20%</td></tr>
-    <tr><td>AgentDojo Catalog</td><td>63% / 13%</td><td>43% / 14%</td></tr>
-    <tr><td>AgentHarm <code>v2-explicit-harm</code> (352 re-run, 0 API failures)</td><td>95% / 38%</td><td><b>95% / 53%</b></td></tr>
+    <tr><td>always_allow</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0.0002</td></tr>
+    <tr><td>always_block</td><td>100%</td><td>100%</td><td>100%</td><td>98.41%</td><td>99.20%</td><td>0.0001</td></tr>
+    <tr><td>aegis_single_turn_local</td><td>4.84%</td><td>4.84%</td><td>0%</td><td>100%</td><td>9.23%</td><td>5.66</td></tr>
+    <tr><td>five_stage_rules</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0.35</td></tr>
+    <tr><td>five_stage_semantic (upper bound)</td><td>100%</td><td>0%</td><td>0%</td><td>100%</td><td>100%</td><td>0.32</td></tr>
+    <tr><td>deepseek_judge_live</td><td>96.58%</td><td>90.42%</td><td>0%</td><td>100%</td><td>98.26%</td><td>1049.05</td></tr>
+    <tr><td>five_stage_deepseek_live</td><td>96.96%</td><td>52.75%</td><td>0%</td><td>100%</td><td>98.46%</td><td>1049.29</td></tr>
+    <tr><td>five_stage_deepseek_verified_live</td><td><b>96.96%</b></td><td>52.75%</td><td>0%</td><td>100%</td><td>98.46%</td><td>1051.27</td></tr>
   </tbody>
 </table>
-<p class="small">In-house Chinese dataset prototype baseline: raw single-turn recall 58.33%, recorded judge 83.33%, five-stage pipeline 91.67%.</p>
 
-<div class="box warn"><div class="t">Boundaries we insist on stating</div>
-<ul class="tight" style="margin:4px 0 0">
-  <li>On AgentHarm the five-stage pipeline sends some high-risk legitimate tasks to <code>confirm</code>, giving a 53% confirmation-side false-positive rate. This is <b>not</b> &ldquo;better than the judge&rdquo;; its value is session state, deterministic control and explainability.</li>
-  <li><code>five_stage_semantic</code> uses upstream labels as the semantic signal — an <b>upper bound</b> of &ldquo;perfect semantic extraction&rdquo;, not a measured model result.</li>
-  <li>The relevant tuning was done on the public AgentHarm test split, so it is a <b>same-split exploratory</b> result; before claiming generalisation, freeze the config and re-test on a held-out split.</li>
-  <li>The next model calibration must first fix an independent validation/test split and run test once; immune learning must likewise be isolated train → shadow → test.</li>
-</ul></div>
-<h2>11.3 Reproduction</h2>
-<pre># Offline external-benchmark replay
+<h3>11.2.2 AgentHarm Public (352: 176 attack / 176 benign)</h3>
+<table>
+  <thead><tr><th>Variant</th><th>Attack recall</th><th>Hard block</th><th>Benign FPR</th><th>Benign confirm</th><th>Precision</th><th>F1</th><th>P95 latency (ms)</th></tr></thead>
+  <tbody>
+    <tr><td>always_allow</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0.0002</td></tr>
+    <tr><td>always_block</td><td>100%</td><td>100%</td><td>100%</td><td>0%</td><td>50.00%</td><td>66.67%</td><td>0.0003</td></tr>
+    <tr><td>aegis_single_turn_local</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>30.52</td></tr>
+    <tr><td>five_stage_rules</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>2.65</td></tr>
+    <tr><td>five_stage_semantic (upper bound)</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>2.72</td></tr>
+    <tr><td>deepseek_judge_live</td><td>89.20%</td><td>89.20%</td><td>17.05%</td><td>0.57%</td><td>83.96%</td><td>86.50%</td><td>1133.91</td></tr>
+    <tr><td>five_stage_deepseek_live</td><td>89.20%</td><td>80.11%</td><td><b>16.48%</b></td><td>0%</td><td>84.41%</td><td>86.74%</td><td>1136.41</td></tr>
+    <tr><td>five_stage_deepseek_verified_live</td><td><b>90.34%</b></td><td>81.25%</td><td>16.48%</td><td>0%</td><td>84.57%</td><td><b>87.36%</b></td><td>1251.91</td></tr>
+  </tbody>
+</table>
+<p class="small"><b>Key comparison:</b> on AgentHarm, <code>deepseek_judge_live</code> and <code>five_stage_deepseek_live</code> have the <b>same attack recall (89.20%)</b>, but the five-stage pipeline has a lower benign FPR (16.48% vs 17.05%) and a more controlled hard-block rate (80.11% vs 89.20%). The focused verifier lifts recall to <b>90.34% (+1.14pp)</b> with no change in FPR. On InjecAgent both are comparable (96.58% vs 96.96%) at 0% FPR.</p>
+
+<h2>11.3 Positive-weight evidence co-occurring with benign false positives</h2>
+<ul class="tight">
+  <li><b>always_block</b>: <code>decision.block</code>=176 (all 176 benign samples falsely blocked).</li>
+  <li><b>deepseek_judge_live</b>: <code>decision.block</code>=29, <code>decision.confirm</code>=1.</li>
+  <li><b>five_stage_deepseek_live / verified</b>: <code>decision.block</code>=29, <code>semantic.explicit_harm</code>=29, <code>semantic.irreversible_impact</code>=18, <code>semantic.permission_probing</code>=3, <code>semantic.request_escalation</code>=6.</li>
+</ul>
+<p class="small">The five-stage false positives are not driven by &ldquo;high-risk tool names&rdquo; but mainly by the semantic <code>explicit_harm</code> label — the primary target for false-positive reduction on an independent calibration set.</p>
+
+<h2>11.4 Interpretation boundaries</h2>
+<ul class="tight">
+  <li><code>five_stage_rules</code> uses only deterministic rules and the state machine.</li>
+  <li><code>five_stage_semantic</code> uses upstream labels as the semantic signal only for explicitly labelled indirect injection — an <b>upper bound when semantic extraction is correct</b>, not a real DeepSeek call.</li>
+  <li><code>deepseek_judge_live</code> has DeepSeek emit allow/confirm/block directly; <code>five_stage_deepseek_live</code> reuses the same call's discrete evidence, with the deterministic state machine rendering the verdict.</li>
+  <li><code>five_stage_deepseek_verified_live</code> adds one focused boolean verification only for samples where the first pass found no harm but the request uses <code>shell_exec</code> with scope local/system/external; the verification still returns no final verdict.</li>
+  <li>On a primary-request failure the direct judge is recorded as confirm while the five-stage variants use empty evidence; a failed focused request adds no verification signal. All failures are counted separately (both runs here: 0).</li>
+  <li><code>aegis_single_turn_local</code> is the local single-turn rule analyser, with no session state.</li>
+  <li><code>always_allow</code> / <code>always_block</code> expose the extremes of availability-only and safety-only.</li>
+  <li>Upstream paper figures and sources: see <code>docs/BENCHMARK_RESEARCH.md</code>.</li>
+</ul>
+
+<div class="box warn"><div class="t">Calibration and generalisation boundary (must be cited with the numbers)</div>
+The pipeline defaults, the verifier gate/prompt and the sequence/radius policies were developed on the <b>same public AgentHarm split</b>; results are <b>same-split exploratory optimisation</b>, not an independent estimate of superiority over the judge, nor of generalisation. The next calibration must first fix an independent validation/test split: tune on validation, run test once; immune learning must use train → shadow → test isolation.</div>
+<p class="small"><b>Baseline not run:</b> <code>five_stage_immunity</code> — <code>not_run_requires_leakage_safe_train_shadow_test_split</code>.</p>
+
+<h2>11.5 Reproduction</h2>
+<pre># Offline external-benchmark replay (source of these results)
 python scripts/run_external_benchmarks.py --benchmarks injecagent agentharm --output-dir &lt;dir&gt;
 
 # Plugin -> hook -> API -> audit (self-contained, fast)
@@ -525,6 +562,7 @@ python scripts/run_live_integration.py
 
 # Live integration requiring app + proxy
 python scripts/run_live_integration.py --with-proxy</pre>
+<p class="small">Result-set fingerprints: <code>implementation_sha256=80d2e13c6532db5e0ee4a1573a0acc2f7a4fd1f2031b7150958a547a3a13d6f9</code><br><code>pipeline_config_sha256=3b1adba1d396b4a5fa653c23c6c3cf9c242aebc0b7ed1a1b1d359798d2476e08</code></p>
 </div>
 
 <!-- 12 -->
@@ -584,7 +622,7 @@ aegis-app --web          # -&gt; http://localhost:8741</pre>
 <h2>14.1 Current limitations (stated honestly)</h2>
 <ul class="tight">
   <li>The current deliverable level is a <b>single-machine community edition / lightweight server demo</b>; it is not equivalent to an enterprise production edition with SSO, RBAC, multi-tenant PostgreSQL, object storage and a high-availability queue.</li>
-  <li>External benchmarks are offline replay; <code>five_stage_semantic</code> is an upper bound; the AgentHarm confirmation-side false-positive rate is high and still needs an independent calibration set.</li>
+  <li>External benchmarks are offline replay; <code>five_stage_semantic</code> is an upper bound; the AgentHarm benign FPR is ~16.5% (mainly from the semantic <code>explicit_harm</code> label) and still needs an independent calibration set.</li>
   <li>The hash chain only provides post-hoc tamper detection; it does not prevent in-memory attacks.</li>
   <li>Container OCR / restart recovery / memory-constrained runs still need final acceptance on an Ubuntu host (the Windows dev machine has no Docker).</li>
 </ul>

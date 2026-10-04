@@ -28,7 +28,7 @@
       <div class="kpi"><b>5</b><span>段式 PreToolUse 确定性裁决管线</span></div>
       <div class="kpi"><b>108</b><span>内置检测规则 + 离线 Guardian ML</span></div>
       <div class="kpi"><b>217</b><span>REST 端点 / 34 个前端页面</span></div>
-      <div class="kpi"><b>1,555</b><span>外部基准真实模型响应回放</span></div>
+      <div class="kpi"><b>1,432</b><span>外部基准付费模型调用（0 失败）</span></div>
       <div class="kpi"><b>73k+</b><span>行 Python（183 个源文件）</span></div>
       <div class="kpi"><b>1,090+</b><span>自动化测试通过（含插件 E2E）</span></div>
     </div>
@@ -98,7 +98,7 @@ AI Aegis（灵盾）是一个面向自主 AI Agent 的<b>执行前（pre-executi
     <tr><td>接口面</td><td>217 个 REST 端点</td><td>覆盖检测、治理、审计、运营、云同步</td></tr>
     <tr><td>前端</td><td>34 个页面 · 中英双语</td><td>原生 JS 单页应用，无构建期依赖</td></tr>
     <tr><td>审计</td><td>SHA-256 哈希链</td><td>事后篡改可发现（非内存防篡改）</td></tr>
-    <tr><td>外部基准</td><td>1,555 条真实模型响应</td><td>InjecAgent / AgentHarm / AgentDojo 离线回放</td></tr>
+    <tr><td>外部基准</td><td>1,432 次付费调用 · 0 失败</td><td>InjecAgent / AgentHarm 离线 PreTool 重放</td></tr>
     <tr><td>工程规模</td><td>183 个 Python 文件 · 73k+ 行</td><td>Apache-2.0，pip 一键安装</td></tr>
     <tr><td>自动化测试</td><td>1,090+ 通过</td><td>单元 / 插件 E2E / JS 契约 / live 集成</td></tr>
   </tbody>
@@ -477,40 +477,77 @@ Guardian 是一个随包分发的轻量语义分类器，运行在规则引擎�
 <!-- ================= 11 ================= -->
 <div class="section">
 <h1>11 · 评测方法与结果</h1>
-<div class="box warn"><div class="t">先读这一段：证据分级</div>外部基准是<b>离线 PreTool 网关回放</b>，不是上游原生 Agent 的 ASR（攻击成功率）。标注“上界”或“同分片探索性”的数字不得单独作为泛化结论。</div>
-<h2>11.1 数据集</h2>
+<div class="box warn"><div class="t">先读这一段：口径与证据分级</div>以下是<b>离线 PreTool 网关重放</b>，候选工具从未执行；检测率 / 阻断率<b>不能</b>与上游原生 ASR、Utility 或 Harm Score 直接比较。标注“上界”或“同分片探索性”的数字不得单独作为泛化结论。</div>
+
+<h2>11.1 数据与运行口径</h2>
 <table>
-  <thead><tr><th>数据集</th><th>规模</th><th>性质</th></tr></thead>
+  <thead><tr><th>数据集</th><th>样本</th><th>攻击 / 正常</th><th>付费调用</th><th>失败</th><th>估算成本</th></tr></thead>
   <tbody>
-    <tr><td>InjecAgent</td><td>1,071 条</td><td>工具调用注入</td></tr>
-    <tr><td>AgentHarm Public</td><td>352 条（176 攻击 / 176 良性）</td><td>Agent 有害任务</td></tr>
-    <tr><td>AgentDojo Catalog</td><td>132 条</td><td>攻击目录</td></tr>
-    <tr><td>自建中文 Agent 数据集</td><td>51 条 + 三组离线对照</td><td>中文会话</td></tr>
+    <tr><td>InjecAgent</td><td>1,071</td><td>1,054 / 17</td><td>1,072</td><td>0</td><td>$0.138379</td></tr>
+    <tr><td>AgentHarm Public</td><td>352</td><td>176 / 176</td><td>360</td><td>0</td><td>$0.058092</td></tr>
+    <tr><td colspan="2"><b>合计</b></td><td>1,230 / 193</td><td><b>1,432</b></td><td><b>0</b></td><td><b>$0.196471</b></td></tr>
   </tbody>
 </table>
-<p class="small">历史全量报告共 1,555 条真实模型响应，DeepSeek 响应成功率 1,555 / 1,555。记录版 Judge 在离线重放时不会调用外部 API。</p>
+<p class="small">模型 <code>deepseek-v4-flash</code>；证据 schema <code>v4-orthogonal-explicit-harm</code>；聚焦复核（focused verifier）开启。InjecAgent 运行于 commit <code>38ab971</code>、AgentHarm 运行于 <code>d8c907f</code>；实现指纹 <code>implementation_sha256=80d2e13c…</code>，策略指纹 <code>pipeline_config_sha256=3b1adba1…</code>。两条 live 变体复用每条样本的主响应，verified 方案只为命中门控的样本增加聚焦调用。更早的归档运行还覆盖 AgentDojo Catalog（132 条）与自建中文 Agent 数据集（51 条原型对照：单轮 58.33% / 记录版 Judge 83.33% / 五段 91.67%）。</p>
 
 <h2>11.2 结果</h2>
+<h3>11.2.1 InjecAgent（1,071 条：攻击 1,054 / 正常 17）</h3>
 <table>
-  <thead><tr><th>数据集</th><th>DeepSeek-Judge 检出 / FPR</th><th>五段 + DeepSeek 检出 / FPR</th></tr></thead>
+  <thead><tr><th>方案</th><th>攻击检出</th><th>硬阻断</th><th>正常误报</th><th>Precision</th><th>F1</th><th>P95 延迟 (ms)</th></tr></thead>
   <tbody>
-    <tr><td>InjecAgent</td><td>100% / 0%</td><td>100% / 0%</td></tr>
-    <tr><td>AgentHarm Public（旧六字段）</td><td>90% / 23%</td><td>38% / 20%</td></tr>
-    <tr><td>AgentDojo Catalog</td><td>63% / 13%</td><td>43% / 14%</td></tr>
-    <tr><td>AgentHarm <code>v2-explicit-harm</code>（352 条真实复测，API 失败 0）</td><td>95% / 38%</td><td><b>95% / 53%</b></td></tr>
+    <tr><td>always_allow</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0.0002</td></tr>
+    <tr><td>always_block</td><td>100%</td><td>100%</td><td>100%</td><td>98.41%</td><td>99.20%</td><td>0.0001</td></tr>
+    <tr><td>aegis_single_turn_local</td><td>4.84%</td><td>4.84%</td><td>0%</td><td>100%</td><td>9.23%</td><td>5.66</td></tr>
+    <tr><td>five_stage_rules</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0.35</td></tr>
+    <tr><td>five_stage_semantic（上界）</td><td>100%</td><td>0%</td><td>0%</td><td>100%</td><td>100%</td><td>0.32</td></tr>
+    <tr><td>deepseek_judge_live</td><td>96.58%</td><td>90.42%</td><td>0%</td><td>100%</td><td>98.26%</td><td>1049.05</td></tr>
+    <tr><td>five_stage_deepseek_live</td><td>96.96%</td><td>52.75%</td><td>0%</td><td>100%</td><td>98.46%</td><td>1049.29</td></tr>
+    <tr><td>five_stage_deepseek_verified_live</td><td><b>96.96%</b></td><td>52.75%</td><td>0%</td><td>100%</td><td>98.46%</td><td>1051.27</td></tr>
   </tbody>
 </table>
-<p class="small">自建中文数据集原型基准：原始单轮判定攻击召回 58.33%，记录版 Judge 83.33%，五段管线 91.67%。</p>
 
-<div class="box warn"><div class="t">必须保留的诚实边界</div>
-<ul class="tight" style="margin:4px 0 0">
-  <li>五段管线在 AgentHarm 上把部分高风险合法任务送入 <code>confirm</code>，确认口径误报为 53%——这<b>不是</b>“优于 Judge”，其价值在于会话状态、确定性控制与可解释性。</li>
-  <li><code>five_stage_semantic</code> 使用上游标签作为语义信号，是“语义提取完全正确”的<b>上界</b>，不是模型实测。</li>
-  <li>相关优化在公开 AgentHarm 测试分片上完成，属<b>同分片探索性</b>结果；宣称泛化前需冻结配置并在未参与调参的留出集复测。</li>
-  <li>下一次模型校准必须先固定独立 validation/test 切分，test 只运行一次；免疫学习同样必须 train → shadow → test 隔离。</li>
-</ul></div>
-<h2>11.3 复现</h2>
-<pre># 外部基准离线回放
+<h3>11.2.2 AgentHarm Public（352 条：攻击 176 / 正常 176）</h3>
+<table>
+  <thead><tr><th>方案</th><th>攻击检出</th><th>硬阻断</th><th>正常误报</th><th>正常确认</th><th>Precision</th><th>F1</th><th>P95 延迟 (ms)</th></tr></thead>
+  <tbody>
+    <tr><td>always_allow</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0.0002</td></tr>
+    <tr><td>always_block</td><td>100%</td><td>100%</td><td>100%</td><td>0%</td><td>50.00%</td><td>66.67%</td><td>0.0003</td></tr>
+    <tr><td>aegis_single_turn_local</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>30.52</td></tr>
+    <tr><td>five_stage_rules</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>2.65</td></tr>
+    <tr><td>five_stage_semantic（上界）</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>2.72</td></tr>
+    <tr><td>deepseek_judge_live</td><td>89.20%</td><td>89.20%</td><td>17.05%</td><td>0.57%</td><td>83.96%</td><td>86.50%</td><td>1133.91</td></tr>
+    <tr><td>five_stage_deepseek_live</td><td>89.20%</td><td>80.11%</td><td><b>16.48%</b></td><td>0%</td><td>84.41%</td><td>86.74%</td><td>1136.41</td></tr>
+    <tr><td>five_stage_deepseek_verified_live</td><td><b>90.34%</b></td><td>81.25%</td><td>16.48%</td><td>0%</td><td>84.57%</td><td><b>87.36%</b></td><td>1251.91</td></tr>
+  </tbody>
+</table>
+<p class="small"><b>关键对比：</b>AgentHarm 上 <code>deepseek_judge_live</code> 与 <code>five_stage_deepseek_live</code> 的<b>攻击检出相同（89.20%）</b>，但五段的正常误报更低（16.48% vs 17.05%）、硬阻断更可控（80.11% vs 89.20%）。聚焦复核把攻击检出提升到 <b>90.34%（+1.14pp）</b>，误报不变。InjecAgent 上两者检出相当（96.58% vs 96.96%），均 0 误报。</p>
+
+<h2>11.3 正常样本误报的正权重证据共现</h2>
+<ul class="tight">
+  <li><b>always_block</b>：<code>decision.block</code>=176（即 176 条正常样本全部被误阻断）。</li>
+  <li><b>deepseek_judge_live</b>：<code>decision.block</code>=29、<code>decision.confirm</code>=1。</li>
+  <li><b>five_stage_deepseek_live / verified</b>：<code>decision.block</code>=29、<code>semantic.explicit_harm</code>=29、<code>semantic.irreversible_impact</code>=18、<code>semantic.permission_probing</code>=3、<code>semantic.request_escalation</code>=6。</li>
+</ul>
+<p class="small">五段的误报并非来自“工具名高危”，而主要来自语义层判定的 <code>explicit_harm</code>；这是后续独立校准集要重点降假阳的方向。</p>
+
+<h2>11.4 解读边界</h2>
+<ul class="tight">
+  <li><code>five_stage_rules</code> 只用确定性规则与状态机。</li>
+  <li><code>five_stage_semantic</code> 仅对明确标注的间接注入使用上游标签作为语义信号，代表<b>语义提取正确时的上界</b>，并非真的调用了 DeepSeek。</li>
+  <li><code>deepseek_judge_live</code> 是 DeepSeek 直接输出 allow/confirm/block；<code>five_stage_deepseek_live</code> 复用同一次调用的离散证据，由确定性状态机裁决。</li>
+  <li><code>five_stage_deepseek_verified_live</code> 仅对首轮未判伤害、但请求 <code>shell_exec</code> 且范围达到 local/system/external 的样本增加一次聚焦布尔复核；复核仍不返回最终裁决。</li>
+  <li>主请求失败时直接 Judge 记为 confirm，而五段方案使用空证据；聚焦请求失败时不增加复核信号。所有失败均单独计数（本次两条运行均为 0）。</li>
+  <li><code>aegis_single_turn_local</code> 是本地单轮规则分析器，不含会话状态。</li>
+  <li><code>always_allow</code> / <code>always_block</code> 用于暴露只追求可用性或只追求安全性的极端结果。</li>
+  <li>上游论文数字与来源见 <code>docs/BENCHMARK_RESEARCH.md</code>。</li>
+</ul>
+
+<div class="box warn"><div class="t">校准与泛化边界（必须随数字一起引用）</div>
+Pipeline 默认值、复核门控/提示词与序列/半径策略，均使用<b>同一份公开 AgentHarm 分片</b>开发；结果为<b>同分片探索性优化</b>，不是“优于 Judge”或泛化能力的独立估计。下一次校准必须先固定独立 validation/test 切分：在 validation 上调参，test 只运行一次；免疫学习必须使用 train → shadow → test 隔离。</div>
+<p class="small"><b>未运行基线：</b><code>five_stage_immunity</code> —— <code>not_run_requires_leakage_safe_train_shadow_test_split</code>。</p>
+
+<h2>11.5 复现</h2>
+<pre># 外部基准离线回放（本次结果来源）
 python scripts/run_external_benchmarks.py --benchmarks injecagent agentharm --output-dir &lt;dir&gt;
 
 # 插件 → hook → API → 审计（自包含，快）
@@ -518,6 +555,7 @@ python scripts/run_live_integration.py
 
 # 需要 app + proxy 的 live 集成
 python scripts/run_live_integration.py --with-proxy</pre>
+<p class="small">结果集指纹：<code>implementation_sha256=80d2e13c6532db5e0ee4a1573a0acc2f7a4fd1f2031b7150958a547a3a13d6f9</code><br><code>pipeline_config_sha256=3b1adba1d396b4a5fa653c23c6c3cf9c242aebc0b7ed1a1b1d359798d2476e08</code></p>
 </div>
 
 <!-- ================= 12 ================= -->
@@ -577,7 +615,7 @@ aegis-app --web          # → http://localhost:8741</pre>
 <h2>14.1 当前局限（诚实声明）</h2>
 <ul class="tight">
   <li>当前可交付级别是<b>单机社区版 / 轻量服务器 Demo</b>，不等同于具备 SSO、RBAC、多租户 PostgreSQL、对象存储与高可用队列的企业生产版。</li>
-  <li>外部基准为离线回放；<code>five_stage_semantic</code> 为上界；AgentHarm 确认口径误报偏高，仍需独立校准集。</li>
+  <li>外部基准为离线回放；<code>five_stage_semantic</code> 为上界；AgentHarm 正常误报约 16.5%（主要来自语义 <code>explicit_harm</code>），仍需独立校准集。</li>
   <li>哈希链只提供事后篡改可发现性，不防内存攻击。</li>
   <li>容器 OCR / 重启恢复 / 内存受限运行需在 Ubuntu 主机完成最终验收（Windows 开发机无 Docker）。</li>
 </ul>

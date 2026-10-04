@@ -209,15 +209,14 @@
       <div class="card">
         <h2>评测结果 <em>（机器报告可复现）</em></h2>
         <table>
-          <thead><tr><th>数据集</th><th>Judge</th><th>五段</th></tr></thead>
+          <thead><tr><th>数据集 (n)</th><th>Judge 检出/误报</th><th>五段 检出/误报</th></tr></thead>
           <tbody>
-            <tr><td>InjecAgent</td><td>100/0%</td><td><b>100/0%</b></td></tr>
-            <tr><td>AgentHarm 旧</td><td>90/23%</td><td>38/20%</td></tr>
-            <tr><td>AgentDojo</td><td>63/13%</td><td>43/14%</td></tr>
-            <tr><td>AgentHarm v2</td><td>95/38%</td><td><b>95/53%</b></td></tr>
+            <tr><td>InjecAgent (1071)</td><td>96.6% / 0%</td><td><b>97.0% / 0%</b></td></tr>
+            <tr><td>AgentHarm (352)</td><td>89.2% / 17.1%</td><td><b>89.2% / 16.5%</b></td></tr>
+            <tr><td>AgentHarm +复核</td><td>—</td><td><b>90.3% / 16.5%</b></td></tr>
           </tbody>
         </table>
-        <p style="font-size:10.5pt;color:var(--muted);margin-top:2mm">检出率 / 误报率；离线 PreTool 网关回放</p>
+        <p style="font-size:10.5pt;color:var(--muted);margin-top:2mm">离线 PreTool 网关重放 · 付费调用 1,432 次 · 0 失败 · $0.196</p>
       </div>
       <div class="card">
         <h2>免疫学习 · <em>生命周期</em></h2>
