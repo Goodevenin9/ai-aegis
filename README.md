@@ -84,7 +84,7 @@ pip install ai-aegis[app]
 aegis-app --web
 ```
 
-> **Binary installers** (`.exe` / `.deb` / `.rpm` / `.dmg`) are **not published yet**. `pip install ai-aegis[app]` is the only supported install path; the releases page hosts source tags only.
+> **Binary installers** (Windows `.exe`, `.deb`, `.rpm`, macOS `.dmg`, `.AppImage`) are built for every tagged release and attached to the [releases page](https://github.com/Goodevenin9/ai-aegis/releases). `pip install ai-aegis[app]` is the recommended path; the Gitee mirror hosts the source.
 
 **Step 2 — Open the app**
 

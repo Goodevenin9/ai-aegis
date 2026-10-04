@@ -12,7 +12,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
 # Read version from __init__.py
 def get_version():
     version_file = os.path.join("src", "aegis", "__init__.py")
-    with open(version_file, "r") as f:
+    # Pin the encoding: the file is UTF-8 and contains non-ASCII, so the
+    # platform default (e.g. GBK on zh-CN Windows) raises UnicodeDecodeError.
+    with open(version_file, "r", encoding="utf-8") as f:
         for line in f:
             if line.startswith("__version__"):
                 return line.split("=")[1].strip().strip('"').strip("'")
