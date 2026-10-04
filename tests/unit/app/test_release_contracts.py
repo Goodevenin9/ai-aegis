@@ -35,6 +35,17 @@ def test_all_product_versions_report_the_same_value():
     assert MCPServerConfig().version == aegis.__version__
 
 
+def test_version_is_defined_before_any_import_in_the_package_init():
+    """A late ``__version__`` made ``aegis.mcp.config`` raise ImportError while
+    the package was still initialising, which silently flipped the MCP
+    detection to False and failed the release workflow's pre-build check.
+    The version must be assigned before the first relative import."""
+    source = (SRC / "__init__.py").read_text(encoding="utf-8")
+    version_at = source.index('__version__ = "')
+    first_import_at = source.index("\nfrom .")
+    assert version_at < first_import_at, "define __version__ before any import"
+
+
 def test_surfaces_derive_the_version_instead_of_hardcoding_it():
     """Structural guard against the drift that caused the last audit finding.
 

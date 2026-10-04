@@ -18,6 +18,12 @@ Copyright (c) 2026 Aegis (derived work; see NOTICE)
 Licensed under the Apache License, Version 2.0
 """
 
+#: Single source of truth for the distribution version. Defined BEFORE any
+#: import so modules pulled in during package initialisation (e.g.
+#: ``aegis.mcp.config.server_config``) can read it without triggering a
+#: partially-initialised import — that would make MCP detection fail closed.
+__version__ = "1.0.3"
+
 # Import zero-config utilities
 from .utils.auto_config import (
     create_zero_config_async_client,
@@ -71,7 +77,6 @@ except ImportError:
         return False
 
 # Main public interface
-__version__ = "1.0.3"
 __all__ = [
     # Core clients
     "AegisClient",
