@@ -12,6 +12,7 @@
 - **未知 `/api/*` 返回 JSON 404**：SPA catch-all 之前会把任何 GET 都返回 200 + HTML 外壳，导致 API 消费者解析 HTML、并在 live 集成测试里表现为 `JSONDecodeError`
 - **小瑷 导航项按能力显示**：小瑷 依赖可选的 `pi` 集成（仅源码仓库挂载 + 本机需有 `pi` CLI）。安装版此前会显示入口但 iframe 指向 404；现在侧栏与页面都先探测 `/api/aegis-guide/status`，不可用时整个入口隐藏并给出空状态。`integrations/` 仍不进 wheel（有意保持源码专用）
 - **README 与产品数字对齐**：72 → 108 条规则（四处）、头部版本 1.0.3、移除指向空 releases 页的 5 个二进制下载按钮（并说明 `.exe/.deb/.rpm/.dmg` 尚未发布）
+- **`[mcp]` 依赖修正**：`aegis.mcp.auth_validator` 直接 `import httpx`，但 `[mcp]` 未声明它；而 `mcp`/`fastmcp` 的无上限 `>=` 会装到 mcp 2.x / fastmcp 4.x（改用 httpx2、导入面已变）。已声明 `httpx` 并把两个依赖封顶到 `<2` / `<3`。发布 workflow 的可选 MCP 校验改为警告，不再因可选 extra 阻塞基础包发布
 
 ### 新增
 - 补齐两个缺失的工具调用频率限制端点：`PUT /api/tool-permissions/overrides/{tool_id}/rate-limit` 与 `PUT /api/tool-permissions/custom/{tool_id}/rate-limit`（前端 `api.js` 一直调用它们，但路由从未存在；数据库列与仓库方法早已就绪）

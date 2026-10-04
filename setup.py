@@ -61,8 +61,17 @@ setup(
         "mcp": [
             # NOTE: MCP dependencies require Python >=3.10
             # The base package works with 3.9+, but [mcp] extras need 3.10+
-            "mcp>=1.23.0",  # Security fix for GHSA-c2jp-c369-7pvx (was >=0.1.0)
-            "fastmcp>=2.13.0",  # Security fix (was >=0.1.0)
+            #
+            # aegis.mcp.auth_validator imports httpx directly. mcp 2.x /
+            # fastmcp 4.x switched to httpx2 and no longer install httpx, so a
+            # [mcp]-only install lost it and MCP detection failed closed.
+            "httpx>=0.24.0",
+            # The code targets the FastMCP surface exposed by mcp 1.x
+            # (`mcp.server.fastmcp`) plus the standalone fastmcp 2.x package.
+            # Cap the majors, or `>=` silently upgrades to mcp 2.x / fastmcp 4.x,
+            # whose import surface changed.
+            "mcp>=1.23.0,<2",  # Security fix for GHSA-c2jp-c369-7pvx (was >=0.1.0)
+            "fastmcp>=2.13.0,<3",  # Security fix (was >=0.1.0)
         ],
         "app": [
             # Desktop application dependencies
@@ -108,8 +117,10 @@ setup(
             "memory-profiler>=0.60",
         ],
         "all": [
-            "mcp>=1.23.0",  # Security fix
-            "fastmcp>=2.13.0",  # Security fix
+            # Same major caps as [mcp]: mcp 2.x / fastmcp 4.x changed the import
+            # surface the code targets.
+            "mcp>=1.23.0,<2",  # Security fix
+            "fastmcp>=2.13.0,<3",  # Security fix
             "pywebview>=5.0",  # Lightweight cross-platform webview
             "fastapi>=0.100.0",
             "uvicorn[standard]>=0.20.0",
