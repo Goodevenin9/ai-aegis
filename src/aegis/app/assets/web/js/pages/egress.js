@@ -49,6 +49,7 @@ const EgressPage = {
         destinations: [],
         replay: null,
         replayPreset: null,
+        audit: [],
         windowDays: 30,
     },
 
@@ -70,6 +71,7 @@ const EgressPage = {
             // renderer and backend are all still wired.
             ['destinations', 'Destinations'],
             ['policy', 'Policy'],
+            ['audit', 'Audit'],
         ].forEach(([id, label]) => {
             const b = document.createElement('button');
             b.type = 'button';
@@ -90,7 +92,60 @@ const EgressPage = {
 
         if (this._state.tab === 'containment') await this._loadContainment();
         else if (this._state.tab === 'destinations') await this._loadDestinations();
+        else if (this._state.tab === 'audit') await this._loadAudit();
         else await this._loadPolicy();
+    },
+
+    // ============================================================= audit tab ===
+
+    async _loadAudit() {
+        const data = await API.getEgressAudit(200);
+        this._state.audit = (data && data.rows) || [];
+        this._renderAudit();
+    },
+
+    _renderAudit() {
+        const body = document.getElementById('eg-body');
+        if (!body) return;
+        body.textContent = '';
+        const rows = this._state.audit || [];
+
+        const card = document.createElement('div');
+        card.className = 'eg-card';
+        card.appendChild(this._sectionTitle('Egress audit log',
+            'Every destination decision the guard made, newest first. Read-only.'));
+
+        if (!rows.length) {
+            const empty = document.createElement('div');
+            empty.className = 'eg-empty';
+            empty.textContent = 'No egress decision has been recorded yet. ' +
+                'Once a protected runtime makes a network-capable tool call, its verdict appears here.';
+            card.appendChild(empty);
+            body.appendChild(card);
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'eg-table';
+        table.innerHTML =
+            '<thead><tr><th>When</th><th>Destination</th><th>Operation</th>' +
+            '<th>Action</th><th>Rule</th><th>Tool</th></tr></thead>';
+        const tbody = document.createElement('tbody');
+        rows.forEach(r => {
+            const tr = document.createElement('tr');
+            const dest = r.port ? `${r.host}:${r.port}` : (r.host || '');
+            tr.innerHTML =
+                `<td class="muted">${this._esc(this._rel(r.timestamp))}</td>` +
+                `<td><code>${this._esc(dest)}</code></td>` +
+                `<td>${this._esc(r.operation || r.kind || '')}</td>` +
+                `<td class="${r.action === 'block' ? 'bad-text' : ''}">${this._esc(r.action || '')}</td>` +
+                `<td class="muted">${this._esc(r.rule_id || '')}</td>` +
+                `<td class="muted">${this._esc(r.tool_name || '')}</td>`;
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        card.appendChild(table);
+        body.appendChild(card);
     },
 
     // ==================================================== containment tab ===

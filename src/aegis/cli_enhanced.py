@@ -21,6 +21,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, TextIO
 
+from aegis import __version__
+
 from .utils.exceptions import APIError, ConfigurationError, SecurityException
 from .utils.logger import get_logger
 from .utils.retry import API_RETRY_CONFIG, RetryConfig
@@ -52,7 +54,9 @@ class EnhancedCLI:
 
         # Global options
         parser.add_argument(
-            "--version", action="version", version="Aegis Enhanced CLI 1.0.1"
+            "--version",
+            action="version",
+            version=f"Aegis Enhanced CLI {__version__}",
         )
         parser.add_argument("--debug", action="store_true", help="Enable debug mode")
         parser.add_argument("--telemetry", action="store_true", help="Enable telemetry collection")

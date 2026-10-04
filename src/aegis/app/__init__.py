@@ -15,10 +15,11 @@ Usage:
     aegis-app [--port PORT] [--host HOST] [--debug] [--no-tray]
 """
 
-# Keep in sync with __version__ in src/aegis/__init__.py on every
-# release bump. This is the value main.py prints in the startup banner and
-# --version.
-__version__ = "1.0.1"
+# Single source of truth: the distribution version. Derived from the
+# top-level package rather than duplicated, so /health, the startup banner
+# and --version cannot drift from the installed package metadata.
+from aegis import __version__
+
 __app_name__ = "Aegis Local Threat Monitor"
 
 # Required dependencies for the app

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aegis-sdk-hermes"
+version = "0.1.0"
+description = "Aegis tool-call permissions, leak detection and audit for Hermes (hermes-agent)."
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Aegis" }]
+keywords = ["security", "hermes", "hermes-agent", "agents", "guardrails", "audit"]
+dependencies = ["ai-aegis[app]>=1.0.0"]
+
+[project.urls]
+Homepage = "https://gitee.com/wan-xianghao/ai-aegis"
+
+[project.optional-dependencies]
+hermes = ["hermes-agent>=0.18"]
+
+[project.entry-points."hermes_agent.plugins"]
+aegis-guard = "aegis_sdk_hermes.plugin:register"
+
+[tool.setuptools]
+packages = ["aegis_sdk_hermes"]

@@ -1,0 +1,132 @@
+{
+  "report": "AI Aegis 测试打包报告",
+  "generated_at": "2026-09-10T23:30:00+08:00",
+  "generated_by": "Claude Code（本次会话），非项目原作者",
+  "code_under_test": {
+    "commit": "4acffee7cd9ce74171cd6f51861b7328128bd42c",
+    "version": "1.0.2",
+    "worktree_dirty": true
+  },
+  "provenance_note": "本目录中只有 01 / 02 / 03-offline-replay / 04 是 2026-09-10 本次会话实测产出。03-benchmarks/preexisting/ 是既有历史报告的原样归档，不是本次产出的证据。",
+
+  "unit_tests": {
+    "command": "pytest tests/",
+    "ran_today": true,
+    "passed": 1071,
+    "failed": 0,
+    "skipped": 6,
+    "deselected": 191,
+    "duration_s": 136.55,
+    "note": "191 条被 pyproject 的 addopts '-m \"not integration\"' 排除，需单独运行，见 integration_tests"
+  },
+
+  "credential_feature_tests": {
+    "command": "pytest tests/unit/app/test_model_credentials_routes.py -v",
+    "ran_today": true,
+    "passed": 8,
+    "failed": 0
+  },
+
+  "integration_tests": {
+    "status": "requires_live_server_and_mode_decision",
+    "ran_today": true,
+    "without_server": {"failed": 91, "passed": 33, "skipped": 2, "errors": 65, "duration_s": 755},
+    "with_server_monitor_mode": {"failed": 6, "passed": 128, "errors": 43, "duration_s": 784},
+    "files_involved": [
+      "tests/test_tool_audit_log_live.py",
+      "tests/test_tool_permissions_api_live.py",
+      "tests/unit/app/test_costs_budget.py"
+    ],
+    "open_items": [
+      "未知 /api/* 路径返回 HTTP 200 text/html 而非 404 JSON（独立缺陷）",
+      "test_tool_permissions_api_live 中 3 条安全不变量断言比产品默认（monitor mode）更严格，需在明确模式下重新界定期望",
+      "2 条代理用例在 monitor 模式下代理未按测试预期启动"
+    ]
+  },
+
+  "benchmarks": {
+    "offline_replay": {
+      "ran_today": true,
+      "command": "scripts/run_external_benchmarks.py --benchmarks injecagent agentharm --output-dir <dir>",
+      "live_deepseek": false,
+      "tool_execution": "disabled",
+      "datasets": "github raw，命中本地 source-cache（网络间歇性不可达）",
+      "results": {
+        "injecagent": {
+          "cases": 1071, "attack": 1054, "benign": 17,
+          "always_allow_recall": 0.0,
+          "always_block_recall": 1.0,
+          "always_block_benign_fp_rate": 1.0,
+          "aegis_single_turn_local_recall": 0.0484,
+          "five_stage_rules_recall": 0.0,
+          "five_stage_semantic_recall": 1.0
+        },
+        "agentharm_public": {
+          "cases": 352, "attack": 176, "benign": 176,
+          "always_allow_recall": 0.0,
+          "always_block_recall": 1.0,
+          "always_block_benign_fp_rate": 1.0,
+          "aegis_single_turn_local_recall": 0.0,
+          "five_stage_rules_recall": 0.0,
+          "five_stage_semantic_recall": 0.0
+        }
+      },
+      "caveats": [
+        "five_stage_semantic 使用上游标签作为语义信号，是『语义提取完全正确』的上界，不是真实模型表现",
+        "deepseek_judge_live 与 five_stage_immunity 本次未运行（无付费 API 授权）",
+        "agentharm_public 与既往报告中的 v2-explicit-harm 是不同变体，数字不可互相引用",
+        "本轮运行于 dirty worktree，commit 不能唯一标识代码；implementation_sha256 为准"
+      ]
+    },
+    "preexisting_archived": {
+      "ran_today": false,
+      "note": "以下为历史报告原样归档，非本次证据",
+      "entries": [
+        {"dir": "external-benchmarks", "generated_at": "2026-09-09T15:27:43", "commit": "9f27ae10", "dirty": true},
+        {"dir": "external-benchmarks-explicit-harm", "generated_at": "2026-09-10T03:54:33", "commit": "ef38b510", "dirty": true},
+        {"dir": "external-benchmarks-smoke", "generated_at": "2026-09-09T15:12:20", "commit": "9f27ae10", "dirty": true},
+        {"dir": "external-benchmarks-smoke-nonthinking", "generated_at": "2026-09-09T15:14:57", "commit": "9f27ae10", "dirty": true}
+      ]
+    }
+  },
+
+  "findings": [
+    {
+      "id": "version-string-mismatch",
+      "severity": "high",
+      "summary": "1.0.2 的版本号只改了 5 处中的 1 处，/health 与两个 CLI 仍自报 1.0.1",
+      "impact": "README 与 runbook 把 /health 列为验证动作，测试者会以为自己装错了",
+      "fix_cost": "PyPI 同版本内容不可改，必须发 1.0.3",
+      "evidence": "04-audit/version-audit.md"
+    },
+    {
+      "id": "rule-count-mismatch",
+      "severity": "medium",
+      "summary": "README 三处写 72 条规则，实际为 108 条",
+      "impact": "与 /health 自报的 108 自相矛盾",
+      "evidence": "04-audit/rule-count-audit.md"
+    },
+    {
+      "id": "readme-download-buttons",
+      "severity": "medium",
+      "summary": "README:87 的 5 个下载按钮指向空的 releases 页，同文件 465 行又声明不存在二进制包",
+      "impact": "落在『教程、命令、URL、按钮真实性』交付项上",
+      "evidence": "04-audit/readme-contradictions.md"
+    },
+    {
+      "id": "unknown-api-path-returns-html",
+      "severity": "medium",
+      "summary": "未知 /api/* 路径返回 HTTP 200 text/html（SPA 外壳）而非 404 JSON",
+      "impact": "API 消费者打错路径拿到 200 HTML；也是 costs 用例报 JSONDecodeError 的原因",
+      "evidence": "04-audit/integration-tests.md"
+    }
+  ],
+
+  "not_verified": [
+    "chain-a 的 allow → confirm → block 需要真实有效的 DeepSeek 密钥；本机密钥返回 HTTP 401，本次未能确认",
+    "Docker 容器启动需在 Ubuntu 主机执行；本机无 Docker CLI",
+    "agentdojo 数据集重放需要 --agentdojo-root，本机未配置",
+    "deepseek_judge_live 与 five_stage_immunity 基线本次未运行",
+    "README 中声称的二进制安装包确实不存在（未下载验证，但 releases 页为空）"
+  ]
+}

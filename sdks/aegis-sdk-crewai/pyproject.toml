@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aegis-sdk-crewai"
+version = "0.1.0"
+description = "Aegis tool-call permissions, leak detection and audit for CrewAI agents."
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Aegis" }]
+keywords = ["security", "crewai", "agents", "guardrails", "audit"]
+dependencies = ["ai-aegis[app]>=1.0.0"]
+
+[project.urls]
+Homepage = "https://gitee.com/wan-xianghao/ai-aegis"
+
+[project.optional-dependencies]
+crewai = ["crewai>=0.60"]
+
+[project.entry-points."crewai.tools"]
+# (none — CrewAI has no plugin entry point; secure_tools / install are explicit)
+
+[tool.setuptools]
+packages = ["aegis_sdk_crewai"]

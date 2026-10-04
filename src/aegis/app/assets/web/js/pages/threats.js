@@ -493,17 +493,7 @@ const ThreatsPage = {
     async deleteSelectedRecords() {
         try {
             const ids = Array.from(this.selectedIds);
-            const response = await fetch('/api/threat-intel', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: ids })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to delete records');
-            }
-
-            const result = await response.json();
+            const result = await API.deleteThreats({ ids });
             if (window.Toast) Toast.success(`Deleted ${result.deleted} record${result.deleted !== 1 ? 's' : ''}`);
             this.selectedIds.clear();
             this.filters.page = 1;

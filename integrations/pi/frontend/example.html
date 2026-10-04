@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aegis Guide — pi 集成示例</title>
+  <link rel="stylesheet" href="aegis-guide.css">
+  <style>
+    html, body { height: 100%; margin: 0; background: #f5f6f8; }
+    .wrap { max-width: 820px; margin: 24px auto; height: calc(100% - 48px); }
+    h1 { font-size: 16px; margin: 0 0 12px; color: #333; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Aegis 安全向导（由 pi 驱动）</h1>
+    <div id="aegis-guide"></div>
+  </div>
+
+  <script src="aegis-guide.js"></script>
+  <script>
+    const guide = new AegisGuide({
+      mount: "#aegis-guide",
+      ws: (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/api/aegis-guide/ws",
+      // token: "<AEGIS_PI_TOKEN>"   // 若后端设置了 AEGIS_PI_TOKEN
+    });
+
+    // 探测后端是否就绪（可选）
+    fetch("/api/aegis-guide/status").then(r => r.json()).then(s => {
+      if (!s.pi_available || !s.extension_exists) {
+        console.warn("Aegis Guide 未就绪：", s);
+      }
+    });
+  </script>
+</body>
+</html>

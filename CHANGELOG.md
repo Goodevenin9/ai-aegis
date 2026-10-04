@@ -3,6 +3,33 @@
 本项目包含基于 Apache License 2.0 上游项目演进的代码，完整来源与版权归属见
 [NOTICE](NOTICE) 与 [LICENSE](LICENSE)。
 
+## 1.0.3 — 未发布
+
+**前后端能力对齐 + 版本自证一致**
+
+### 修复
+- **版本号统一**：`aegis.app.__version__`、两个 CLI、控制平面与 MCP 服务器改为从 `aegis.__version__` 单一来源派生。此前 `/health`、CLI 与包元数据各自自报 1.0.0 / 1.0.1 / 1.0.2，测试者会以为自己装错版本
+- **未知 `/api/*` 返回 JSON 404**：SPA catch-all 之前会把任何 GET 都返回 200 + HTML 外壳，导致 API 消费者解析 HTML、并在 live 集成测试里表现为 `JSONDecodeError`
+- **小瑷 导航项按能力显示**：小瑷 依赖可选的 `pi` 集成（仅源码仓库挂载 + 本机需有 `pi` CLI）。安装版此前会显示入口但 iframe 指向 404；现在侧栏与页面都先探测 `/api/aegis-guide/status`，不可用时整个入口隐藏并给出空状态。`integrations/` 仍不进 wheel（有意保持源码专用）
+- **README 与产品数字对齐**：72 → 108 条规则（四处）、头部版本 1.0.3、移除指向空 releases 页的 5 个二进制下载按钮（并说明 `.exe/.deb/.rpm/.dmg` 尚未发布）
+
+### 新增
+- 补齐两个缺失的工具调用频率限制端点：`PUT /api/tool-permissions/overrides/{tool_id}/rate-limit` 与 `PUT /api/tool-permissions/custom/{tool_id}/rate-limit`（前端 `api.js` 一直调用它们，但路由从未存在；数据库列与仓库方法早已就绪）
+- 安全运营页补上后端已有但前端未展示的四项能力：RAG 评测（Recall@k / MRR）、Agent 工具目录、外部基准结果、删除受治理记忆
+- 会话安全页新增「Immunity matches」面板（`GET /api/runtime/immunity/matches`）
+- 设置页新增「Device Identity」区块，可重置本机 device ID（克隆 VM 恢复）
+- Agent Egress 页新增「Audit」标签页；Tool Permissions 页新增「Local overrides & rate limits」面板，可读可改每个工具的调用频率上限
+
+### 测试与 CI
+- 新增 `tests/unit/app/test_release_contracts.py`：版本单一来源一致性、未知 `/api/*` 必须 404 JSON、SPA 页面路由仍返回 HTML
+- 新增 `scripts/run_live_integration.py`：启动 app（+可选 proxy）、等健康、跑 `-m integration`、必清理，供本地与 CI 复现 live 测试
+- 新增 CI 门禁 `integration-plugin-e2e`（插件 → hook → API → 审计，自包含，14 条，此前被 `-m "not integration"` 永久排除）；app+proxy 依赖的 live 测试暂以 manual + 非阻塞 workflow 保留
+
+### 清理
+- 删除 `api.js` 中四个从未被调用的死包装（`getThreat` / `deleteThreat` / `getSiemForwarder` / `testSecurityAgentModel`），并把 `integrations.js`、`threats.js` 的裸 `fetch` 改为走 API 客户端
+- 品牌完整性测试为竞品对比文档加白名单（文档点名竞争对手是其目的）
+- `.gitignore` 忽略仓库根 `tmp/` 临时目录
+
 ## 1.0.2 — 2026-09-10
 
 **模型凭据可在网页配置**

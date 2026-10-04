@@ -63,6 +63,9 @@ const Sidebar = {
         // therefore gets its own primary destination instead of being buried
         // as the third child of a long traces menu.
         { id: 'security-operations', label: 'Security Copilot', icon: 'chat', tooltip: 'Evidence ingestion, security RAG, governed memory, session immunity and human-approved Agent workflows.' },
+        // 小瑷（Aeg）— 对话式安全助手。与 Security Copilot 互补：后者是表单式
+        // Agent 工作台，小瑷 是自然语言多轮对话 + 报表，工具调用同样受治理。
+        { id: 'xiaoai', label: '小瑷 (Aeg)', icon: 'chat', tooltip: 'Aegis 安全助手 · 自然语言查审计 / 检索制度 / 看风险 / 出报表，工具调用受五阶段管线治理。' },
         // ---- Govern (IA) ----
         // Everything below until Connect is a control the human sets: what
         // agents may do, which rules fire, what ML runs, what budgets cap.
@@ -227,6 +230,13 @@ const Sidebar = {
     _enrolled: null,
     _enrollmentProbed: false,
 
+    // 小瑷 nav row is gated on the optional pi integration being live. null =
+    // not yet probed; true only when /api/aegis-guide/status reports both the
+    // pi binary and the extension present. Fails closed (hidden) on any error,
+    // so an installed package never links to a dead iframe.
+    _aegisGuideAvailable: null,
+    _aegisGuideProbed: false,
+
     /**
      * Probe enrollment once per page load so enrolled-only nav items (Cloud
      * Activity) can reveal themselves. Cheap idempotent GET. On resolution,
@@ -249,6 +259,26 @@ const Sidebar = {
                 }
             })
             .catch(() => { /* fail closed — cloud rows stay dimmed/locked */ });
+    },
+
+    /**
+     * Probe the optional pi integration once per page load so the 小瑷 row
+     * only appears when it can actually load. Cheap idempotent GET; on a flip
+     * we re-render so the row appears/disappears without a full reload.
+     */
+    _probeAegisGuide() {
+        if (this._aegisGuideProbed) return;
+        this._aegisGuideProbed = true;
+        fetch('/api/aegis-guide/status')
+            .then(r => (r.ok ? r.json() : null))
+            .then(data => {
+                const available = !!(data && data.pi_available && data.extension_exists);
+                if (available !== this._aegisGuideAvailable) {
+                    this._aegisGuideAvailable = available;
+                    this.render();
+                }
+            })
+            .catch(() => { /* fail closed — the row stays hidden */ });
     },
 
     render() {
@@ -364,6 +394,7 @@ const Sidebar = {
         // (`!== true`) and keep the row dimmed, then re-render when the answer
         // lands. CLOUD_TIER (above) is the set that gets this treatment.
         this._probeEnrollment();
+        this._probeAegisGuide();
 
         // Task-oriented IA: overview, protection, observability, operations,
         // governance, connections, cloud/export and support.
@@ -384,6 +415,11 @@ const Sidebar = {
         let currentSection = null;
 
         this.navItems.forEach(item => {
+
+            // 小瑷 requires the optional source-only pi integration. Skip the
+            // row entirely until the probe confirms pi + the extension exist,
+            // so a pip install never renders a link to a dead page.
+            if (item.id === 'xiaoai' && this._aegisGuideAvailable !== true) return;
 
             // Cloud-locked = a CLOUD_TIER surface on a device that isn't known
             // to be enrolled. The row still renders (discoverability) but gets

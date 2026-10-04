@@ -1,0 +1,43 @@
+/* Aegis Guide —— 最小样式，可按你现有主题覆盖变量 */
+.ag-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 320px;
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--ag-fg, #1c1c1e);
+  background: var(--ag-bg, #fff);
+  border: 1px solid var(--ag-border, #e3e3e6);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.ag-log { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.ag-msg { max-width: 90%; padding: 8px 12px; border-radius: 10px; white-space: normal; word-break: break-word; }
+.ag-user { align-self: flex-end; background: var(--ag-user, #e7f0ff); }
+.ag-assistant { align-self: flex-start; background: var(--ag-assistant, #f4f4f6); }
+.ag-note { align-self: center; font-size: 12px; color: #666; background: transparent; }
+.ag-error { align-self: stretch; background: #fdecec; color: #a11212; border: 1px solid #f3b6b6; }
+
+.ag-tool { align-self: stretch; background: #fafafb; border: 1px solid #ececef; border-radius: 8px; padding: 8px 10px; }
+.ag-tool-head { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.ag-tool-text { font-size: 13px; color: #444; white-space: pre-wrap; margin-bottom: 6px; }
+
+.ag-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; }
+.ag-table th, .ag-table td { border: 1px solid #e3e3e6; padding: 4px 8px; text-align: left; vertical-align: top; }
+.ag-table th { background: #f3f4f6; font-weight: 600; }
+
+.ag-composer { border-top: 1px solid #e3e3e6; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.ag-input { resize: vertical; min-height: 40px; padding: 8px; border: 1px solid #d9d9de; border-radius: 8px; font: inherit; }
+.ag-actions { display: flex; align-items: center; gap: 10px; }
+.ag-send { padding: 6px 14px; border-radius: 8px; border: 1px solid #2f6fed; background: #2f6fed; color: #fff; cursor: pointer; }
+.ag-hint { font-size: 12px; color: #888; }
+
+.ag-modal { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.ag-modal[hidden] { display: none; }
+.ag-modal-card { background: #fff; border-radius: 12px; padding: 18px 20px; width: min(460px, 92vw); box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+.ag-modal-title { margin: 0 0 6px; font-size: 16px; }
+.ag-modal-message { margin: 0 0 10px; color: #444; white-space: pre-wrap; }
+.ag-modal-input { width: 100%; padding: 8px; border: 1px solid #d9d9de; border-radius: 8px; margin-bottom: 10px; font: inherit; }
+.ag-modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.ag-btn { padding: 6px 14px; border-radius: 8px; border: 1px solid #d0d0d6; background: #f6f6f8; cursor: pointer; }
+.ag-btn-primary { background: #2f6fed; border-color: #2f6fed; color: #fff; }

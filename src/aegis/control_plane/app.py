@@ -12,6 +12,7 @@ import yaml
 from fastapi import Depends, FastAPI, Header, HTTPException, Response, status
 from pydantic import BaseModel, Field
 
+from aegis import __version__
 from aegis.app.services.bundle_verifier import sign_bundle
 from aegis.control_plane.config import ControlPlaneSettings
 from aegis.control_plane.store import ControlPlaneStore
@@ -93,7 +94,7 @@ def create_app(settings: Optional[ControlPlaneSettings] = None) -> FastAPI:
     store = ControlPlaneStore(cfg.database_path)
     app = FastAPI(
         title="AI Aegis Control Plane",
-        version="1.0.1",
+        version=__version__,
         description="Self-hosted device enrollment and signed policy distribution.",
     )
     app.state.settings = cfg

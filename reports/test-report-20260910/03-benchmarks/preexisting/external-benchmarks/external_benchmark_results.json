@@ -1,0 +1,785 @@
+{
+  "benchmarks": [
+    {
+      "benchmark": "injecagent",
+      "benign_count": 17,
+      "case_count": 1071,
+      "malicious_count": 1054,
+      "metric_scope": "offline pre-tool gateway replay; no candidate tool was executed",
+      "native_metric_comparable": false,
+      "results": [
+        {
+          "actions": {
+            "allow": 1071,
+            "block": 0,
+            "confirm": 0
+          },
+          "attack_detection_recall": 0.0,
+          "balanced_accuracy": 0.5,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 1071,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 1054,
+            "fp": 0,
+            "tn": 17,
+            "tp": 0
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.0,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.0,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 0.0001,
+          "output_tokens": 0,
+          "p95_latency_ms": 0.0001,
+          "p99_latency_ms": 0.0001,
+          "precision": 0.0,
+          "variant": "always_allow"
+        },
+        {
+          "actions": {
+            "allow": 0,
+            "block": 1071,
+            "confirm": 0
+          },
+          "attack_detection_recall": 1.0,
+          "balanced_accuracy": 0.5,
+          "benign_false_positive_rate": 1.0,
+          "benign_hard_block_rate": 1.0,
+          "cases": 1071,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 0,
+            "fp": 17,
+            "tn": 0,
+            "tp": 1054
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.992,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 1.0,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 0.0001,
+          "output_tokens": 0,
+          "p95_latency_ms": 0.0001,
+          "p99_latency_ms": 0.0002,
+          "precision": 0.9841,
+          "variant": "always_block"
+        },
+        {
+          "actions": {
+            "allow": 1020,
+            "block": 51,
+            "confirm": 0
+          },
+          "attack_detection_recall": 0.0484,
+          "balanced_accuracy": 0.5242,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 1071,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 1003,
+            "fp": 0,
+            "tn": 17,
+            "tp": 51
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.0923,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.0484,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 3.4386,
+          "output_tokens": 0,
+          "p95_latency_ms": 6.3683,
+          "p99_latency_ms": 7.0228,
+          "precision": 1.0,
+          "variant": "aegis_single_turn_local"
+        },
+        {
+          "actions": {
+            "allow": 1071,
+            "block": 0,
+            "confirm": 0
+          },
+          "attack_detection_recall": 0.0,
+          "balanced_accuracy": 0.5,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 1071,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 1054,
+            "fp": 0,
+            "tn": 17,
+            "tp": 0
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.0,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.0,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 0.1984,
+          "output_tokens": 0,
+          "p95_latency_ms": 0.3844,
+          "p99_latency_ms": 0.532,
+          "precision": 0.0,
+          "variant": "five_stage_rules"
+        },
+        {
+          "actions": {
+            "allow": 17,
+            "block": 1054,
+            "confirm": 0
+          },
+          "attack_detection_recall": 1.0,
+          "balanced_accuracy": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 1071,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 0,
+            "fp": 0,
+            "tn": 17,
+            "tp": 1054
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 1.0,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 1.0,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 0.2016,
+          "output_tokens": 0,
+          "p95_latency_ms": 0.3569,
+          "p99_latency_ms": 0.5031,
+          "precision": 1.0,
+          "variant": "five_stage_semantic"
+        },
+        {
+          "actions": {
+            "allow": 17,
+            "block": 1051,
+            "confirm": 3
+          },
+          "attack_detection_recall": 1.0,
+          "balanced_accuracy": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 1071,
+          "confirm_rate": 0.0028,
+          "confusion": {
+            "fn": 0,
+            "fp": 0,
+            "tn": 17,
+            "tp": 1054
+          },
+          "estimated_llm_cost_usd": 0.091406,
+          "f1": 1.0,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.9972,
+          "input_tokens": 537456,
+          "latency_measurement_valid": false,
+          "llm_calls": 1071,
+          "llm_failures": 0,
+          "median_latency_ms": null,
+          "output_tokens": 57723,
+          "p95_latency_ms": null,
+          "p99_latency_ms": null,
+          "precision": 1.0,
+          "variant": "deepseek_judge_live"
+        },
+        {
+          "actions": {
+            "allow": 17,
+            "block": 1035,
+            "confirm": 19
+          },
+          "attack_detection_recall": 1.0,
+          "balanced_accuracy": 1.0,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 1071,
+          "confirm_rate": 0.0177,
+          "confusion": {
+            "fn": 0,
+            "fp": 0,
+            "tn": 17,
+            "tp": 1054
+          },
+          "estimated_llm_cost_usd": 0.091406,
+          "f1": 1.0,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.982,
+          "input_tokens": 537456,
+          "latency_measurement_valid": false,
+          "llm_calls": 1071,
+          "llm_failures": 0,
+          "median_latency_ms": null,
+          "output_tokens": 57723,
+          "p95_latency_ms": null,
+          "p99_latency_ms": null,
+          "precision": 1.0,
+          "variant": "five_stage_deepseek_live"
+        }
+      ],
+      "source_metadata": {
+        "license": "MIT",
+        "replay_scope": "base attacks plus published user-tool controls",
+        "revision": "f19c9f2c79a41046eb13c03c51a24c567a8ffa07",
+        "source": "https://github.com/uiuc-kang-lab/InjecAgent",
+        "source_sha256": {
+          "data_stealing": "4daab35c62a3845e8b9400f4dca58b9c9f37e57cd33b2337552557fbb26282e9",
+          "direct_harm": "0a8186468d21389af432e8c7b399ae42264d1b93a07b65c7a489468508604305",
+          "user_cases": "c840e2b00fdce68e7142d0970220522303d67b2530d6fb36ef1112448cdd8977"
+        }
+      }
+    },
+    {
+      "benchmark": "agentharm_public",
+      "benign_count": 176,
+      "case_count": 352,
+      "malicious_count": 176,
+      "metric_scope": "offline pre-tool gateway replay; no candidate tool was executed",
+      "native_metric_comparable": false,
+      "results": [
+        {
+          "actions": {
+            "allow": 352,
+            "block": 0,
+            "confirm": 0
+          },
+          "attack_detection_recall": 0.0,
+          "balanced_accuracy": 0.5,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 352,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 176,
+            "fp": 0,
+            "tn": 176,
+            "tp": 0
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.0,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.0,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 0.0001,
+          "output_tokens": 0,
+          "p95_latency_ms": 0.0001,
+          "p99_latency_ms": 0.0001,
+          "precision": 0.0,
+          "variant": "always_allow"
+        },
+        {
+          "actions": {
+            "allow": 0,
+            "block": 352,
+            "confirm": 0
+          },
+          "attack_detection_recall": 1.0,
+          "balanced_accuracy": 0.5,
+          "benign_false_positive_rate": 1.0,
+          "benign_hard_block_rate": 1.0,
+          "cases": 352,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 0,
+            "fp": 176,
+            "tn": 0,
+            "tp": 176
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.6667,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 1.0,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 0.0001,
+          "output_tokens": 0,
+          "p95_latency_ms": 0.0001,
+          "p99_latency_ms": 0.0002,
+          "precision": 0.5,
+          "variant": "always_block"
+        },
+        {
+          "actions": {
+            "allow": 352,
+            "block": 0,
+            "confirm": 0
+          },
+          "attack_detection_recall": 0.0,
+          "balanced_accuracy": 0.5,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 352,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 176,
+            "fp": 0,
+            "tn": 176,
+            "tp": 0
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.0,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.0,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 6.8275,
+          "output_tokens": 0,
+          "p95_latency_ms": 15.4329,
+          "p99_latency_ms": 22.5043,
+          "precision": 0.0,
+          "variant": "aegis_single_turn_local"
+        },
+        {
+          "actions": {
+            "allow": 352,
+            "block": 0,
+            "confirm": 0
+          },
+          "attack_detection_recall": 0.0,
+          "balanced_accuracy": 0.5,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 352,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 176,
+            "fp": 0,
+            "tn": 176,
+            "tp": 0
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.0,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.0,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 0.4796,
+          "output_tokens": 0,
+          "p95_latency_ms": 1.0405,
+          "p99_latency_ms": 1.422,
+          "precision": 0.0,
+          "variant": "five_stage_rules"
+        },
+        {
+          "actions": {
+            "allow": 352,
+            "block": 0,
+            "confirm": 0
+          },
+          "attack_detection_recall": 0.0,
+          "balanced_accuracy": 0.5,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 352,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 176,
+            "fp": 0,
+            "tn": 176,
+            "tp": 0
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.0,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.0,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 0.4799,
+          "output_tokens": 0,
+          "p95_latency_ms": 0.9891,
+          "p99_latency_ms": 1.4269,
+          "precision": 0.0,
+          "variant": "five_stage_semantic"
+        },
+        {
+          "actions": {
+            "allow": 153,
+            "block": 184,
+            "confirm": 15
+          },
+          "attack_detection_recall": 0.9034,
+          "balanced_accuracy": 0.8381,
+          "benign_false_positive_rate": 0.2273,
+          "benign_hard_block_rate": 0.1534,
+          "cases": 352,
+          "confirm_rate": 0.0426,
+          "confusion": {
+            "fn": 17,
+            "fp": 40,
+            "tn": 136,
+            "tp": 159
+          },
+          "estimated_llm_cost_usd": 0.042206,
+          "f1": 0.848,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.892,
+          "input_tokens": 263811,
+          "latency_measurement_valid": false,
+          "llm_calls": 352,
+          "llm_failures": 0,
+          "median_latency_ms": null,
+          "output_tokens": 18831,
+          "p95_latency_ms": null,
+          "p99_latency_ms": null,
+          "precision": 0.799,
+          "variant": "deepseek_judge_live"
+        },
+        {
+          "actions": {
+            "allow": 251,
+            "block": 4,
+            "confirm": 97
+          },
+          "attack_detection_recall": 0.375,
+          "balanced_accuracy": 0.5881,
+          "benign_false_positive_rate": 0.1989,
+          "benign_hard_block_rate": 0.0227,
+          "cases": 352,
+          "confirm_rate": 0.2756,
+          "confusion": {
+            "fn": 110,
+            "fp": 35,
+            "tn": 141,
+            "tp": 66
+          },
+          "estimated_llm_cost_usd": 0.042206,
+          "f1": 0.4765,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.0,
+          "input_tokens": 263811,
+          "latency_measurement_valid": false,
+          "llm_calls": 352,
+          "llm_failures": 0,
+          "median_latency_ms": null,
+          "output_tokens": 18831,
+          "p95_latency_ms": null,
+          "p99_latency_ms": null,
+          "precision": 0.6535,
+          "variant": "five_stage_deepseek_live"
+        }
+      ],
+      "source_metadata": {
+        "license": "MIT with safety/security-use restriction",
+        "license_restriction": "Use only to improve AI system safety and security",
+        "replay_scope": "public harmful and benign behavior subsets",
+        "source": "https://huggingface.co/datasets/ai-safety-institute/AgentHarm",
+        "source_sha256": {
+          "benign": "65b4ebd4d8d2e7c9a79db4e11bc642f1800e642be0626ba0a990c763a325957a",
+          "harmful": "fc3e4abbcd812022b85150b0e6f81c0bdbdfabb486e5b82ec46f1ba135f3ba08"
+        }
+      }
+    },
+    {
+      "benchmark": "agentdojo_catalog",
+      "benign_count": 97,
+      "case_count": 132,
+      "malicious_count": 35,
+      "metric_scope": "offline pre-tool gateway replay; no candidate tool was executed",
+      "native_metric_comparable": false,
+      "results": [
+        {
+          "actions": {
+            "allow": 132,
+            "block": 0,
+            "confirm": 0
+          },
+          "attack_detection_recall": 0.0,
+          "balanced_accuracy": 0.5,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 132,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 35,
+            "fp": 0,
+            "tn": 97,
+            "tp": 0
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.0,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.0,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 0.0001,
+          "output_tokens": 0,
+          "p95_latency_ms": 0.0001,
+          "p99_latency_ms": 0.0002,
+          "precision": 0.0,
+          "variant": "always_allow"
+        },
+        {
+          "actions": {
+            "allow": 0,
+            "block": 132,
+            "confirm": 0
+          },
+          "attack_detection_recall": 1.0,
+          "balanced_accuracy": 0.5,
+          "benign_false_positive_rate": 1.0,
+          "benign_hard_block_rate": 1.0,
+          "cases": 132,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 0,
+            "fp": 97,
+            "tn": 0,
+            "tp": 35
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.4192,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 1.0,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 0.0001,
+          "output_tokens": 0,
+          "p95_latency_ms": 0.0001,
+          "p99_latency_ms": 0.0001,
+          "precision": 0.2652,
+          "variant": "always_block"
+        },
+        {
+          "actions": {
+            "allow": 131,
+            "block": 1,
+            "confirm": 0
+          },
+          "attack_detection_recall": 0.0286,
+          "balanced_accuracy": 0.5143,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 132,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 34,
+            "fp": 0,
+            "tn": 97,
+            "tp": 1
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.0556,
+          "first_detection_turn_median": 1.0,
+          "hard_prevention_rate": 0.0286,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 2.3974,
+          "output_tokens": 0,
+          "p95_latency_ms": 14.1604,
+          "p99_latency_ms": 23.7594,
+          "precision": 1.0,
+          "variant": "aegis_single_turn_local"
+        },
+        {
+          "actions": {
+            "allow": 132,
+            "block": 0,
+            "confirm": 0
+          },
+          "attack_detection_recall": 0.0,
+          "balanced_accuracy": 0.5,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 132,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 35,
+            "fp": 0,
+            "tn": 97,
+            "tp": 0
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.0,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.0,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 0.1943,
+          "output_tokens": 0,
+          "p95_latency_ms": 0.7713,
+          "p99_latency_ms": 1.1064,
+          "precision": 0.0,
+          "variant": "five_stage_rules"
+        },
+        {
+          "actions": {
+            "allow": 106,
+            "block": 26,
+            "confirm": 0
+          },
+          "attack_detection_recall": 0.7429,
+          "balanced_accuracy": 0.8714,
+          "benign_false_positive_rate": 0.0,
+          "benign_hard_block_rate": 0.0,
+          "cases": 132,
+          "confirm_rate": 0.0,
+          "confusion": {
+            "fn": 9,
+            "fp": 0,
+            "tn": 97,
+            "tp": 26
+          },
+          "estimated_llm_cost_usd": 0.0,
+          "f1": 0.8525,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.7429,
+          "input_tokens": 0,
+          "latency_measurement_valid": true,
+          "llm_calls": 0,
+          "llm_failures": 0,
+          "median_latency_ms": 0.1888,
+          "output_tokens": 0,
+          "p95_latency_ms": 0.7318,
+          "p99_latency_ms": 1.0928,
+          "precision": 1.0,
+          "variant": "five_stage_semantic"
+        },
+        {
+          "actions": {
+            "allow": 97,
+            "block": 26,
+            "confirm": 9
+          },
+          "attack_detection_recall": 0.6286,
+          "balanced_accuracy": 0.7473,
+          "benign_false_positive_rate": 0.134,
+          "benign_hard_block_rate": 0.0515,
+          "cases": 132,
+          "confirm_rate": 0.0682,
+          "confusion": {
+            "fn": 13,
+            "fp": 13,
+            "tn": 84,
+            "tp": 22
+          },
+          "estimated_llm_cost_usd": 0.011243,
+          "f1": 0.6286,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.6,
+          "input_tokens": 66641,
+          "latency_measurement_valid": false,
+          "llm_calls": 132,
+          "llm_failures": 0,
+          "median_latency_ms": null,
+          "output_tokens": 6833,
+          "p95_latency_ms": null,
+          "p99_latency_ms": null,
+          "precision": 0.6286,
+          "variant": "deepseek_judge_live"
+        },
+        {
+          "actions": {
+            "allow": 103,
+            "block": 10,
+            "confirm": 19
+          },
+          "attack_detection_recall": 0.4286,
+          "balanced_accuracy": 0.6421,
+          "benign_false_positive_rate": 0.1443,
+          "benign_hard_block_rate": 0.0309,
+          "cases": 132,
+          "confirm_rate": 0.1439,
+          "confusion": {
+            "fn": 20,
+            "fp": 14,
+            "tn": 83,
+            "tp": 15
+          },
+          "estimated_llm_cost_usd": 0.011243,
+          "f1": 0.4688,
+          "first_detection_turn_median": 0.0,
+          "hard_prevention_rate": 0.2,
+          "input_tokens": 66641,
+          "latency_measurement_valid": false,
+          "llm_calls": 132,
+          "llm_failures": 0,
+          "median_latency_ms": null,
+          "output_tokens": 6833,
+          "p95_latency_ms": null,
+          "p99_latency_ms": null,
+          "precision": 0.5172,
+          "variant": "five_stage_deepseek_live"
+        }
+      ],
+      "source_metadata": {
+        "benchmark_version": "v1.2.2",
+        "license": "MIT",
+        "replay_scope": "task ground-truth catalog, not the 629 native security cases",
+        "source": "https://github.com/ethz-spylab/agentdojo"
+      }
+    }
+  ],
+  "run_metadata": {
+    "aegis_commit": "9f27ae10d09f79ae745120dddce47f882833c251",
+    "aegis_worktree_dirty": true,
+    "agentdojo_commit": "089ed468cf3ed0322acc66b0211f26d9d90dbf60",
+    "baseline_status": {
+      "deepseek_judge_live": "completed",
+      "five_stage_immunity": "not_run_requires_leakage_safe_train_shadow_test_split"
+    },
+    "deepseek": {
+      "api_responses_represented": 1555,
+      "estimated_cost_usd": 0.144855,
+      "failed_samples": 0,
+      "input_tokens": 867908,
+      "model": "deepseek-v4-flash",
+      "new_paid_api_calls_during_this_invocation": 0,
+      "output_tokens": 83387,
+      "paid_api_calls_for_result_set": 1555,
+      "pricing_assumption_usd_per_million": {
+        "input_cache_miss": 0.14,
+        "output": 0.28
+      },
+      "responses_reused_between_live_variants": true
+    },
+    "generated_at": "2026-09-09T15:27:43.576520+00:00",
+    "implementation_sha256": "e289fc9f0dc7b13af5b0d354e321f6ade37105c21f1019692873a774e771e5c1",
+    "network_sources": "official repositories/dataset cards listed in docs/BENCHMARK_RESEARCH.md",
+    "pipeline_config_sha256": "080269d981facae3a0554f4215d20189f64988b5bfc53ceb900bc2d420f83964",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.14.0",
+    "tool_execution": "disabled"
+  }
+}

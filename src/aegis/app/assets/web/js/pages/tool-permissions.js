@@ -688,10 +688,142 @@ const ToolPermissionsPage = {
         toolsContainer.appendChild(loading);
 
         page.appendChild(toolsContainer);
+
+        // Local overrides + call rate limits (raw view). The tools list above
+        // shows the EFFECTIVE action; this exposes the stored local override
+        // rows, including the per-tool call rate limit that has no other
+        // surface in the UI. Collapsed by default — it is a reference view.
+        const overridesBox = document.createElement('details');
+        overridesBox.id = 'tp-local-overrides';
+        overridesBox.style.cssText = 'margin-top:18px;';
+        const overridesSummary = document.createElement('summary');
+        overridesSummary.style.cssText = 'cursor:pointer;font-weight:600;color:var(--text-primary);font-size:13px;';
+        overridesSummary.textContent = 'Local overrides & rate limits';
+        overridesBox.appendChild(overridesSummary);
+        const overridesBody = document.createElement('div');
+        overridesBody.id = 'tp-local-overrides-body';
+        overridesBody.style.cssText = 'margin-top:10px;';
+        overridesBody.textContent = 'Loading…';
+        overridesBox.appendChild(overridesBody);
+        page.appendChild(overridesBox);
+        this._renderLocalOverrides();
+
         content.appendChild(page);
 
         // Load data
         await this.loadData(toggleInput, toolsContainer, cloudPill);
+    },
+
+    async _renderLocalOverrides() {
+        const root = document.getElementById('tp-local-overrides-body');
+        if (!root) return;
+        try {
+            const [overrideData, customData] = await Promise.all([
+                API.getToolOverrides(), API.getCustomTools(),
+            ]);
+            // Essential overrides and custom tools both carry a call rate
+            // limit, but they live in different tables with different
+            // endpoints. Merge them into one reference view and remember
+            // which setter each row needs.
+            const rows = [
+                ...((overrideData && overrideData.overrides) || [])
+                    .map(o => ({ ...o, kind: 'essential' })),
+                ...((customData && customData.tools) || []).map(t => ({
+                    tool_id: t.tool_id,
+                    action: t.default_permission,
+                    runtime_kind: null,
+                    rate_limit_max_calls: t.rate_limit_max_calls,
+                    rate_limit_window_seconds: t.rate_limit_window_seconds,
+                    kind: 'custom',
+                })),
+            ];
+            root.textContent = '';
+            if (!rows.length) {
+                const empty = document.createElement('p');
+                empty.style.cssText = 'margin:0;color:var(--text-secondary);font-size:12.5px;';
+                empty.textContent = 'No local overrides or custom tools yet. Block or allow a tool above, or add a custom tool.';
+                root.appendChild(empty);
+                return;
+            }
+            const table = document.createElement('table');
+            table.style.cssText = 'width:100%;border-collapse:collapse;font-size:12px;';
+            table.innerHTML = '<thead><tr>' +
+                ['Tool', 'Kind', 'Action', 'Scope', 'Rate limit (max / seconds)']
+                    .map(h => `<th style="text-align:left;padding:6px;border-bottom:1px solid var(--border-default);">${h}</th>`)
+                    .join('') + '</tr></thead>';
+            const tbody = document.createElement('tbody');
+            rows.forEach(o => {
+                const tr = document.createElement('tr');
+                [o.tool_id, o.kind, o.action, o.runtime_kind || 'all'].forEach((value, index) => {
+                    const td = document.createElement('td');
+                    td.style.cssText = 'padding:6px;border-bottom:1px solid var(--border-default);';
+                    if (index === 0) {
+                        const code = document.createElement('code');
+                        code.textContent = String(value);
+                        td.appendChild(code);
+                    } else {
+                        td.textContent = String(value);
+                    }
+                    tr.appendChild(td);
+                });
+                tr.appendChild(this._rateLimitCell(o));
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            root.appendChild(table);
+        } catch (error) {
+            root.textContent = error.message;
+        }
+    },
+
+    _rateLimitCell(row) {
+        const td = document.createElement('td');
+        td.style.cssText = 'padding:6px;border-bottom:1px solid var(--border-default);white-space:nowrap;';
+        const inputStyle = 'width:58px;padding:3px 4px;margin-right:4px;';
+        const max = document.createElement('input');
+        max.type = 'number';
+        max.min = '1';
+        max.placeholder = 'max';
+        max.style.cssText = inputStyle;
+        max.value = row.rate_limit_max_calls == null ? '' : String(row.rate_limit_max_calls);
+        const seconds = document.createElement('input');
+        seconds.type = 'number';
+        seconds.min = '1';
+        seconds.placeholder = 'sec';
+        seconds.style.cssText = inputStyle;
+        seconds.value = row.rate_limit_window_seconds == null ? '' : String(row.rate_limit_window_seconds);
+        const apply = document.createElement('button');
+        apply.type = 'button';
+        apply.textContent = 'Apply';
+        apply.style.cssText = 'padding:3px 8px;border-radius:6px;border:1px solid var(--border-default);background:var(--bg-secondary);color:var(--text-primary);cursor:pointer;';
+        apply.addEventListener('click', () => this._applyRateLimit(row, max.value, seconds.value, apply));
+        td.appendChild(max);
+        td.appendChild(seconds);
+        td.appendChild(apply);
+        return td;
+    },
+
+    async _applyRateLimit(row, maxRaw, secondsRaw, button) {
+        const max = String(maxRaw).trim() === '' ? null : Number(maxRaw);
+        const seconds = String(secondsRaw).trim() === '' ? null : Number(secondsRaw);
+        if ((max === null) !== (seconds === null)) {
+            if (window.Toast) Toast.error('Set both max calls and window seconds, or clear both.');
+            return;
+        }
+        button.disabled = true;
+        try {
+            if (row.kind === 'custom' && API.updateCustomToolRateLimit) {
+                await API.updateCustomToolRateLimit(row.tool_id, max, seconds);
+            } else {
+                await API.updateEssentialToolRateLimit(row.tool_id, max, seconds);
+            }
+            if (window.Toast) Toast.success('Rate limit updated');
+            await this._renderLocalOverrides();
+        } catch (error) {
+            if (window.Toast) Toast.error(error.message);
+        } finally {
+            button.disabled = false;
+        }
     },
 
     async _renderActivityTab(content) {

@@ -4,6 +4,7 @@ Tool permissions API endpoints.
 GET /api/tool-permissions/essential - List all essential tools with overrides
 GET /api/tool-permissions/overrides - Get all user overrides
 PUT /api/tool-permissions/overrides/:tool_id - Upsert an override
+PUT /api/tool-permissions/overrides/:tool_id/rate-limit - Set/clear a call rate limit
 DELETE /api/tool-permissions/overrides/:tool_id - Delete an override
 """
 
@@ -57,6 +58,21 @@ class OverrideResponse(BaseModel):
     tool_id: str
     action: str
     updated_at: str
+
+
+class RateLimitRequest(BaseModel):
+    """Per-tool call rate limit.
+
+    Both fields set = allow at most ``max_calls`` calls per ``window_seconds``.
+    Both null = remove the limit. Rate limiting is orthogonal to allow/block:
+    it only caps tools that are already allowed to run, so setting a limit
+    must never be able to flip a tool's permission. The stored row may or may
+    not exist yet — the repository creates it with the registry default action
+    when absent.
+    """
+
+    max_calls: Optional[int] = Field(default=None, ge=1, le=1_000_000)
+    window_seconds: Optional[int] = Field(default=None, ge=1, le=86_400)
 
 
 class EssentialToolResponse(BaseModel):
@@ -814,28 +830,45 @@ async def get_synced_overrides(runtime: Optional[str] = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def _ensure_essential_tool_known(tool_id: str) -> None:
+    """Reject a tool_id that is not governable on the Tool Permissions page.
+
+    Validate against the YAML registry AND the built-ins list for every
+    supported runtime — the page renders all of them as governable rows, so a
+    404 on built-in IDs would make every "Block Bash" click silently fail with
+    a toast error. The CC + Codex built-in sets share names today, but accept
+    the union to stay correct if either runtime adds a tool the other doesn't.
+    """
+    registry = _get_registry()
+    builtin_ids = {name for name, _r, _d in CLAUDE_CODE_BUILTINS}
+    builtin_ids.update(name for name, _r, _d in CODEX_BUILTINS)
+    builtin_ids.update(name for name, _r, _d in COPILOT_CLI_BUILTINS)
+    builtin_ids.update(name for name, _r, _d in CURSOR_BUILTINS)
+    builtin_ids.update(name for name, _r, _d in HERMES_BUILTINS)
+    if tool_id not in registry and tool_id not in builtin_ids:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Unknown essential tool: {tool_id}",
+        )
+
+
+def _ensure_complete_rate_limit(request: RateLimitRequest) -> None:
+    """A half-specified limit (only one of the two fields) is meaningless."""
+    if (request.max_calls is None) != (request.window_seconds is None):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "max_calls and window_seconds must be supplied together "
+                "(or both omitted to clear the limit)"
+            ),
+        )
+
+
 @router.put("/tool-permissions/overrides/{tool_id}")
 async def upsert_override(tool_id: str, request: OverrideRequest):
     """Set or update an override for an essential tool."""
     try:
-        # Validate tool_id exists either in the YAML registry OR in the
-        # built-ins list for one of the supported runtimes — the Tool
-        # Permissions page renders all of them as governable rows, so a
-        # 404 on built-in IDs would make every "Block Bash" click
-        # silently fail with a toast error. The CC + Codex built-in
-        # sets share names today, but accept the union to stay correct
-        # if either runtime adds a tool the other doesn't have.
-        registry = _get_registry()
-        builtin_ids = {name for name, _r, _d in CLAUDE_CODE_BUILTINS}
-        builtin_ids.update(name for name, _r, _d in CODEX_BUILTINS)
-        builtin_ids.update(name for name, _r, _d in COPILOT_CLI_BUILTINS)
-        builtin_ids.update(name for name, _r, _d in CURSOR_BUILTINS)
-        builtin_ids.update(name for name, _r, _d in HERMES_BUILTINS)
-        if tool_id not in registry and tool_id not in builtin_ids:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Unknown essential tool: {tool_id}",
-            )
+        _ensure_essential_tool_known(tool_id)
 
         # Normalise scope: "all"/""/None all mean "every runtime" (stored NULL).
         scope = (request.runtime_kind or "").strip().lower() or None
@@ -866,6 +899,30 @@ async def delete_override(tool_id: str):
 
     except Exception as e:
         logger.error(f"Failed to delete override: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/tool-permissions/overrides/{tool_id}/rate-limit")
+async def upsert_override_rate_limit(tool_id: str, request: RateLimitRequest):
+    """Set or clear the call rate limit on an essential tool.
+
+    Complements the block/allow override: a tool can be allowed yet capped to
+    N calls per window. Returns the updated override row.
+    """
+    try:
+        _ensure_essential_tool_known(tool_id)
+        _ensure_complete_rate_limit(request)
+
+        db = get_database()
+        repo = ToolPermissionsRepository(db)
+        return await repo.upsert_rate_limit(
+            tool_id, request.max_calls, request.window_seconds
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to upsert rate limit for {tool_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1050,6 +1107,39 @@ async def delete_custom_tool(tool_id: str):
         raise
     except Exception as e:
         logger.error(f"Failed to delete custom tool: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/tool-permissions/custom/{tool_id}/rate-limit")
+async def update_custom_tool_rate_limit(tool_id: str, request: RateLimitRequest):
+    """Set or clear the call rate limit on a custom tool.
+
+    PUT on this path is deliberately distinct from the plain PUT (permission)
+    and PATCH (metadata): a limit never changes what the tool may do.
+    """
+    try:
+        _ensure_complete_rate_limit(request)
+
+        db = get_database()
+        repo = CustomToolsRepository(db)
+
+        existing = await repo.get_custom_tool(tool_id)
+        if not existing:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Custom tool '{tool_id}' not found",
+            )
+
+        tool = await repo.update_custom_tool_rate_limit(
+            tool_id, request.max_calls, request.window_seconds
+        )
+        tool["risk_score"] = get_risk_score(tool.get("risk"))
+        return tool
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update rate limit for {tool_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

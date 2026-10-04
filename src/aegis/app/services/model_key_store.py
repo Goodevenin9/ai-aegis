@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,10 @@ DRIFT_FLAG = "AEGIS_DRIFT_LLM_ENABLED"
 # Mirrors the size ceiling read_model_key() already enforces on the file.
 MAX_KEY_BYTES = 4096
 MASK_TAIL = 4
+
+# DeepSeek keys are ``sk-`` + URL-safe token chars. Reject prose (e.g. a status
+# message pasted into the UI field) before it can overwrite a real key file.
+_KEY_PATTERN = re.compile(r"^sk-[A-Za-z0-9_-]{8,}$")
 
 
 def _data_dir() -> Path:
@@ -90,6 +95,10 @@ def _atomic_write_text(path: Path, text: str) -> bool:
 def save_model_key(api_key: str) -> bool:
     key = (api_key or "").strip()
     if not key or len(key.encode("utf-8")) > MAX_KEY_BYTES:
+        return False
+    if not _KEY_PATTERN.match(key):
+        # Never log the body; mask() is safe (tail/head only).
+        logger.warning("Rejected model credential: not a DeepSeek key format (masked=%s)", mask(key))
         return False
     return _atomic_write_text(key_file_path(), key)
 

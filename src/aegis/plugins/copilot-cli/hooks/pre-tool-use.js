@@ -48,6 +48,11 @@ const ALLOW = Object.freeze({ decision: 'allow' });
 const ARGS_PREVIEW_LIMIT = 200;
 const RUNTIME_KIND = 'copilot-cli';
 const REASON_PREFIX = 'Aegis Guard';
+// Mirrors the Claude Code / Codex hooks: opt this process into the backend's
+// "unattended" mode, where a `confirm` verdict is escalated to `block` instead
+// of surfacing an interactive approval nobody is there to answer. `CI` counts
+// too — matching the Claude Code hook — because a CI run has no human to answer.
+const TRUTHY = new Set(['1', 'true', 'yes', 'on']);
 
 
 /**
@@ -219,7 +224,8 @@ async function decide(toolName, baseUrl, sessionId = null, toolInput = null) {
     base_decision: baseDecision.decision,
     allowed_capabilities: [],
     project_root: null,
-    headless: false,
+    headless: TRUTHY.has(String(process.env.AEGIS_HEADLESS || '').toLowerCase())
+      || TRUTHY.has(String(process.env.CI || '').toLowerCase()),
   });
   const mapped = pipeline.action === 'block'
     ? 'deny' : pipeline.action === 'confirm'

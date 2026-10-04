@@ -12,6 +12,8 @@ import os
 import sys
 from typing import Any, Dict, Optional
 
+from aegis import __version__
+
 from .utils.exceptions import APIError, ConfigurationError, SecurityException
 from .utils.logger import get_security_logger
 
@@ -47,7 +49,9 @@ For more information, visit: https://gitee.com/wan-xianghao/ai-aegis
 
         # Global options
         parser.add_argument(
-            "--version", action="version", version="Aegis AI Threat Monitor 1.0.1"
+            "--version",
+            action="version",
+            version=f"Aegis AI Threat Monitor {__version__}",
         )
 
         parser.add_argument(

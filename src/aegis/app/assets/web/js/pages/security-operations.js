@@ -27,6 +27,7 @@ const SecurityOperationsPage = {
             </section>
             <section class="so-card"><header><span>03</span><div><h3>Evidence-grounded RAG</h3><p>Hybrid retrieval · reranking · citations</p></div></header>
               <form id="so-rag-form" class="so-inline"><input name="query" required placeholder="Search policies and confirmed incidents"><button>Search</button></form><div id="so-rag-result" class="so-output">No retrieval yet.</div>
+              <form id="so-rageval-form"><textarea name="cases" placeholder='Evaluation cases JSON, for example [{"query":"...","relevant_chunk_ids":["..."]}]'></textarea><div class="so-row"><input name="k" type="number" min="1" max="20" placeholder="k (default 5)"><button type="button" id="so-rageval-run" class="ghost">Evaluate retrieval</button></div></form><div id="so-rageval-result" class="so-output">No retrieval evaluation yet.</div>
             </section>
             <section class="so-card"><header><span>04</span><div><h3>Session immunity</h3><p>Candidate → shadow → approved activation</p></div></header>
               <form id="so-immune-form"><div class="so-row"><input name="runtime_kind" value="codex" placeholder="runtime"><input name="session_id" required placeholder="confirmed session ID"></div><input name="name" required placeholder="Antibody name"><button>Learn candidate</button></form><div id="so-antibodies" class="so-list"></div>
@@ -34,6 +35,8 @@ const SecurityOperationsPage = {
             <section class="so-card so-memory"><header><span>05</span><div><h3>Governed memory</h3><p>Explicit preference and confirmed incident memory</p></div></header>
               <form id="so-memory-form"><select name="memory_type"><option value="preference">Preference</option><option value="incident">Confirmed incident</option><option value="session">Session</option></select><input name="subject_key" required placeholder="Subject key"><input name="evidence_ids" placeholder="Evidence IDs for incident"><textarea name="summary" required placeholder="Memory summary"></textarea><button>Save memory</button></form><div id="so-memories" class="so-list"></div>
             </section>
+            <section class="so-card"><header><span>06</span><div><h3>Agent tools</h3><p>Closed read-only registry · timeout- and role-bound</p></div></header><div id="so-agent-tools" class="so-list"></div></section>
+            <section class="so-card so-wide"><header><span>07</span><div><h3>External benchmarks</h3><p>Offline oracle replay · published with its limitations</p></div></header><div id="so-benchmarks" class="so-output">Loading benchmark report…</div></section>
           </div>`;
         this._bind();
         const agentForm = document.getElementById('so-agent-form');
@@ -182,15 +185,19 @@ const SecurityOperationsPage = {
         document.getElementById('so-rag-form').addEventListener('submit', e => this._search(e));
         document.getElementById('so-immune-form').addEventListener('submit', e => this._learn(e));
         document.getElementById('so-memory-form').addEventListener('submit', e => this._remember(e));
+        document.getElementById('so-rageval-run').addEventListener('click', () => this._evaluateRag());
     },
 
     async _refresh() {
-        const [evidence, antibodies, memories] = await Promise.all([
+        const [evidence, antibodies, memories, tools, benchmarks] = await Promise.all([
             API.listSecurityEvidence(), API.listAntibodies(), API.listAgentMemories(),
+            API.listSecurityAgentTools(), API.listSecurityBenchmarks(),
         ]);
         this._renderEvidence(evidence.evidence || []);
         this._renderAntibodies(antibodies.antibodies || []);
         this._renderMemories(memories.memories || []);
+        this._renderAgentTools(tools.tools || []);
+        this._renderBenchmarks(benchmarks);
     },
 
     async _runAgent(event) {
@@ -284,7 +291,51 @@ const SecurityOperationsPage = {
     },
 
     _renderEvidence(items) { document.getElementById('so-evidence').innerHTML = items.slice(0, 8).map(item => `<article><b>${this._esc(item.source_name)}</b><span>${this._esc(item.evidence_type)}</span><small>${this._esc(item.evidence_id)}</small></article>`).join('') || '<p>No evidence uploaded.</p>'; },
-    _renderMemories(items) { document.getElementById('so-memories').innerHTML = items.slice(0, 8).map(item => `<article><b>${this._esc(item.subject_key)}</b><span>${this._esc(item.summary)}</span><small>${this._esc(item.memory_type)} · <span>${item.confirmed ? 'confirmed' : 'ephemeral'}</span></small></article>`).join('') || '<p>No governed memory.</p>'; },
+    _renderMemories(items) {
+        const root = document.getElementById('so-memories');
+        root.innerHTML = items.slice(0, 8).map(item => `<article><div><b>${this._esc(item.subject_key)}</b><span>${this._esc(item.summary)}</span><small>${this._esc(item.memory_type)} · <span>${item.confirmed ? 'confirmed' : 'ephemeral'}</span></small></div><button class="ghost" data-memory="${this._esc(item.memory_id)}">Delete</button></article>`).join('') || '<p>No governed memory.</p>';
+        root.querySelectorAll('[data-memory]').forEach(button => button.addEventListener('click', () => this._deleteMemory(button.dataset.memory)));
+    },
+
+    async _deleteMemory(memoryId) {
+        try { await API.deleteAgentMemory(memoryId); await this._refresh(); }
+        catch (error) { document.getElementById('so-memories').textContent = error.message; }
+    },
+
+    async _evaluateRag() {
+        const root = document.getElementById('so-rageval-result');
+        const form = new FormData(document.getElementById('so-rageval-form'));
+        let cases;
+        try { cases = JSON.parse(String(form.get('cases') || '').trim()); }
+        catch (error) { root.textContent = 'Evaluation cases must be valid JSON.'; return; }
+        if (!Array.isArray(cases) || !cases.length) { root.textContent = 'Add at least one evaluation case.'; return; }
+        root.textContent = 'Evaluating retrieval…';
+        try {
+            const result = await API.evaluateSecurityRag(cases, Number(form.get('k')) || 5);
+            root.innerHTML = `<span class="so-cred-chip ok">Recall@k: ${this._num(result.recall_at_k)}</span> <span class="so-cred-chip ok">MRR: ${this._num(result.mrr)}</span> <span class="so-cred-chip">Cases: ${this._esc(result.queries)}</span>`;
+        } catch (error) { root.textContent = error.message; }
+    },
+
+    _renderAgentTools(items) {
+        const root = document.getElementById('so-agent-tools');
+        root.innerHTML = items.map(tool => `<article><div><b>${this._esc(tool.name)}</b><small>${this._esc(tool.required_role)} · ${this._esc(tool.timeout_seconds)}s</small></div><span class="so-pill">${tool.read_only ? 'read-only' : 'write'}</span></article>`).join('') || '<p>No Agent tools registered.</p>';
+    },
+
+    _renderBenchmarks(data) {
+        const root = document.getElementById('so-benchmarks');
+        if (!data || data.status !== 'available') {
+            root.textContent = (data && data.reason) || 'Benchmark report is unavailable.';
+            return;
+        }
+        const rows = (data.benchmarks || []).map(bench => {
+            const variants = (bench.results || []).map(r => `<article><b>${this._esc(r.variant)}</b><span>recall ${this._num(r.attack_detection_recall)} · FPR ${this._num(r.benign_false_positive_rate)} · ${this._esc(r.cases)} cases</span></article>`).join('');
+            return `<details><summary>${this._esc(bench.benchmark)} · ${this._esc(bench.case_count)} cases (${this._esc(bench.malicious_count)} malicious)</summary>${variants}</details>`;
+        }).join('');
+        const limits = (data.limitations || []).map(l => `<small>↳ ${this._esc(l)}</small>`).join('');
+        root.innerHTML = rows + limits + `<small>report ${this._esc(String(data.report_sha256 || '').slice(0, 16))}…</small>`;
+    },
+
+    _num(value, digits = 3) { const n = Number(value); return Number.isFinite(n) ? n.toFixed(digits) : '—'; },
     _renderAntibodies(items) {
         const root = document.getElementById('so-antibodies');
         root.innerHTML = items.map(item => `<article><div><b>${this._esc(item.name)}</b><small><span>${this._esc(item.status)}</span> · <span>maximum contribution</span> +${Number(item.max_score_delta)}</small></div><div>${item.status === 'candidate' ? `<button data-id="${this._esc(item.antibody_id)}" data-target="shadow">Start shadow</button>` : ''}${item.status === 'shadow' ? `<button data-id="${this._esc(item.antibody_id)}" data-target="active">Approve active</button>` : ''}${['active','decaying'].includes(item.status) ? `<button data-id="${this._esc(item.antibody_id)}" data-target="retired" class="ghost">Retire</button>` : ''}</div></article>`).join('') || '<p>No learned antibodies.</p>';
@@ -294,7 +345,7 @@ const SecurityOperationsPage = {
     _esc(value) { const node = document.createElement('div'); node.textContent = String(value == null ? '' : value); return node.innerHTML; },
     _style() {
         if (document.getElementById('so-style')) return; const style = document.createElement('style'); style.id = 'so-style';
-        style.textContent = `.so-hero{display:flex;justify-content:space-between;gap:20px;padding:24px;border:1px solid rgba(124,108,255,.35);border-radius:18px;background:radial-gradient(circle at 85% 10%,rgba(124,108,255,.18),transparent 38%),var(--bg-card);margin-bottom:16px}.so-hero h2{margin:5px 0;color:var(--text-primary)}.so-hero p,.so-card header p{margin:0;color:var(--text-muted);font-size:12px}.so-kicker{font-size:10px;letter-spacing:1.5px;color:#9f94ff}.so-status{align-self:center;color:#9ee7c1;font-size:12px}.so-status i{display:inline-block;width:7px;height:7px;background:#10b981;border-radius:50%;margin-right:7px}.so-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.so-card{padding:17px;border:1px solid var(--border-default);border-radius:14px;background:var(--bg-card);min-width:0}.so-agent{grid-column:span 2}.so-card header{display:flex;gap:11px;margin-bottom:13px}.so-card header>span{font-size:10px;color:#9f94ff;border:1px solid rgba(124,108,255,.35);height:22px;padding:3px 6px;border-radius:6px}.so-card h3{margin:0 0 2px;color:var(--text-primary)}.so-card form{display:flex;flex-direction:column;gap:8px}.so-card input,.so-card textarea,.so-card select{background:var(--bg-primary);border:1px solid var(--border-default);color:var(--text-primary);padding:9px;border-radius:8px}.so-card textarea{min-height:70px;resize:vertical}.so-card button{border:0;border-radius:8px;background:var(--accent-primary);color:white;padding:9px 12px;cursor:pointer}.so-card button.ghost{background:transparent;border:1px solid var(--border-default);color:var(--text-secondary)}.so-row,.so-inline{display:flex!important;flex-direction:row!important;gap:8px}.so-row>*:not(button),.so-inline input{flex:1}.so-output,.so-list{margin-top:12px;color:var(--text-secondary);font-size:12px}.so-output article,.so-list article{padding:9px 0;border-top:1px solid var(--border-default);display:flex;flex-direction:column;gap:3px}.so-list article{flex-direction:row;justify-content:space-between;align-items:center}.so-list small,.so-output small{display:block;color:var(--text-muted)}.so-run-head{display:flex;justify-content:space-between}.so-pill{padding:2px 7px;border-radius:999px;background:rgba(96,165,250,.14);color:#60a5fa}.so-pill.completed{color:#10b981;background:rgba(16,185,129,.14)}.so-pill.failed{color:#ef4444}.so-approval{margin-top:10px;padding:10px;border:1px solid #f59e0b;border-radius:9px}.so-approval code{display:block;word-break:break-all;margin:6px 0;color:var(--text-muted)}.so-credentials{grid-column:span 2}.so-cred-badge{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:11px}.so-cred-chip{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--border-default);color:var(--text-secondary)}.so-cred-chip.ok{color:#10b981;border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.12)}.so-cred-chip.warn{color:#f59e0b;border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.12)}.so-cred-toggle{display:flex;align-items:center;gap:7px;color:var(--text-secondary);font-size:12px}.so-cred-toggle input{width:auto}.so-card button[disabled]{opacity:.45;cursor:not-allowed}@media(max-width:900px){.so-grid{grid-template-columns:1fr}.so-agent,.so-credentials{grid-column:auto}.so-row,.so-inline{flex-direction:column!important}.so-hero{flex-direction:column}}`;
+        style.textContent = `.so-hero{display:flex;justify-content:space-between;gap:20px;padding:24px;border:1px solid rgba(124,108,255,.35);border-radius:18px;background:radial-gradient(circle at 85% 10%,rgba(124,108,255,.18),transparent 38%),var(--bg-card);margin-bottom:16px}.so-hero h2{margin:5px 0;color:var(--text-primary)}.so-hero p,.so-card header p{margin:0;color:var(--text-muted);font-size:12px}.so-kicker{font-size:10px;letter-spacing:1.5px;color:#9f94ff}.so-status{align-self:center;color:#9ee7c1;font-size:12px}.so-status i{display:inline-block;width:7px;height:7px;background:#10b981;border-radius:50%;margin-right:7px}.so-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.so-card{padding:17px;border:1px solid var(--border-default);border-radius:14px;background:var(--bg-card);min-width:0}.so-agent{grid-column:span 2}.so-wide{grid-column:span 2}.so-card header{display:flex;gap:11px;margin-bottom:13px}.so-card header>span{font-size:10px;color:#9f94ff;border:1px solid rgba(124,108,255,.35);height:22px;padding:3px 6px;border-radius:6px}.so-card h3{margin:0 0 2px;color:var(--text-primary)}.so-card form{display:flex;flex-direction:column;gap:8px}.so-card input,.so-card textarea,.so-card select{background:var(--bg-primary);border:1px solid var(--border-default);color:var(--text-primary);padding:9px;border-radius:8px}.so-card textarea{min-height:70px;resize:vertical}.so-card button{border:0;border-radius:8px;background:var(--accent-primary);color:white;padding:9px 12px;cursor:pointer}.so-card button.ghost{background:transparent;border:1px solid var(--border-default);color:var(--text-secondary)}.so-row,.so-inline{display:flex!important;flex-direction:row!important;gap:8px}.so-row>*:not(button),.so-inline input{flex:1}.so-output,.so-list{margin-top:12px;color:var(--text-secondary);font-size:12px}.so-output article,.so-list article{padding:9px 0;border-top:1px solid var(--border-default);display:flex;flex-direction:column;gap:3px}.so-list article{flex-direction:row;justify-content:space-between;align-items:center}.so-list small,.so-output small{display:block;color:var(--text-muted)}.so-run-head{display:flex;justify-content:space-between}.so-pill{padding:2px 7px;border-radius:999px;background:rgba(96,165,250,.14);color:#60a5fa}.so-pill.completed{color:#10b981;background:rgba(16,185,129,.14)}.so-pill.failed{color:#ef4444}.so-approval{margin-top:10px;padding:10px;border:1px solid #f59e0b;border-radius:9px}.so-approval code{display:block;word-break:break-all;margin:6px 0;color:var(--text-muted)}.so-credentials{grid-column:span 2}.so-cred-badge{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:11px}.so-cred-chip{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--border-default);color:var(--text-secondary)}.so-cred-chip.ok{color:#10b981;border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.12)}.so-cred-chip.warn{color:#f59e0b;border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.12)}.so-cred-toggle{display:flex;align-items:center;gap:7px;color:var(--text-secondary);font-size:12px}.so-cred-toggle input{width:auto}.so-card button[disabled]{opacity:.45;cursor:not-allowed}@media(max-width:900px){.so-grid{grid-template-columns:1fr}.so-agent,.so-credentials,.so-wide{grid-column:auto}.so-row,.so-inline{flex-direction:column!important}.so-hero{flex-direction:column}}`;
         document.head.appendChild(style);
     },
 };

@@ -18,6 +18,8 @@ const App = {
         'agent-timeline': AgentTimelinePage,
         'session-security': SessionSecurityPage,
         'security-operations': SecurityOperationsPage,
+        // 小瑷（Aeg）— 对话式安全助手（内嵌 pi 驱动的聊天应用）。
+        xiaoai: XiaoaiPage,
         'storylines': StorylinesPage,
         // Dedicated blocked-action ledger; legacy deep links remain routable.
         'blocked-ledger': BlockedLedgerPage,

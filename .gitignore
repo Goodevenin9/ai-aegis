@@ -270,6 +270,8 @@ docs/dist/
 *.tmp.py
 temp_*
 scratch_*
+# Repo-local scratch (build/intermediate artifacts, not source)
+tmp/
 
 # IDE and editor files
 .vscode/settings.json

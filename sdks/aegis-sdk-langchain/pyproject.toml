@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aegis-sdk-langchain"
+version = "0.1.0"
+description = "Aegis tool-call permissions, leak detection and audit for LangChain agents."
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Aegis" }]
+keywords = ["security", "langchain", "agents", "guardrails", "audit"]
+dependencies = ["ai-aegis[app]>=1.0.0"]
+
+[project.urls]
+Homepage = "https://gitee.com/wan-xianghao/ai-aegis"
+
+[project.optional-dependencies]
+langchain = ["langchain>=1.0", "langchain-core>=1.0"]
+
+[tool.setuptools]
+packages = ["aegis_sdk_langchain"]

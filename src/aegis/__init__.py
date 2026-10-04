@@ -71,7 +71,7 @@ except ImportError:
         return False
 
 # Main public interface
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 __all__ = [
     # Core clients
     "AegisClient",

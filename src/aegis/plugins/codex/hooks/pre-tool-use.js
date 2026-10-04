@@ -44,6 +44,9 @@ const DEFAULT_BASE_URL = 'http://127.0.0.1:8741';
 const ALLOW = Object.freeze({ decision: 'allow' });
 const ARGS_PREVIEW_LIMIT = 200;
 const RUNTIME_KIND = 'codex';
+// Unattended-mode flags. `CI` mirrors the Claude Code hook: in CI there is no
+// human to answer a `confirm`, so the backend escalates it to `block`.
+const TRUTHY = new Set(['1', 'true', 'yes', 'on']);
 
 
 /**
@@ -360,7 +363,8 @@ async function main() {
     decision = await decide(toolName, baseUrl, sessionId, toolInputForCall, {
       allowedCapabilities: (process.env.AEGIS_SESSION_CAPABILITIES || '').split(',').map(v => v.trim()).filter(Boolean),
       projectRoot: event && event.cwd,
-      headless: ['1', 'true', 'yes', 'on'].includes(String(process.env.AEGIS_HEADLESS || '').toLowerCase()),
+      headless: TRUTHY.has(String(process.env.AEGIS_HEADLESS || '').toLowerCase())
+        || TRUTHY.has(String(process.env.CI || '').toLowerCase()),
     });
   } catch {
     decision = ALLOW;

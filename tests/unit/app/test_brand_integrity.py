@@ -16,6 +16,13 @@ LEGAL_PATHS = {
     ROOT / "src" / "aegis" / "rules" / "tool_permissions" / "RULES_ATTRIBUTION.md",
 }
 
+# Third-party comparison documents name competitors on purpose — that is the
+# document's subject, not leaked product identity. Excluded from the identity
+# scan so the comparison can cite rival products by name.
+THIRD_PARTY_COMPARISON_PATHS = {
+    ROOT / "docs" / "COMPETITOR_BENCHMARK_COMPARISON.md",
+}
+
 RUNTIME_ROOTS = (
     ROOT / "src",
     ROOT / "scripts",
@@ -67,7 +74,12 @@ def test_runtime_and_plugins_have_no_legacy_product_identity():
         "s" + "vgrad",
     )
     for path in _product_files():
-        if path == Path(__file__) or path in LEGAL_PATHS or path.name == "LICENSE":
+        if (
+            path == Path(__file__)
+            or path in LEGAL_PATHS
+            or path in THIRD_PARTY_COMPARISON_PATHS
+            or path.name == "LICENSE"
+        ):
             continue
         try:
             text = path.read_text(encoding="utf-8")

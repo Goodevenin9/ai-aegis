@@ -417,6 +417,26 @@ def create_app(host: str = "127.0.0.1", port: int = 8741) -> FastAPI:
     from aegis.app.server.routes import instant_audit
     app.include_router(instant_audit.router, prefix="/api", tags=["Instant Audit"])
 
+    # 小瑷（Aeg）— 对话式安全助手：挂载 pi RPC 的 WebSocket 桥与聊天前端
+    # （/api/aegis-guide/chat、/api/aegis-guide/ws）。仅当从源码仓库运行时可用；
+    # `integrations/` 随仓库分发，安装版找不到则静默跳过，不影响主应用。
+    try:  # noqa: SIM105
+        import sys as _sys
+        from pathlib import Path as _Path
+
+        _repo_root = _Path(__file__).resolve().parents[4]
+        _bridge = _repo_root / "integrations" / "pi" / "backend" / "aegis_guide_ws.py"
+        if _bridge.is_file():
+            if str(_repo_root) not in _sys.path:
+                _sys.path.insert(0, str(_repo_root))
+            from integrations.pi.backend.aegis_guide_ws import (
+                router as aegis_guide_router,
+            )
+
+            app.include_router(aegis_guide_router)
+    except Exception:  # pragma: no cover - optional integration
+        pass
+
     # Serve web UI static files
     if WEB_ASSETS_PATH.exists():
         # Mount static directories
@@ -464,10 +484,15 @@ def create_app(host: str = "127.0.0.1", port: int = 8741) -> FastAPI:
                 return FileResponse(str(index_path), headers=_NO_CACHE_HEADERS)
             return {"error": "Web UI not found"}
 
-        # Client-side routing catch-all — serve index.html for any unmatched path
-        # FastAPI matches registered API routes first; this only fires for SPA page routes
+        # Client-side routing catch-all — serve index.html for any unmatched path.
+        # FastAPI matches registered API routes first; this only fires for SPA
+        # page routes. An unmatched /api/* path is a client error, NOT a page
+        # route: returning the HTML shell with HTTP 200 makes every API consumer
+        # parse HTML (and shows up as a JSONDecodeError instead of a clean 404).
         @app.get("/{path:path}", include_in_schema=False)
         async def serve_spa(path: str):
+            if path == "api" or path.startswith("api/"):
+                return JSONResponse({"error": "Not found"}, status_code=404)
             index_path = WEB_ASSETS_PATH / "index.html"
             if index_path.exists():
                 return FileResponse(str(index_path), headers=_NO_CACHE_HEADERS)

@@ -11,7 +11,7 @@
 - **See everything — Traces.** Every agent session replays as a stepped waterfall: verdict per tool call, tokens + estimated cost per model call. Live follow, redacted replay, audit PDF.
 - **Control everything — permissions + JIT.** Allow / deny / ask at agent runtime. Blocked tools become just-in-time requests: approve for 15 minutes, an hour, or one session — grants expire on their own.
 - **Audit the past — Instant Agent Audit.** Opt-in scan of session history already on disk: destructive commands, plaintext secrets, estimated spend.
-- **Catch the threats — 72 rules + Guardian ML.** OWASP LLM Top 10 + 28 agent-attack chains, detected while the agent is still running. Offline ML catches what regex misses. [Details ↓](#optional-ml-detection-layer--aegis-guardian)
+- **Catch the threats — 108 rules + Guardian ML.** OWASP LLM Top 10 + 28 agent-attack chains, detected while the agent is still running. Offline ML catches what regex misses. [Details ↓](#optional-ml-detection-layer--aegis-guardian)
 - **Prove it** — every tool call in a SHA-256 hash-chained log; blocked actions get a per-rule evidence ledger.
 - **Apache 2.0, no signup, 100% local** — `pip install` and you're covered in 60 seconds. Nothing leaves your machine.
 
@@ -51,8 +51,8 @@
 
 <br>
 
-> **AI Aegis (灵盾) 1.0.0** — AI 智能体的安全与可观测监控平台。
-> - **威胁检测**：72 条规则 + Guardian ML 检测层，覆盖提示注入、数据泄露、越狱攻击等 OWASP LLM Top 10 威胁
+> **AI Aegis (灵盾) 1.0.3** — AI 智能体的安全与可观测监控平台。
+> - **威胁检测**：108 条规则 + Guardian ML 检测层，覆盖提示注入、数据泄露、越狱攻击等 OWASP LLM Top 10 威胁
 > - **工具权限治理**：Allow / Deny / JIT 授权，为每个工具调用实时裁决
 > - **全链路审计**：每次工具调用的 SHA-256 哈希链日志、事件回放、审计 PDF
 > - **Agent 可观测**：Trace 瀑布流、Agent 拓扑地图、成本追踪、规则与权限明细
@@ -84,11 +84,11 @@ pip install ai-aegis[app]
 aegis-app --web
 ```
 
-**Or download the app:** [Windows](https://gitee.com/wan-xianghao/ai-aegis/releases) · [Linux](https://gitee.com/wan-xianghao/ai-aegis/releases) · [DEB](https://gitee.com/wan-xianghao/ai-aegis/releases) · [RPM](https://gitee.com/wan-xianghao/ai-aegis/releases) · [macOS](https://gitee.com/wan-xianghao/ai-aegis/releases)
+> **Binary installers** (`.exe` / `.deb` / `.rpm` / `.dmg`) are **not published yet**. `pip install ai-aegis[app]` is the only supported install path; the releases page hosts source tags only.
 
 **Step 2 — Open the app**
 
-Open [http://localhost:8741](http://localhost:8741) in your browser, or double-click the installed binary.
+Open [http://localhost:8741](http://localhost:8741) in your browser.
 
 **Step 3 — Connect your agent**
 
@@ -161,7 +161,7 @@ Every tool call is recorded to a SHA-256-linked, tamper-evident audit log (re-ve
 </td>
 <td valign="top">
 
-Scans every prompt, response, and natural-language tool input for prompt injection (direct + indirect), jailbreaks, PII leaks, credential exfiltration, and tool-result injection. 72 rules covering the OWASP LLM Top 10 + 28 agent-attack chains. Monitor by default; opt-in block mode for hard-stop.
+Scans every prompt, response, and natural-language tool input for prompt injection (direct + indirect), jailbreaks, PII leaks, credential exfiltration, and tool-result injection. 108 rules covering the OWASP LLM Top 10 + 28 agent-attack chains. Monitor by default; opt-in block mode for hard-stop.
 
 </td>
 </tr>
@@ -281,7 +281,7 @@ aegis-app --install-plugin claude-code
 
 Full coverage: [OWASP LLM Top 10](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
 
-### AI Agent Attack Protection (28 new rules · 72 total)
+### AI Agent Attack Protection (28 new rules · 108 total)
 
 Built from real attack chains observed against production agent frameworks:
 
@@ -293,7 +293,7 @@ Built from real attack chains observed against production agent frameworks:
 
 ### Optional ML Detection Layer — Aegis Guardian
 
-Alongside the 72 regex rules, the app ships **Aegis Guardian**, a bundled stdlib-only semantic threat classifier. It runs in parallel with the rule engine and catches obfuscated, paraphrased, buried, or encoded attacks that literal patterns miss. The model is fully local and runs offline — no cloud round-trip and no prompt text leaves your machine.
+Alongside the 108 regex rules, the app ships **Aegis Guardian**, a bundled stdlib-only semantic threat classifier. It runs in parallel with the rule engine and catches obfuscated, paraphrased, buried, or encoded attacks that literal patterns miss. The model is fully local and runs offline — no cloud round-trip and no prompt text leaves your machine.
 
 **Install — comes with the app.** The inference code and verified model asset are included in the AI Aegis wheel, so a fresh install is immediately offline-capable. Updating `ai-aegis` updates the model with the application. Air-gapped deployments may override the asset path with `AEGIS_GUARDIAN_RUNTIME`.
 

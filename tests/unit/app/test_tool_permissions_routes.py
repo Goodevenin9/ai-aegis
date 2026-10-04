@@ -9,6 +9,7 @@ Covers the slice of Task 3:
 from __future__ import annotations
 
 import pytest
+from fastapi import HTTPException
 
 from aegis.app.database.connection import DatabaseConnection
 from aegis.app.database.migrations import run_migrations
@@ -186,3 +187,104 @@ def test_update_request_has_no_permission_field():
     from aegis.app.server.routes.tool_permissions import UpdateCustomToolRequest
 
     assert "default_permission" not in UpdateCustomToolRequest.model_fields
+
+
+# --- Call rate-limit endpoints --------------------------------------------
+#
+# api.js has always called `PUT .../{tool_id}/rate-limit` for both essential
+# and custom tools, but neither route existed: the DB columns (migration v11)
+# and the repository methods were built and then orphaned, so every such call
+# 404'd. These cover the routes that now wire them up.
+
+
+@pytest.mark.asyncio
+async def test_essential_rate_limit_route_creates_then_clears(tmp_path, monkeypatch):
+    from aegis.app.server.routes import tool_permissions
+    from aegis.app.server.routes.tool_permissions import RateLimitRequest
+
+    db = DatabaseConnection(tmp_path / "essential-rate-limit.db")
+    await run_migrations(db)
+    monkeypatch.setattr(tool_permissions, "get_database", lambda: db)
+
+    created = await tool_permissions.upsert_override_rate_limit(
+        "Bash", RateLimitRequest(max_calls=5, window_seconds=60)
+    )
+    assert created["rate_limit_max_calls"] == 5
+    assert created["rate_limit_window_seconds"] == 60
+    # A limit must not change what the tool is allowed to do.
+    assert created["action"] == "allow"
+
+    cleared = await tool_permissions.upsert_override_rate_limit(
+        "Bash", RateLimitRequest()
+    )
+    assert cleared["rate_limit_max_calls"] is None
+    assert cleared["rate_limit_window_seconds"] is None
+
+    await db.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_essential_rate_limit_rejects_half_specified_limit(monkeypatch):
+    from aegis.app.server.routes import tool_permissions
+    from aegis.app.server.routes.tool_permissions import RateLimitRequest
+
+    with pytest.raises(HTTPException) as exc:
+        await tool_permissions.upsert_override_rate_limit(
+            "Bash", RateLimitRequest(max_calls=5)
+        )
+    assert exc.value.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_essential_rate_limit_rejects_unknown_tool(monkeypatch):
+    from aegis.app.server.routes import tool_permissions
+    from aegis.app.server.routes.tool_permissions import RateLimitRequest
+
+    with pytest.raises(HTTPException) as exc:
+        await tool_permissions.upsert_override_rate_limit(
+            "not-a-real-tool", RateLimitRequest(max_calls=5, window_seconds=60)
+        )
+    assert exc.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_custom_rate_limit_route_updates_and_404s(tmp_path, monkeypatch):
+    from aegis.app.server.routes import tool_permissions
+    from aegis.app.server.routes.tool_permissions import RateLimitRequest
+
+    db = DatabaseConnection(tmp_path / "custom-rate-limit.db")
+    await run_migrations(db)
+    repo = CustomToolsRepository(db)
+    await repo.create_custom_tool(
+        tool_id="srv:limited", name="Limited", risk="write",
+        default_permission="allow", description="",
+    )
+    monkeypatch.setattr(tool_permissions, "get_database", lambda: db)
+
+    tool = await tool_permissions.update_custom_tool_rate_limit(
+        "srv:limited", RateLimitRequest(max_calls=3, window_seconds=30)
+    )
+    assert tool["rate_limit_max_calls"] == 3
+    assert tool["rate_limit_window_seconds"] == 30
+    # Permission is untouched by a rate-limit edit.
+    assert tool["default_permission"] == "allow"
+
+    with pytest.raises(HTTPException) as exc:
+        await tool_permissions.update_custom_tool_rate_limit(
+            "srv:missing", RateLimitRequest(max_calls=1, window_seconds=1)
+        )
+    assert exc.value.status_code == 404
+
+    await db.disconnect()
+
+
+def test_rate_limit_request_rejects_zero_window_and_bad_type():
+    from pydantic import ValidationError
+    from aegis.app.server.routes.tool_permissions import RateLimitRequest
+
+    with pytest.raises(ValidationError):
+        RateLimitRequest(max_calls=0, window_seconds=60)
+    with pytest.raises(ValidationError):
+        RateLimitRequest(max_calls=5, window_seconds=0)
+    # Both-null (clear) is the only single-field-free valid shape.
+    assert RateLimitRequest().max_calls is None

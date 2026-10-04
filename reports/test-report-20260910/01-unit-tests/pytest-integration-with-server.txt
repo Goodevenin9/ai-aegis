@@ -1,0 +1,366 @@
+D:\pyt\Lib\site-packages\requests\__init__.py:113: RequestsDependencyWarning: urllib3 (2.7.0) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.1.1, pluggy-1.6.0 -- D:\pyt\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\19546\Desktop\ai-aegis
+configfile: pyproject.toml
+plugins: anyio-4.14.1, langsmith-0.10.6, asyncio-1.4.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 177 items
+
+tests/test_tool_permissions_api_live.py::TestAPIConnectivity::test_aegis_api_reachable PASSED [  0%]
+tests/test_tool_permissions_api_live.py::TestAPIConnectivity::test_proxy_reachable FAILED [  1%]
+tests/test_tool_permissions_api_live.py::TestEssentialTools::test_returns_tools_list_and_total PASSED [  1%]
+tests/test_tool_permissions_api_live.py::TestEssentialTools::test_registry_has_expected_minimum_count PASSED [  2%]
+tests/test_tool_permissions_api_live.py::TestEssentialTools::test_each_tool_has_required_fields PASSED [  2%]
+tests/test_tool_permissions_api_live.py::TestEssentialTools::test_risk_values_are_valid PASSED [  3%]
+tests/test_tool_permissions_api_live.py::TestEssentialTools::test_risk_score_matches_risk_level PASSED [  3%]
+tests/test_tool_permissions_api_live.py::TestEssentialTools::test_permissions_are_valid_values PASSED [  4%]
+tests/test_tool_permissions_api_live.py::TestEssentialTools::test_majority_of_tools_are_blocked_by_default FAILED [  5%]
+tests/test_tool_permissions_api_live.py::TestSecurityInvariants::test_critical_tool_is_blocked[gmail.send-Gmail send \u2014 must never exfiltrate to email] PASSED [  5%]
+tests/test_tool_permissions_api_live.py::TestSecurityInvariants::test_critical_tool_is_blocked[create_access_key-AWS access-key creation \u2014 admin credential risk] PASSED [  6%]
+tests/test_tool_permissions_api_live.py::TestSecurityInvariants::test_critical_tool_is_blocked[use_aws_cli-AWS CLI \u2014 unrestricted cloud admin access] PASSED [  6%]
+tests/test_tool_permissions_api_live.py::TestSecurityInvariants::test_critical_tool_is_blocked[bash-Bash exec \u2014 arbitrary command execution] PASSED [  7%]
+tests/test_tool_permissions_api_live.py::TestSecurityInvariants::test_critical_tool_is_blocked[delete_user-User deletion \u2014 irreversible data loss] PASSED [  7%]
+tests/test_tool_permissions_api_live.py::TestSecurityInvariants::test_critical_tool_is_blocked[delete_file-File deletion \u2014 irreversible data loss] PASSED [  8%]
+tests/test_tool_permissions_api_live.py::TestSecurityInvariants::test_critical_tool_is_blocked[attach_role_policy-IAM role policy attachment \u2014 privilege escalation] PASSED [  9%]
+tests/test_tool_permissions_api_live.py::TestSecurityInvariants::test_no_email_tool_is_allowed FAILED [  9%]
+tests/test_tool_permissions_api_live.py::TestSecurityInvariants::test_no_secret_credential_tool_is_allowed PASSED [ 10%]
+tests/test_tool_permissions_api_live.py::TestSecurityInvariants::test_admin_risk_tools_mostly_blocked FAILED [ 10%]
+tests/test_tool_permissions_api_live.py::TestOverrideCRUD::test_precondition_target_exists_and_is_allowed PASSED [ 11%]
+tests/test_tool_permissions_api_live.py::TestOverrideCRUD::test_01_set_block_override_on_allowed_tool PASSED [ 11%]
+tests/test_tool_permissions_api_live.py::TestOverrideCRUD::test_02_effective_action_reflects_override PASSED [ 12%]
+tests/test_tool_permissions_api_live.py::TestOverrideCRUD::test_03_override_appears_in_overrides_list PASSED [ 12%]
+tests/test_tool_permissions_api_live.py::TestOverrideCRUD::test_04_delete_override_reverts_to_default PASSED [ 13%]
+tests/test_tool_permissions_api_live.py::TestOverrideCRUD::test_invalid_action_value_rejected PASSED [ 14%]
+tests/test_tool_permissions_api_live.py::TestOverrideCRUD::test_unknown_tool_id_rejected PASSED [ 14%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_create_custom_tool_success PASSED [ 15%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_create_sets_correct_risk_score_for_delete PASSED [ 15%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_create_admin_risk_defaults_to_block PASSED [ 16%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_new_tool_appears_in_list PASSED [ 16%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_list_includes_total_count PASSED [ 17%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_toggle_allow_to_block PASSED [ 18%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_toggle_block_to_allow PASSED [ 18%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_update_nonexistent_tool_returns_404 PASSED [ 19%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_update_invalid_permission_returns_422 PASSED [ 19%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_delete_removes_tool_from_list PASSED [ 20%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_delete_nonexistent_returns_404 PASSED [ 20%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_duplicate_creation_returns_409 PASSED [ 21%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_collision_with_essential_tool_rejected PASSED [ 22%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_invalid_risk_level_rejected PASSED [ 22%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_invalid_permission_value_rejected PASSED [ 23%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_custom_tool_in_engine_block_decision PASSED [ 23%]
+tests/test_tool_permissions_api_live.py::TestCustomToolLifecycle::test_custom_tool_in_engine_allow_decision PASSED [ 24%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_registry_non_empty PASSED [ 24%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_gmail_send_is_blocked_by_engine PASSED [ 25%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_use_aws_cli_blocked_by_default PASSED [ 25%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_bash_exec_blocked_by_default PASSED [ 26%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_override_allow_unlocks_blocked_tool PASSED [ 27%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_override_block_locks_allowed_tool PASSED [ 27%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_partial_name_match_blocked PASSED [ 28%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_unknown_tool_gets_log_only PASSED [ 28%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_extract_tool_calls_openai_format PASSED [ 29%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_extract_tool_calls_anthropic_format PASSED [ 29%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_extract_no_tool_calls_from_plain_response PASSED [ 30%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_full_pipeline_openai_blocked PASSED [ 31%]
+tests/test_tool_permissions_api_live.py::TestPermissionEngine::test_full_pipeline_anthropic_blocked PASSED [ 31%]
+tests/test_tool_permissions_api_live.py::TestProxyToolEnforcement::test_proxy_check_endpoint_blocked_tool_via_api FAILED [ 32%]
+tests/test_tool_permissions_api_live.py::TestProxyToolEnforcement::test_proxy_live_request_blocked_tool_returns_error FAILED [ 32%]
+tests/test_tool_permissions_api_live.py::TestProxyToolEnforcement::test_engine_decision_per_tool_name[use_aws_cli-True] PASSED [ 33%]
+tests/test_tool_permissions_api_live.py::TestProxyToolEnforcement::test_engine_decision_per_tool_name[gmail.send-True] PASSED [ 33%]
+tests/test_tool_permissions_api_live.py::TestProxyToolEnforcement::test_engine_decision_per_tool_name[bash-True] PASSED [ 34%]
+tests/test_tool_permissions_api_live.py::TestProxyToolEnforcement::test_engine_decision_per_tool_name[create_access_key-True] PASSED [ 35%]
+tests/test_tool_permissions_api_live.py::TestProxyToolEnforcement::test_engine_decision_per_tool_name[web_search-False] PASSED [ 35%]
+tests/test_tool_permissions_api_live.py::TestProxyToolEnforcement::test_engine_decision_per_tool_name[read-False] PASSED [ 36%]
+tests/test_tool_permissions_api_live.py::TestCustomToolEngineIntegration::test_custom_tool_blocked_via_api_registry PASSED [ 36%]
+tests/test_tool_permissions_api_live.py::TestCustomToolEngineIntegration::test_custom_tool_allowed_via_api_registry PASSED [ 37%]
+tests/test_tool_permissions_api_live.py::TestCustomToolEngineIntegration::test_toggle_custom_tool_permission_changes_engine_decision PASSED [ 37%]
+tests/test_tool_audit_log_live.py::TestAuditEndpoints::test_audit_list_endpoint_reachable PASSED [ 38%]
+tests/test_tool_audit_log_live.py::TestAuditEndpoints::test_audit_stats_endpoint_reachable PASSED [ 38%]
+tests/test_tool_audit_log_live.py::TestAuditEndpoints::test_audit_post_endpoint_reachable PASSED [ 39%]
+tests/test_tool_audit_log_live.py::TestAuditEndpoints::test_list_returns_required_shape PASSED [ 40%]
+tests/test_tool_audit_log_live.py::TestAuditEndpoints::test_stats_returns_required_fields PASSED [ 40%]
+tests/test_tool_audit_log_live.py::TestAuditEndpoints::test_entry_has_all_required_fields PASSED [ 41%]
+tests/test_tool_audit_log_live.py::TestDecisionTypesAreLogged::test_blocked_entry_appears_in_log PASSED [ 41%]
+tests/test_tool_audit_log_live.py::TestDecisionTypesAreLogged::test_allowed_entry_appears_in_log PASSED [ 42%]
+tests/test_tool_audit_log_live.py::TestDecisionTypesAreLogged::test_log_only_entry_appears_in_log PASSED [ 42%]
+tests/test_tool_audit_log_live.py::TestDecisionTypesAreLogged::test_all_three_actions_present_in_log PASSED [ 43%]
+tests/test_tool_audit_log_live.py::TestActionFilter::test_filter_block_returns_only_blocked PASSED [ 44%]
+tests/test_tool_audit_log_live.py::TestActionFilter::test_filter_allow_returns_only_allowed PASSED [ 44%]
+tests/test_tool_audit_log_live.py::TestActionFilter::test_filter_log_only_returns_only_log_only PASSED [ 45%]
+tests/test_tool_audit_log_live.py::TestActionFilter::test_no_filter_returns_all_actions PASSED [ 45%]
+tests/test_tool_audit_log_live.py::TestStatsConsistency::test_stats_sum_equals_total PASSED [ 46%]
+tests/test_tool_audit_log_live.py::TestStatsConsistency::test_stats_increase_after_new_entry PASSED [ 46%]
+tests/test_tool_audit_log_live.py::TestStatsConsistency::test_allowed_stats_increment PASSED [ 47%]
+tests/test_tool_audit_log_live.py::TestStatsConsistency::test_log_only_stats_increment PASSED [ 48%]
+tests/test_tool_audit_log_live.py::TestRiskLevelPreserved::test_risk_level_stored_correctly[read] PASSED [ 48%]
+tests/test_tool_audit_log_live.py::TestRiskLevelPreserved::test_risk_level_stored_correctly[write] PASSED [ 49%]
+tests/test_tool_audit_log_live.py::TestRiskLevelPreserved::test_risk_level_stored_correctly[delete] PASSED [ 49%]
+tests/test_tool_audit_log_live.py::TestRiskLevelPreserved::test_risk_level_stored_correctly[admin] PASSED [ 50%]
+tests/test_tool_audit_log_live.py::TestRiskLevelPreserved::test_null_risk_stored_as_null PASSED [ 50%]
+tests/test_tool_audit_log_live.py::TestIsEssentialFlag::test_essential_flag_true_stored_correctly PASSED [ 51%]
+tests/test_tool_audit_log_live.py::TestIsEssentialFlag::test_essential_flag_false_stored_correctly PASSED [ 51%]
+tests/test_tool_audit_log_live.py::TestIsEssentialFlag::test_log_only_is_not_essential PASSED [ 52%]
+tests/test_tool_audit_log_live.py::TestArgsPreview::test_short_args_stored_verbatim PASSED [ 53%]
+tests/test_tool_audit_log_live.py::TestArgsPreview::test_long_args_stored_at_full_length_sent PASSED [ 53%]
+tests/test_tool_audit_log_live.py::TestArgsPreview::test_null_args_stored_as_null PASSED [ 54%]
+tests/test_tool_audit_log_live.py::TestReasonText::test_reason_stored_verbatim PASSED [ 54%]
+tests/test_tool_audit_log_live.py::TestReasonText::test_rate_limit_reason_stored PASSED [ 55%]
+tests/test_tool_audit_log_live.py::TestReasonText::test_override_reason_stored PASSED [ 55%]
+tests/test_tool_audit_log_live.py::TestOrdering::test_entries_returned_newest_first PASSED [ 56%]
+tests/test_tool_audit_log_live.py::TestOrdering::test_called_at_timestamps_are_present PASSED [ 57%]
+tests/test_tool_audit_log_live.py::TestLimitParameter::test_limit_1_returns_at_most_1_entry PASSED [ 57%]
+tests/test_tool_audit_log_live.py::TestLimitParameter::test_limit_3_returns_at_most_3_entries PASSED [ 58%]
+tests/test_tool_audit_log_live.py::TestLimitParameter::test_limit_500_respected_as_max PASSED [ 58%]
+tests/test_tool_audit_log_live.py::TestSecurityInvariantsInAudit::test_sensitive_tool_never_appears_as_allowed[gmail.send] PASSED [ 59%]
+tests/test_tool_audit_log_live.py::TestSecurityInvariantsInAudit::test_sensitive_tool_never_appears_as_allowed[use_aws_cli] PASSED [ 59%]
+tests/test_tool_audit_log_live.py::TestSecurityInvariantsInAudit::test_sensitive_tool_never_appears_as_allowed[bash] PASSED [ 60%]
+tests/test_tool_audit_log_live.py::TestSecurityInvariantsInAudit::test_sensitive_tool_never_appears_as_allowed[create_access_key] PASSED [ 61%]
+tests/test_tool_audit_log_live.py::TestSecurityInvariantsInAudit::test_sensitive_tool_never_appears_as_allowed[delete_file] PASSED [ 61%]
+tests/test_tool_audit_log_live.py::TestSecurityInvariantsInAudit::test_sensitive_tool_never_appears_as_allowed[attach_role_policy] PASSED [ 62%]
+tests/test_tool_audit_log_live.py::TestSecurityInvariantsInAudit::test_no_email_tool_in_allowed_audit PASSED [ 62%]
+tests/test_tool_audit_log_live.py::TestSecurityInvariantsInAudit::test_no_credential_tool_in_allowed_audit PASSED [ 63%]
+tests/test_tool_audit_log_live.py::TestEngineToAuditRoundTrip::test_engine_decision_matches_audit_action[gmail.send-block] PASSED [ 63%]
+tests/test_tool_audit_log_live.py::TestEngineToAuditRoundTrip::test_engine_decision_matches_audit_action[use_aws_cli-block] PASSED [ 64%]
+tests/test_tool_audit_log_live.py::TestEngineToAuditRoundTrip::test_engine_decision_matches_audit_action[bash-block] PASSED [ 64%]
+tests/test_tool_audit_log_live.py::TestEngineToAuditRoundTrip::test_engine_decision_matches_audit_action[create_access_key-block] PASSED [ 65%]
+tests/test_tool_audit_log_live.py::TestEngineToAuditRoundTrip::test_engine_decision_matches_audit_action[web_search-allow] PASSED [ 66%]
+tests/test_tool_audit_log_live.py::TestEngineToAuditRoundTrip::test_engine_decision_matches_audit_action[read-allow] PASSED [ 66%]
+tests/test_tool_audit_log_live.py::TestEngineToAuditRoundTrip::test_override_allow_decision_audit PASSED [ 67%]
+tests/test_tool_audit_log_live.py::TestEngineToAuditRoundTrip::test_unknown_tool_gets_log_only_in_audit PASSED [ 67%]
+tests/test_tool_audit_log_live.py::TestCustomToolAuditCycle::test_custom_tool_blocked_entry_appears_in_audit PASSED [ 68%]
+tests/test_tool_audit_log_live.py::TestCustomToolAuditCycle::test_custom_tool_allowed_entry_after_toggle PASSED [ 68%]
+tests/test_tool_audit_log_live.py::TestFullProxySimulation::test_openai_blocked_tool_is_logged_as_block PASSED [ 69%]
+tests/test_tool_audit_log_live.py::TestFullProxySimulation::test_anthropic_blocked_tool_is_logged_as_block PASSED [ 70%]
+tests/test_tool_audit_log_live.py::TestFullProxySimulation::test_openai_allowed_tool_is_logged_as_allow PASSED [ 70%]
+tests/test_tool_audit_log_live.py::TestFullProxySimulation::test_mixed_response_blocked_and_allowed_both_logged PASSED [ 71%]
+tests/test_tool_audit_log_live.py::TestFullProxySimulation::test_unknown_tool_logged_as_log_only PASSED [ 71%]
+tests/test_tool_audit_log_live.py::TestFullProxySimulation::test_partial_name_match_blocked_and_logged PASSED [ 72%]
+tests/test_tool_audit_log_live.py::TestAuditInputValidation::test_invalid_action_rejected PASSED [ 72%]
+tests/test_tool_audit_log_live.py::TestAuditInputValidation::test_missing_function_name_rejected PASSED [ 73%]
+tests/test_tool_audit_log_live.py::TestAuditInputValidation::test_missing_action_rejected PASSED [ 74%]
+tests/test_tool_audit_log_live.py::TestAuditInputValidation::test_all_valid_actions_accepted[block] PASSED [ 74%]
+tests/test_tool_audit_log_live.py::TestAuditInputValidation::test_all_valid_actions_accepted[allow] PASSED [ 75%]
+tests/test_tool_audit_log_live.py::TestAuditInputValidation::test_all_valid_actions_accepted[log_only] PASSED [ 75%]
+tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_list_pricing_returns_entries ERROR [ 76%]
+tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_list_pricing_filter_by_provider ERROR [ 76%]
+tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_list_pricing_filter_anthropic ERROR [ 77%]
+tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_update_pricing ERROR [ 77%]
+tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_update_pricing_restores ERROR [ 78%]
+tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_update_pricing_invalid_negative ERROR [ 79%]
+tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_pricing_sync ERROR [ 79%]
+tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_no_stale_entries_after_sync ERROR [ 80%]
+tests/unit/app/test_costs_budget.py::TestGlobalBudget::test_get_global_budget ERROR [ 80%]
+tests/unit/app/test_costs_budget.py::TestGlobalBudget::test_set_global_budget_warn ERROR [ 81%]
+tests/unit/app/test_costs_budget.py::TestGlobalBudget::test_set_global_budget_block ERROR [ 81%]
+tests/unit/app/test_costs_budget.py::TestGlobalBudget::test_set_global_budget_null_disables ERROR [ 82%]
+tests/unit/app/test_costs_budget.py::TestGlobalBudget::test_set_global_budget_invalid_action ERROR [ 83%]
+tests/unit/app/test_costs_budget.py::TestAgentBudget::test_set_agent_budget ERROR [ 83%]
+tests/unit/app/test_costs_budget.py::TestAgentBudget::test_list_agent_budgets_includes_created ERROR [ 84%]
+tests/unit/app/test_costs_budget.py::TestAgentBudget::test_delete_agent_budget ERROR [ 84%]
+tests/unit/app/test_costs_budget.py::TestAgentBudget::test_delete_nonexistent_agent_budget_returns_404 ERROR [ 85%]
+tests/unit/app/test_costs_budget.py::TestAgentBudget::test_agent_budget_requires_positive_amount ERROR [ 85%]
+tests/unit/app/test_costs_budget.py::TestAgentBudget::test_agent_budget_invalid_action ERROR [ 86%]
+tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_no_budget_returns_not_over ERROR [ 87%]
+tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_under_budget ERROR [ 87%]
+tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_over_budget_warn_mode ERROR [ 88%]
+tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_over_budget_block_mode ERROR [ 88%]
+tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_global_budget_applies_when_no_agent_budget ERROR [ 89%]
+tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_agent_budget_overrides_global ERROR [ 89%]
+tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_budget_status_requires_agent_id ERROR [ 90%]
+tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_reachable ERROR [ 90%]
+tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_no_budget_forwards_request ERROR [ 91%]
+tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_warn_mode_over_budget_still_forwards ERROR [ 92%]
+tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_block_mode_over_budget_returns_429 ERROR [ 92%]
+tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_block_mode_under_budget_forwards ERROR [ 93%]
+tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_block_mode_exactly_at_limit ERROR [ 93%]
+tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_block_message_contains_spend_info ERROR [ 94%]
+tests/unit/app/test_costs_budget.py::TestBudgetGuardian::test_guardian_returns_global_info ERROR [ 94%]
+tests/unit/app/test_costs_budget.py::TestBudgetGuardian::test_guardian_detects_over_budget_agent ERROR [ 95%]
+tests/unit/app/test_costs_budget.py::TestBudgetGuardian::test_guardian_warning_threshold ERROR [ 96%]
+tests/unit/app/test_costs_budget.py::TestCostRecords::test_list_records ERROR [ 96%]
+tests/unit/app/test_costs_budget.py::TestCostRecords::test_list_records_filter_by_provider ERROR [ 97%]
+tests/unit/app/test_costs_budget.py::TestCostRecords::test_list_records_pagination ERROR [ 97%]
+tests/unit/app/test_costs_budget.py::TestCostRecords::test_delete_records_by_agent ERROR [ 98%]
+tests/unit/app/test_costs_budget.py::TestCostRecords::test_cost_summary_includes_agent ERROR [ 98%]
+tests/unit/app/test_costs_budget.py::TestCostRecords::test_dashboard_summary ERROR [ 99%]
+tests/unit/app/test_costs_budget.py::TestCostRecords::test_csv_export ERROR [100%]
+
+=================================== ERRORS ====================================
+__ ERROR at setup of TestPricingEndpoints.test_list_pricing_returns_entries ___
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestPricingEndpoints.test_list_pricing_filter_by_provider _
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+__ ERROR at setup of TestPricingEndpoints.test_list_pricing_filter_anthropic __
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_________ ERROR at setup of TestPricingEndpoints.test_update_pricing __________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_____ ERROR at setup of TestPricingEndpoints.test_update_pricing_restores _____
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestPricingEndpoints.test_update_pricing_invalid_negative _
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+__________ ERROR at setup of TestPricingEndpoints.test_pricing_sync ___________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+___ ERROR at setup of TestPricingEndpoints.test_no_stale_entries_after_sync ___
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+__________ ERROR at setup of TestGlobalBudget.test_get_global_budget __________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_______ ERROR at setup of TestGlobalBudget.test_set_global_budget_warn ________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_______ ERROR at setup of TestGlobalBudget.test_set_global_budget_block _______
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+___ ERROR at setup of TestGlobalBudget.test_set_global_budget_null_disables ___
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+__ ERROR at setup of TestGlobalBudget.test_set_global_budget_invalid_action ___
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+___________ ERROR at setup of TestAgentBudget.test_set_agent_budget ___________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestAgentBudget.test_list_agent_budgets_includes_created __
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_________ ERROR at setup of TestAgentBudget.test_delete_agent_budget __________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestAgentBudget.test_delete_nonexistent_agent_budget_returns_404 _
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestAgentBudget.test_agent_budget_requires_positive_amount _
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_____ ERROR at setup of TestAgentBudget.test_agent_budget_invalid_action ______
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_____ ERROR at setup of TestBudgetStatus.test_no_budget_returns_not_over ______
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+____________ ERROR at setup of TestBudgetStatus.test_under_budget _____________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+________ ERROR at setup of TestBudgetStatus.test_over_budget_warn_mode ________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_______ ERROR at setup of TestBudgetStatus.test_over_budget_block_mode ________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestBudgetStatus.test_global_budget_applies_when_no_agent_budget _
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+____ ERROR at setup of TestBudgetStatus.test_agent_budget_overrides_global ____
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+___ ERROR at setup of TestBudgetStatus.test_budget_status_requires_agent_id ___
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+______ ERROR at setup of TestProxyBudgetEnforcement.test_proxy_reachable ______
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestProxyBudgetEnforcement.test_proxy_no_budget_forwards_request _
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestProxyBudgetEnforcement.test_proxy_warn_mode_over_budget_still_forwards _
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestProxyBudgetEnforcement.test_proxy_block_mode_over_budget_returns_429 _
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestProxyBudgetEnforcement.test_proxy_block_mode_under_budget_forwards _
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestProxyBudgetEnforcement.test_proxy_block_mode_exactly_at_limit _
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestProxyBudgetEnforcement.test_proxy_block_message_contains_spend_info _
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+___ ERROR at setup of TestBudgetGuardian.test_guardian_returns_global_info ____
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_ ERROR at setup of TestBudgetGuardian.test_guardian_detects_over_budget_agent _
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+____ ERROR at setup of TestBudgetGuardian.test_guardian_warning_threshold _____
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_____________ ERROR at setup of TestCostRecords.test_list_records _____________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+___ ERROR at setup of TestCostRecords.test_list_records_filter_by_provider ____
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_______ ERROR at setup of TestCostRecords.test_list_records_pagination ________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_______ ERROR at setup of TestCostRecords.test_delete_records_by_agent ________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+_____ ERROR at setup of TestCostRecords.test_cost_summary_includes_agent ______
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+__________ ERROR at setup of TestCostRecords.test_dashboard_summary ___________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+______________ ERROR at setup of TestCostRecords.test_csv_export ______________
+E   json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+================================== FAILURES ===================================
+E   TimeoutError: timed out
+
+The above exception was the direct cause of the following exception:
+E   urllib3.exceptions.ReadTimeoutError: HTTPConnectionPool(host='localhost', port=8742): Read timed out. (read timeout=5)
+
+During handling of the above exception, another exception occurred:
+E   requests.exceptions.ReadTimeout: HTTPConnectionPool(host='localhost', port=8742): Read timed out. (read timeout=5)
+D:\pyt\Lib\site-packages\requests\adapters.py:690: requests.exceptions.ReadTimeout: HTTPConnectionPool(host='localhost', port=8742): Read timed out. (read timeout=5)
+E   AssertionError: Expected ¡Ý70 %% blocked by default, got 26%
+    assert 0.2559241706161137 >= 0.7
+C:\Users\19546\Desktop\ai-aegis\tests\test_tool_permissions_api_live.py:168: AssertionError: Expected ¡Ý70 %% blocked by default, got 26%
+E   AssertionError: Email-capable tools are allowed (risk of data exfiltration):
+        send_input
+        send_message
+        yb_send_dm
+        yb_send_sticker
+    assert not [{'tool_id': 'send_input', 'name': 'send_input', 'provider': 'Codex', 'category': 'codex', 'risk': 'admin', 'risk_score': 90, 'default_permission': 'allow', 'description': 'Send input to a spawned agent.', 'effective_action': 'allow', 'effective_source': 'default', 'has_override': False, 'is_synced': False, 'synced_effect': None, 'synced_source_org': None, 'synced_policy_id': None, 'synced_policy_name': None, 'synced_policy_version': None, 'synced_reason': None, 'is_last_resort': False, 'last_resort_reason': None, 'source': 'builtin', 'mcp_server': '', 'popular': False}, {'tool_id': 'send_message', 'name': 'send_message', 'provider': 'Codex', 'category': 'codex', 'risk': 'admin', 'risk_score': 90, 'default_permission': 'allow', 'description': 'Send a message to a spawned agent.', 'effective_action': 'allow', 'effective_source': 'default', 'has_override': False, 'is_synced': False, 'synced_effect': None, 'synced_source_org': None, 'synced_policy_id': None, 'synced_policy_name': None, 'synced_policy_version': None, 'synced_reason': None, 'is_last_resort': False, 'last_resort_reason': None, 'source': 'builtin', 'mcp_server': '', 'popular': False}, {'tool_id': 'yb_send_dm', 'name': 'yb_send_dm', 'provider': 'Hermes', 'category': 'hermes', 'risk': 'write', 'risk_score': 50, 'default_permission': 'allow', 'description': 'Messaging: send a direct message.', 'effective_action': 'allow', 'effective_source': 'default', 'has_override': False, 'is_synced': False, 'synced_effect': None, 'synced_source_org': None, 'synced_policy_id': None, 'synced_policy_name': None, 'synced_policy_version': None, 'synced_reason': None, 'is_last_resort': False, 'last_resort_reason': None, 'source': 'builtin', 'mcp_server': '', 'popular': False}, {'tool_id': 'yb_send_sticker', 'name': 'yb_send_sticker', 'provider': 'Hermes', 'category': 'hermes', 'risk': 'write', 'risk_score': 50, 'default_permission': 'allow', 'description': 'Messaging: send a sticker.', 'effective_action': 'allow', 'effective_source': 'default', 'has_override': False, 'is_synced': False, 'synced_effect': None, 'synced_source_org': None, 'synced_policy_id': None, 'synced_policy_name': None, 'synced_policy_version': None, 'synced_reason': None, 'is_last_resort': False, 'last_resort_reason': None, 'source': 'builtin', 'mcp_server': '', 'popular': False}]
+C:\Users\19546\Desktop\ai-aegis\tests\test_tool_permissions_api_live.py:209: AssertionError: Email-capable tools are allowed (risk of data exfiltration):
+E   AssertionError: Only 26% of admin-risk tools are blocked (11/43)
+    assert 0.2558139534883721 >= 0.9
+C:\Users\19546\Desktop\ai-aegis\tests\test_tool_permissions_api_live.py:237: AssertionError: Only 26% of admin-risk tools are blocked (11/43)
+E   assert 405 == 200
+     +  where 405 = <Response [405]>.status_code
+C:\Users\19546\Desktop\ai-aegis\tests\test_tool_permissions_api_live.py:734: assert 405 == 200
+E   AssertionError: Unexpected analyze response: 405 {"detail":"Method Not Allowed"}
+    assert 405 in (200, 422)
+     +  where 405 = <Response [405]>.status_code
+C:\Users\19546\Desktop\ai-aegis\tests\test_tool_permissions_api_live.py:753: AssertionError: Unexpected analyze response: 405 {"detail":"Method Not Allowed"}
+=========================== short test summary info ===========================
+FAILED tests/test_tool_permissions_api_live.py::TestAPIConnectivity::test_proxy_reachable - requests.exceptions.ReadTimeout: HTTPConnectionPool(host='localhost', port=8742): Read timed out. (read timeout=5)
+FAILED tests/test_tool_permissions_api_live.py::TestEssentialTools::test_majority_of_tools_are_blocked_by_default - AssertionError: Expected ¡Ý70 %% blocked by default, got 26%
+assert 0.2559241706161137 >= 0.7
+FAILED tests/test_tool_permissions_api_live.py::TestSecurityInvariants::test_no_email_tool_is_allowed - AssertionError: Email-capable tools are allowed (risk of data exfiltration):
+    send_input
+    send_message
+    yb_send_dm
+    yb_send_sticker
+assert not [{'tool_id': 'send_input', 'name': 'send_input', 'provider': 'Codex', 'category': 'codex', 'risk': 'admin', 'risk_score': 90, 'default_permission': 'allow', 'description': 'Send input to a spawned agent.', 'effective_action': 'allow', 'effective_source': 'default', 'has_override': False, 'is_synced': False, 'synced_effect': None, 'synced_source_org': None, 'synced_policy_id': None, 'synced_policy_name': None, 'synced_policy_version': None, 'synced_reason': None, 'is_last_resort': False, 'last_resort_reason': None, 'source': 'builtin', 'mcp_server': '', 'popular': False}, {'tool_id': 'send_message', 'name': 'send_message', 'provider': 'Codex', 'category': 'codex', 'risk': 'admin', 'risk_score': 90, 'default_permission': 'allow', 'description': 'Send a message to a spawned agent.', 'effective_action': 'allow', 'effective_source': 'default', 'has_override': False, 'is_synced': False, 'synced_effect': None, 'synced_source_org': None, 'synced_policy_id': None, 'synced_policy_name': None, 'synced_policy_version': None, 'synced_reason': None, 'is_last_resort': False, 'last_resort_reason': None, 'source': 'builtin', 'mcp_server': '', 'popular': False}, {'tool_id': 'yb_send_dm', 'name': 'yb_send_dm', 'provider': 'Hermes', 'category': 'hermes', 'risk': 'write', 'risk_score': 50, 'default_permission': 'allow', 'description': 'Messaging: send a direct message.', 'effective_action': 'allow', 'effective_source': 'default', 'has_override': False, 'is_synced': False, 'synced_effect': None, 'synced_source_org': None, 'synced_policy_id': None, 'synced_policy_name': None, 'synced_policy_version': None, 'synced_reason': None, 'is_last_resort': False, 'last_resort_reason': None, 'source': 'builtin', 'mcp_server': '', 'popular': False}, {'tool_id': 'yb_send_sticker', 'name': 'yb_send_sticker', 'provider': 'Hermes', 'category': 'hermes', 'risk': 'write', 'risk_score': 50, 'default_permission': 'allow', 'description': 'Messaging: send a sticker.', 'effective_action': 'allow', 'effective_source': 'default', 'has_override': False, 'is_synced': False, 'synced_effect': None, 'synced_source_org': None, 'synced_policy_id': None, 'synced_policy_name': None, 'synced_policy_version': None, 'synced_reason': None, 'is_last_resort': False, 'last_resort_reason': None, 'source': 'builtin', 'mcp_server': '', 'popular': False}]
+FAILED tests/test_tool_permissions_api_live.py::TestSecurityInvariants::test_admin_risk_tools_mostly_blocked - AssertionError: Only 26% of admin-risk tools are blocked (11/43)
+assert 0.2558139534883721 >= 0.9
+FAILED tests/test_tool_permissions_api_live.py::TestProxyToolEnforcement::test_proxy_check_endpoint_blocked_tool_via_api - assert 405 == 200
+ +  where 405 = <Response [405]>.status_code
+FAILED tests/test_tool_permissions_api_live.py::TestProxyToolEnforcement::test_proxy_live_request_blocked_tool_returns_error - AssertionError: Unexpected analyze response: 405 {"detail":"Method Not Allowed"}
+assert 405 in (200, 422)
+ +  where 405 = <Response [405]>.status_code
+ERROR tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_list_pricing_returns_entries - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_list_pricing_filter_by_provider - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_list_pricing_filter_anthropic - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_update_pricing - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_update_pricing_restores - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_update_pricing_invalid_negative - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_pricing_sync - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestPricingEndpoints::test_no_stale_entries_after_sync - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestGlobalBudget::test_get_global_budget - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestGlobalBudget::test_set_global_budget_warn - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestGlobalBudget::test_set_global_budget_block - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestGlobalBudget::test_set_global_budget_null_disables - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestGlobalBudget::test_set_global_budget_invalid_action - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestAgentBudget::test_set_agent_budget - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestAgentBudget::test_list_agent_budgets_includes_created - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestAgentBudget::test_delete_agent_budget - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestAgentBudget::test_delete_nonexistent_agent_budget_returns_404 - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestAgentBudget::test_agent_budget_requires_positive_amount - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestAgentBudget::test_agent_budget_invalid_action - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_no_budget_returns_not_over - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_under_budget - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_over_budget_warn_mode - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_over_budget_block_mode - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_global_budget_applies_when_no_agent_budget - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_agent_budget_overrides_global - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestBudgetStatus::test_budget_status_requires_agent_id - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_reachable - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_no_budget_forwards_request - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_warn_mode_over_budget_still_forwards - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_block_mode_over_budget_returns_429 - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_block_mode_under_budget_forwards - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_block_mode_exactly_at_limit - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestProxyBudgetEnforcement::test_proxy_block_message_contains_spend_info - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestBudgetGuardian::test_guardian_returns_global_info - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestBudgetGuardian::test_guardian_detects_over_budget_agent - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestBudgetGuardian::test_guardian_warning_threshold - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestCostRecords::test_list_records - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestCostRecords::test_list_records_filter_by_provider - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestCostRecords::test_list_records_pagination - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestCostRecords::test_delete_records_by_agent - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestCostRecords::test_cost_summary_includes_agent - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestCostRecords::test_dashboard_summary - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ERROR tests/unit/app/test_costs_budget.py::TestCostRecords::test_csv_export - json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+============ 6 failed, 128 passed, 43 errors in 783.66s (0:13:03) =============

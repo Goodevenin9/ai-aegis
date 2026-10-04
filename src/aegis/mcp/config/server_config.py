@@ -14,6 +14,8 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 from pathlib import Path
 
+from aegis import __version__
+
 
 @dataclass
 class SecurityConfig:
@@ -72,7 +74,7 @@ class MCPServerConfig:
 
     # Server identification
     name: str = "Aegis AI Threat Monitor"
-    version: str = "1.0.0"
+    version: str = __version__
     description: str = "AI threat analysis and security monitoring via MCP"
 
     # Server settings

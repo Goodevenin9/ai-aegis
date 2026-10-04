@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>小瑷 · Aegis 安全助手</title>
+  <link rel="stylesheet" href="/api/aegis-guide/static/aegis-chat.css?v=3">
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- 侧边栏 -->
+    <aside class="sidebar" id="sidebar">
+      <div class="side-top">
+        <div class="brand">
+          <span class="brand-dot"></span>
+          <span class="brand-name">小瑷 (Aeg)</span>
+        </div>
+        <button class="btn-new" id="btn-new" title="新对话">＋ 新对话</button>
+      </div>
+      <nav class="conv-list" id="conv-list"></nav>
+      <div class="side-bottom">
+        <div class="conn" id="conn"><i></i><span>连接中…</span></div>
+        <div class="side-row">
+          <button class="btn-ghost" id="btn-theme" title="切换主题">🌗 主题</button>
+          <a class="btn-ghost" href="/api/aegis-guide/status" target="_blank" title="后端状态">状态</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主区域 -->
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn" id="btn-menu" title="菜单">☰</button>
+        <div class="topbar-title" id="topbar-title">新对话</div>
+        <div class="topbar-meta" id="topbar-meta"></div>
+      </header>
+
+      <div class="scroller" id="scroller">
+        <div class="welcome" id="welcome">
+          <div class="welcome-logo">🛡️</div>
+          <h1>你好，我是小瑷</h1>
+          <p class="welcome-sub">Aegis 的安全助手（Aeg）。可以查审计、检索制度、看风险、出报表。</p>
+          <div class="chips" id="chips">
+            <button class="chip">列出最近的 Agent 运行</button>
+            <button class="chip">用知识库回答：Radius 层能不能单独阻断？</button>
+            <button class="chip">列出运行时会话，看看最近有没有风险</button>
+            <button class="chip">Aegis 怎么接入 Claude Code？</button>
+            <button class="chip">导出最近一次运行的 Markdown 报告</button>
+          </div>
+        </div>
+        <div class="thread" id="thread"></div>
+      </div>
+
+      <div class="composer-wrap">
+        <div class="composer" id="composer">
+          <textarea id="input" rows="1" placeholder="给 小瑷 发消息…（Enter 发送，Shift+Enter 换行）"></textarea>
+          <div class="composer-actions">
+            <div class="composer-hint" id="hint"></div>
+            <button class="send-btn" id="btn-send" title="发送">➤</button>
+            <button class="stop-btn" id="btn-stop" title="停止" hidden>■</button>
+          </div>
+        </div>
+        <div class="footnote">小瑷（Aeg）由 pi harness 驱动 · 工具调用受 Aegis 五阶段管线治理 · 内容可能出错，请核验</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+  <script src="/api/aegis-guide/static/aegis-chat.js?v=3"></script>
+</body>
+</html>

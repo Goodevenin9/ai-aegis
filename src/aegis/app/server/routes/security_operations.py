@@ -314,7 +314,13 @@ async def update_model_credentials(
         raise HTTPException(status_code=422, detail="no credential fields supplied")
     if request.api_key is not None:
         if not model_key_store.save_model_key(request.api_key):
-            raise HTTPException(status_code=422, detail="model key could not be stored")
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "model key could not be stored: expected a DeepSeek key of the "
+                    "form 'sk-...' (paste the key itself, not a status message)"
+                ),
+            )
         model_key_store.promote_key_file()
     if request.drift_llm_enabled is not None:
         if not model_key_store.set_drift_enabled(request.drift_llm_enabled):

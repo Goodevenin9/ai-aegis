@@ -104,6 +104,39 @@ jobs:
             exit(1)
         "
 
+  integration-plugin-e2e:
+    # The plugin → hook → API → policy path is the security-critical surface,
+    # and it was excluded from every CI run by the default `-m "not integration"`.
+    # These tests are self-contained: they start their own uvicorn on a free
+    # port with an isolated tmp SQLite DB and spawn the JS hooks via node, so
+    # they need no live services. Gating this path is the highest-value part of
+    # closing the "integration tests never run" gap.
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+
+    - name: Set up Node (the hooks are JS subprocesses)
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+        pip install -e .[app]
+
+    - name: Live plugin → hook → API → audit E2E
+      run: |
+        PYTHONPATH=src pytest tests/integration/test_claude_code_plugin_e2e.py tests/integration/test_codex_plugin_e2e.py -m integration -v --tb=short
+      env:
+        PYTHONPATH: src
+
   lint:
     runs-on: ubuntu-latest
     steps:

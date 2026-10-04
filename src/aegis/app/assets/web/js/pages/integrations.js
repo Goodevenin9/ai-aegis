@@ -3336,7 +3336,7 @@ def chat_with_protection(user_input):
         if (!el) return;
         let node = null;
         try {
-            const g = await fetch('/api/graph/agent-tool?window_days=30').then(r => r.json());
+            const g = await API.getAgentToolGraph({ window_days: 30 });
             node = (g.nodes || []).find(n => n.kind === 'agent' &&
                 (n.id === 'agent:' + rk || n.runtime_kind === rk));
         } catch {}

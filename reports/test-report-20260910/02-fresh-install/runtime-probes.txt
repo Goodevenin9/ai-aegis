@@ -1,0 +1,70 @@
+# 干净安装 1.0.2 的运行时探针
+时间: 2026-09-10T23:09:56+08:00
+环境: 已 unset DEEPSEEK_API_KEY / AEGIS_DEEPSEEK_API_KEY / AEGIS_DEEPSEEK_API_KEY_FILE / AEGIS_DRIFT_LLM_ENABLED
+启动: aegis-app --web --port 8917
+
+## 1. 版本自证（安装的是 1.0.2）
+```
+$ pip show ai-aegis  →  1.0.2
+$ python -c 'import aegis; print(aegis.__version__)'  →  1.0.2
+$ /health .version  →  1.0.1
+$ aegis --version  →  Aegis AI Threat Monitor 1.0.1
+$ aegis-app --version  →  Aegis Local Threat Monitor v1.0.1
+$ python -c 'import aegis.app as m; print(m.__version__)'  →  1.0.1
+```
+
+## 2. /health 全文
+```
+{"status":"healthy","version":"1.0.1","database":{"connected":true,"record_count":28,"path":"C:\\Users\\19546\\AppData\\Local\\Aegis\\ThreatMonitor\\threat_intel.db"},"rules_loaded":{"community":108,"custom":0,"compiled_patterns":423}}
+```
+
+## 3. 凭据端点：初始状态（应无密钥、无路径）
+```
+GET /api/security-operations/model-credentials
+{"key_configured":false,"key_masked":"","key_source":"none","key_managed":true,"drift_llm_enabled":false}
+```
+
+## 4. 鉴权：无 UI 令牌的写入应被拒
+```
+PUT  (无 X-Aegis-UI-Token)  →  HTTP 403
+DELETE (无 X-Aegis-UI-Token)  →  HTTP 403
+POST /test (无 X-Aegis-UI-Token)  →  HTTP 403
+```
+
+## 5. 前端资源
+```
+index.html 引用的版本号:
+  api.js?v=315
+  i18n-dict.js?v=5
+  pages/security-operations.js?v=3
+security-operations.js 中的凭据卡元素计数:
+        2 so-cred-badge
+        6 so-cred-chip
+        3 so-cred-delete
+        3 so-cred-drift
+        2 so-cred-form
+        2 so-cred-key
+        5 so-cred-result
+        2 so-cred-status
+        2 so-cred-test
+        3 so-cred-toggle
+```
+
+## 6. 带 UI 令牌的写入链路（合成密钥，测后删除）
+```
+UI 令牌长度: 32（不记录内容）
+
+PUT body: {"api_key":"sk-synthetic-probe-0000000000","drift_llm_enabled":true}
+→ HTTP 200
+
+写入后 GET（应只有末四位掩码，无密钥本体、无路径）:
+{"key_configured":true,"key_masked":"sk-****0000","key_source":"file","key_managed":true,"drift_llm_enabled":true}
+
+验证响应中确实搜不到密钥本体与文件路径:
+  ✓ 未出现密钥本体
+  ✓ 未出现文件路径
+
+DELETE（带令牌）→ HTTP 200
+删除后 GET（应回落到未配置）:
+{"key_configured":false,"key_masked":"","key_source":"none","key_managed":true,"drift_llm_enabled":true}
+```

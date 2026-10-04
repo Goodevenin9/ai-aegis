@@ -52,6 +52,13 @@ const API = {
         }));
     },
 
+    // Cloned-VM recovery: regenerate the local device_id and clear enrolled
+    // credentials. Destructive and irreversible from the client's side — the
+    // caller is responsible for confirming before invoking it.
+    async resetDeviceId() {
+        return this.request('/api/system/device-id/reset', { method: 'POST' });
+    },
+
     // ==================== Analyze ====================
 
     async analyze(content) {
@@ -158,6 +165,27 @@ const API = {
         });
     },
 
+    // Retrieval quality (Recall@k / MRR) against labelled cases. Cases are
+    // caller-supplied; the server never invents relevance labels.
+    async evaluateSecurityRag(cases, k = 5) {
+        return this.request('/api/security-operations/rag/evaluate', {
+            method: 'POST',
+            body: JSON.stringify({ cases, k }),
+        });
+    },
+
+    // Closed read-only tool registry the Security Analyst Agent may call.
+    async listSecurityAgentTools() {
+        return this.request('/api/security-operations/agent/tools').catch(() => ({ tools: [] }));
+    },
+
+    // Installed external benchmark report (offline oracle replay). Returns
+    // {status:'unavailable'} when no report was installed on this device.
+    async listSecurityBenchmarks() {
+        return this.request('/api/security-operations/benchmarks')
+            .catch(() => ({ status: 'unavailable', reason: 'Benchmark report has not been installed' }));
+    },
+
     async startSecurityAgent(data) {
         return this._jitDecision('/api/security-operations/agent/runs', data);
     },
@@ -170,10 +198,6 @@ const API = {
 
     async listSecurityAgentRuns() {
         return this.request('/api/security-operations/agent/runs');
-    },
-
-    async testSecurityAgentModel() {
-        return this._jitDecision('/api/security-operations/agent/model/test', {});
     },
 
     // Model credentials (DeepSeek key + drift-extraction toggle). The key is
@@ -246,6 +270,15 @@ const API = {
 
     async listAntibodies() {
         return this.request('/api/runtime/immunity/antibodies').catch(() => ({ antibodies: [] }));
+    },
+
+    // Audit trail of which antibodies matched which sessions, and whether the
+    // contribution was actually applied (an ineffective match is visible too).
+    async listImmuneMatches(sessionKey = null, limit = 100) {
+        const query = new URLSearchParams({ limit: String(limit) });
+        if (sessionKey) query.set('session_key', sessionKey);
+        return this.request(`/api/runtime/immunity/matches?${query.toString()}`)
+            .catch(() => ({ matches: [], total: 0 }));
     },
 
     async learnAntibodyFromSession(data) {
@@ -457,10 +490,6 @@ const API = {
         }));
     },
 
-    async getThreat(id) {
-        return this.request(`/api/threat-intel/${id}`);
-    },
-
     async deleteThreats(options = {}) {
         return this.request('/api/threat-intel', {
             method: 'DELETE',
@@ -468,14 +497,8 @@ const API = {
         });
     },
 
-    async deleteThreat(id) {
-        return this.request(`/api/threat-intel/${id}`, {
-            method: 'DELETE',
-        });
-    },
-
     // disposition: 'false_positive' to dismiss, null to undo. Keeps the
-    // record (evidence) — the non-destructive alternative to deleteThreat.
+    // record (evidence) — the non-destructive alternative to bulk delete.
     async setThreatDisposition(id, disposition) {
         return this.request(`/api/threat-intel/${id}/disposition`, {
             method: 'POST',
@@ -528,10 +551,6 @@ const API = {
 
     async listSiemForwarders() {
         return this.request('/api/siem-forwarders').catch(() => ({ items: [], total: 0 }));
-    },
-
-    async getSiemForwarder(id) {
-        return this.request(`/api/siem-forwarders/${id}`);
     },
 
     async createSiemForwarder(payload) {

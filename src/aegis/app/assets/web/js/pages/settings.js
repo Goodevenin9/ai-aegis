@@ -164,6 +164,16 @@ const SettingsPage = {
         refreshSection.appendChild(refreshCard);
         container.appendChild(refreshSection);
 
+        // Device Identity Section — cloned-VM recovery. Regenerating the
+        // device_id breaks the (device, org) binding at the cloud, so it is a
+        // deliberate confirmed action, not a one-click toggle.
+        const deviceSection = this.createSection('Device Identity', 'Reset this device\'s local identifier if it was cloned from another machine and the cloud rejects re-enrollment.');
+        const deviceCard = Card.create({ gradient: true });
+        const deviceBody = deviceCard.querySelector('.card-body');
+        this.renderDeviceIdentity(deviceBody);
+        deviceSection.appendChild(deviceCard);
+        container.appendChild(deviceSection);
+
         // Uninstall Section
         const uninstallSection = this.createSection('Uninstall', 'Remove Aegis from your system');
         const uninstallCard = Card.create({ gradient: true });
@@ -481,6 +491,52 @@ const SettingsPage = {
                 { label: 'Enable Guardian', primary: true, onClick: onConfirm },
             ],
         });
+    },
+
+    renderDeviceIdentity(container) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:16px;';
+
+        const info = document.createElement('div');
+        const label = document.createElement('div');
+        label.style.cssText = 'font-weight:600;';
+        label.textContent = 'Device identifier';
+        const note = document.createElement('div');
+        note.style.cssText = 'font-size:13px;color:var(--text-secondary);margin-top:4px;';
+        note.textContent = 'Reset only after cloning a machine. Clears any enrolled credentials; you must re-enroll afterwards.';
+        info.appendChild(label);
+        info.appendChild(note);
+        row.appendChild(info);
+
+        const button = document.createElement('button');
+        button.className = 'btn btn-danger';
+        button.textContent = 'Reset device ID';
+        button.addEventListener('click', () => this.resetDeviceIdentity(button));
+        row.appendChild(button);
+
+        container.appendChild(row);
+
+        const result = document.createElement('div');
+        result.id = 'device-id-reset-result';
+        result.style.cssText = 'font-size:12.5px;color:var(--text-secondary);margin-top:10px;';
+        container.appendChild(result);
+    },
+
+    async resetDeviceIdentity(button) {
+        if (!confirm('Reset this device ID and clear enrolled credentials? The cloud will treat this as a new device and you must re-enroll it.')) return;
+        const result = document.getElementById('device-id-reset-result');
+        button.disabled = true;
+        result.textContent = 'Resetting…';
+        try {
+            const data = await API.resetDeviceId();
+            result.textContent = `${data.message} New device ID: ${data.new_device_id}`;
+            if (window.Toast) Toast.success('Device ID reset');
+        } catch (error) {
+            result.textContent = error.message;
+            if (window.Toast) Toast.error('Reset failed');
+        } finally {
+            button.disabled = false;
+        }
     },
 
     renderUninstallSection(container) {
