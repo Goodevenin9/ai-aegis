@@ -18,9 +18,12 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      # ubuntu-latest 已切到 26.04；actions/python-versions 不为 26.04 构建 3.9
+      # （26.04 上最低是 3.10），且 3.9 已于 2025-10 EOL。setup.py 声明支持
+      # 3.9-3.12，这里固定用 3.12。setup-python 用 v6（v4 已随 Node20 弃用）。
+      uses: actions/setup-python@v6
       with:
-        python-version: "3.9"
+        python-version: "3.12"
     
     - name: Install dependencies
       run: |

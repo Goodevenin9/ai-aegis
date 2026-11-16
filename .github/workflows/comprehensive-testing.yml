@@ -15,16 +15,28 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        # ubuntu-latest 已切到 26.04，而 actions/python-versions 不为 26.04 构建 3.9
+        # （26.04 最低 3.10）。3.9 是 setup.py 声明的最低支持版本，必须继续覆盖，
+        # 所以这一条单独钉在仍有 3.9 构建的 24.04 上；其余跑当前 latest。
+        include:
+          - os: ubuntu-24.04
+            python-version: "3.9"
+          - os: ubuntu-latest
+            python-version: "3.10"
+          - os: ubuntu-latest
+            python-version: "3.11"
+          - os: ubuntu-latest
+            python-version: "3.12"
 
     steps:
     - uses: actions/checkout@v4
     
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
     
@@ -116,7 +128,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: "3.12"
 
@@ -143,7 +155,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: "3.10"
     
@@ -175,7 +187,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: "3.10"
     
@@ -207,7 +219,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: "3.10"
     
@@ -255,7 +267,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v6
       with:
         python-version: "3.10"
     
