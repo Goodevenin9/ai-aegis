@@ -22,6 +22,11 @@ from aegis.app.services.semantic_evidence import (
 )
 from aegis.app.services.immune_learning import AntibodyPattern, ImmuneMatcher
 
+# 这两个用例要的是"项目之外、落在用户目录"的路径。硬编码 "C:/Users/..." 只在
+# Windows 上是绝对路径；在 POSIX 上 _path_radius 会把它当成项目内的相对路径，
+# 于是 CI（ubuntu）判成 project。用 Path.home() 在两个平台上都成立。
+USER_SCOPE_PATH = str(Path.home() / "Documents" / "notes.txt")
+
 
 def test_session_store_snapshot_can_restore_drift_machine_state():
     original = SessionDriftStore()
@@ -188,7 +193,7 @@ def test_unknown_tool_requires_confirmation_unless_explicitly_manifested():
 def test_radius_detects_path_outside_project_without_deciding_alone():
     decision = run_pretool_pipeline(
         _context(
-            tool_input={"file_path": "C:/Users/alice/Documents/notes.txt"},
+            tool_input={"file_path": USER_SCOPE_PATH},
             allowed_capabilities=frozenset({"file_read"}),
         ),
         SessionDriftStore(),
@@ -201,7 +206,7 @@ def test_radius_detects_path_outside_project_without_deciding_alone():
 
 def test_repeated_out_of_project_radius_evidence_escalates_deterministically():
     store = SessionDriftStore()
-    context = _context(tool_input={"file_path": "C:/Users/alice/Documents/notes.txt"})
+    context = _context(tool_input={"file_path": USER_SCOPE_PATH})
 
     first = run_pretool_pipeline(context, store)
     second = run_pretool_pipeline(context, store)

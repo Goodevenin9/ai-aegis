@@ -18,6 +18,7 @@ from typing import Dict, Any
 sys.path.insert(0, 'src')
 
 try:
+    from aegis import __version__ as AEGIS_VERSION
     from aegis.mcp import (
         AegisMCPServer,
         create_mcp_server,
@@ -57,7 +58,7 @@ class TestMCPServer:
 
         assert server is not None
         assert server.config.name == "Aegis AI Threat Monitor"
-        assert server.config.version == "1.0.0"
+        assert server.config.version == AEGIS_VERSION
 
     def test_server_configuration(self, test_server):
         """Test server configuration."""
@@ -284,7 +285,7 @@ class TestMCPConfiguration:
         config = create_default_config()
 
         assert config.name == "Aegis AI Threat Monitor"
-        assert config.version == "1.0.0"
+        assert config.version == AEGIS_VERSION
         assert config.transport == "stdio"
 
     def test_development_config_creation(self):
