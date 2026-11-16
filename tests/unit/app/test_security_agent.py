@@ -1,6 +1,18 @@
 """Public workflow tests for the bounded LangGraph security analyst Agent."""
 
+import sys
+
 import pytest
+
+# The analyst graph is built on langgraph, which the [app] extra only ships for
+# Python 3.10+ (see setup.py). security_agent keeps the module importable on 3.9
+# and fails at construction time by design, so these workflow tests have nothing
+# to exercise there. Guarding on the interpreter keeps the skip honest: on 3.10+
+# a broken [app] install still fails instead of silently skipping.
+pytestmark = pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="Security Agent needs the [app] extra (langgraph), which requires Python 3.10+",
+)
 
 from aegis.app.database.connection import DatabaseConnection
 from aegis.app.database.migrations import run_migrations
